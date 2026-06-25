@@ -410,6 +410,14 @@ class StorefrontController extends Controller
                 $couponDiscount = 0.00;
 
                 if ($couponCode) {
+                    // Check if any item in the order is in an active flash sale
+                    foreach ($request->input('items') as $cartItem) {
+                        $v = ProductVariant::with('product')->find($cartItem['variant_id']);
+                        if ($v && $v->product && $v->product->is_flash_sale_active) {
+                            throw new \Exception("Kupon diskon tidak dapat digunakan karena terdapat produk Flash Sale di keranjang belanja Anda.");
+                        }
+                    }
+
                     $coupon = Coupon::where('code', $couponCode)->first();
                     if ($coupon) {
                         if (!$coupon->isValidForSubtotal($subtotal)) {
@@ -746,10 +754,27 @@ class StorefrontController extends Controller
         $request->validate([
             'code' => 'required|string',
             'subtotal' => 'required|numeric|min:0',
+            'items' => 'nullable|array',
+            'items.*.variant_id' => 'nullable|exists:product_variants,id',
         ]);
 
         $code = strtoupper(trim($request->input('code')));
         $subtotal = (float) $request->input('subtotal');
+
+        // Check if any item in the cart is in a flash sale
+        if ($request->has('items') && is_array($request->input('items'))) {
+            foreach ($request->input('items') as $item) {
+                if (isset($item['variant_id'])) {
+                    $variant = ProductVariant::with('product')->find($item['variant_id']);
+                    if ($variant && $variant->product && $variant->product->is_flash_sale_active) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'Kupon diskon tidak dapat digunakan karena terdapat produk Flash Sale di keranjang belanja Anda.',
+                        ], 400);
+                    }
+                }
+            }
+        }
 
         $coupon = Coupon::where('code', $code)->first();
 
