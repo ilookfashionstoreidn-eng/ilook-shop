@@ -15,6 +15,8 @@ import {
     Building2,
     QrCode,
     Loader2,
+    Ticket,
+    Tag,
 } from 'lucide-react';
 import axios from 'axios';
 
@@ -47,6 +49,13 @@ export default function Checkout({ provinces, activeCouriers, originCityId, midt
     const [errorMessage, setErrorMessage] = useState('');
     const [checkoutStep, setCheckoutStep] = useState(1); // 1: Alamat, 2: Pengiriman & Pembayaran
     
+    // Coupon States
+    const [couponCode, setCouponCode] = useState('');
+    const [appliedCoupon, setAppliedCoupon] = useState(null);
+    const [couponDiscount, setCouponDiscount] = useState(0);
+    const [couponError, setCouponError] = useState('');
+    const [applyingCoupon, setApplyingCoupon] = useState(false);
+
     // Snap.js script loaded state
     const snapScriptLoaded = useRef(false);
 
@@ -56,6 +65,40 @@ export default function Checkout({ provinces, activeCouriers, originCityId, midt
             currency: 'IDR',
             minimumFractionDigits: 0
         }).format(val);
+    };
+
+    const handleApplyCoupon = async (e) => {
+        e.preventDefault();
+        if (!couponCode) return;
+
+        setApplyingCoupon(true);
+        setCouponError('');
+        try {
+            const res = await axios.post('/api/coupon/apply', {
+                code: couponCode,
+                subtotal: subtotal
+            });
+
+            if (res.data?.success) {
+                setAppliedCoupon(res.data);
+                setCouponDiscount(res.data.discount_amount);
+                setCouponError('');
+            }
+        } catch (err) {
+            console.error(err);
+            setCouponError(err.response?.data?.message || 'Gagal menerapkan kupon diskon.');
+            setAppliedCoupon(null);
+            setCouponDiscount(0);
+        } finally {
+            setApplyingCoupon(false);
+        }
+    };
+
+    const handleRemoveCoupon = () => {
+        setAppliedCoupon(null);
+        setCouponDiscount(0);
+        setCouponCode('');
+        setCouponError('');
     };
 
     // Load cart items on mount
@@ -159,7 +202,7 @@ export default function Checkout({ provinces, activeCouriers, originCityId, midt
 
     const totalWeight = cartItems.reduce((acc, item) => acc + (item.weight * item.quantity), 0);
     const subtotal = cartItems.reduce((acc, item) => acc + (item.price * item.quantity), 0);
-    const finalTotal = subtotal + shippingCost;
+    const finalTotal = Math.max(0, subtotal + shippingCost - couponDiscount);
 
     const handleProvinceChange = (e) => {
         const provId = e.target.value;
@@ -215,6 +258,7 @@ export default function Checkout({ provinces, activeCouriers, originCityId, midt
             shipping_cost: shippingCost,
             weight: totalWeight,
             postal_code: postalCode,
+            coupon_code: appliedCoupon ? appliedCoupon.code : null,
             items: cartItems.map(i => ({
                 variant_id: i.variant_id,
                 quantity: i.quantity
@@ -600,11 +644,63 @@ export default function Checkout({ provinces, activeCouriers, originCityId, midt
                                 ))}
                             </div>
 
+                            {/* Coupon Input Section */}
+                            <div className="border-t border-[#E0E0E0] pt-4 pb-1 space-y-2">
+                                <span className="text-[10px] text-[#747878] font-bold uppercase tracking-wider block">Kupon Diskon</span>
+                                {appliedCoupon ? (
+                                    <div className="flex items-center justify-between p-3.5 bg-emerald-50 border border-emerald-250 text-emerald-800 rounded-none">
+                                        <div className="flex items-center gap-2">
+                                            <Ticket className="w-4 h-4 text-emerald-700" />
+                                            <div>
+                                                <span className="font-bold font-mono tracking-wider text-xs block">{appliedCoupon.code}</span>
+                                                <span className="text-[9px] text-emerald-600 block">Kupon berhasil diterapkan (-{appliedCoupon.type === 'percentage' ? `${appliedCoupon.value}%` : formatCurrency(appliedCoupon.discount_amount)})</span>
+                                            </div>
+                                        </div>
+                                        <button 
+                                            type="button" 
+                                            onClick={handleRemoveCoupon}
+                                            className="text-xs font-bold text-red-650 hover:text-red-800 transition-colors uppercase tracking-wider"
+                                        >
+                                            Hapus
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <form onSubmit={handleApplyCoupon} className="flex gap-2">
+                                        <input 
+                                            type="text" 
+                                            placeholder="MASUKKAN KODE KUPON"
+                                            value={couponCode}
+                                            onChange={e => setCouponCode(e.target.value.toUpperCase())}
+                                            className="flex-1 bg-white border border-[#E0E0E0] focus:border-[#212121] focus:ring-0 rounded-none p-2 text-xs font-mono font-bold tracking-wider text-[#212121] placeholder:text-[#B0B0B0]"
+                                        />
+                                        <button 
+                                            type="submit"
+                                            disabled={applyingCoupon || !couponCode}
+                                            className="px-4 py-2 bg-[#212121] text-white hover:opacity-90 disabled:opacity-40 text-xs font-bold uppercase tracking-wider rounded-none flex items-center justify-center min-w-[70px]"
+                                        >
+                                            {applyingCoupon ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Gunakan'}
+                                        </button>
+                                    </form>
+                                )}
+                                {couponError && (
+                                    <p className="text-[10px] text-red-650 font-bold uppercase tracking-wider flex items-center gap-1">
+                                        <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
+                                        <span>{couponError}</span>
+                                    </p>
+                                )}
+                            </div>
+
                             <div className="border-t border-[#E0E0E0] pt-3 space-y-2">
                                 <div className="flex justify-between items-center">
                                     <span>Subtotal</span>
                                     <span className="font-bold text-[#212121]">{formatCurrency(subtotal)}</span>
                                 </div>
+                                {couponDiscount > 0 && (
+                                    <div className="flex justify-between items-center text-emerald-700 font-bold">
+                                        <span>Potongan Kupon</span>
+                                        <span>-{formatCurrency(couponDiscount)}</span>
+                                    </div>
+                                )}
                                 <div className="flex justify-between items-center">
                                     <span>Ongkos Kirim</span>
                                     <span className="font-bold text-[#212121]">{shippingCost > 0 ? formatCurrency(shippingCost) : 'Pilih layanan...'}</span>

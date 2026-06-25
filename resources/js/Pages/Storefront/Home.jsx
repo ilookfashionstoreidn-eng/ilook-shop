@@ -1,9 +1,208 @@
 import React, { useState, useEffect } from 'react';
 import StorefrontLayout from '@/Layouts/StorefrontLayout';
-import { Head, Link, router } from '@inertiajs/react';
-import { Zap, Truck, RefreshCw, Store, ChevronRight } from 'lucide-react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
+import { Zap, Truck, RefreshCw, Store, ChevronRight, ChevronLeft } from 'lucide-react';
+
+function FlashSaleBanner({ flashSale }) {
+    const [timeLeft, setTimeLeft] = useState({ h: '00', m: '00', s: '00' });
+    const [statusText, setStatusText] = useState('');
+    const [isLive, setIsLive] = useState(false);
+    const [isVisible, setIsVisible] = useState(false);
+    const carouselRef = React.useRef(null);
+
+    const formatCurrency = (val) => {
+        return new Intl.NumberFormat('id-ID', {
+            style: 'currency', currency: 'IDR', minimumFractionDigits: 0
+        }).format(val);
+    };
+
+    useEffect(() => {
+        if (!flashSale.start_time && !flashSale.end_time) {
+            setIsVisible(true);
+            setIsLive(true);
+            setStatusText('Sedang Berlangsung');
+            return;
+        }
+
+        const checkTime = () => {
+            const now = new Date();
+            const start = flashSale.start_time ? new Date(flashSale.start_time) : null;
+            const end = flashSale.end_time ? new Date(flashSale.end_time) : null;
+
+            let target = null;
+            if (start && now < start) {
+                target = start;
+                setStatusText('Dimulai dalam');
+                setIsLive(false);
+                setIsVisible(true);
+            } else if (end && now <= end) {
+                target = end;
+                setStatusText('Berakhir dalam');
+                setIsLive(true);
+                setIsVisible(true);
+            } else if (end && now > end) {
+                setIsVisible(false);
+                return false;
+            } else {
+                setIsLive(true);
+                setIsVisible(true);
+                setStatusText('Sedang Berlangsung');
+                return false;
+            }
+
+            if (target) {
+                const diffMs = target - now;
+                const diffSecs = Math.max(0, Math.floor(diffMs / 1000));
+                const h = Math.floor(diffSecs / 3600);
+                const m = Math.floor((diffSecs % 3600) / 60);
+                const s = diffSecs % 60;
+
+                setTimeLeft({
+                    h: String(h).padStart(2, '0'),
+                    m: String(m).padStart(2, '0'),
+                    s: String(s).padStart(2, '0'),
+                });
+            }
+            return true;
+        };
+
+        checkTime();
+        const interval = setInterval(() => {
+            const keepRunning = checkTime();
+            if (!keepRunning) {
+                clearInterval(interval);
+            }
+        }, 1000);
+
+        return () => clearInterval(interval);
+    }, [flashSale]);
+
+    const scroll = (direction) => {
+        if (carouselRef.current) {
+            const { scrollLeft, clientWidth } = carouselRef.current;
+            const scrollTo = direction === 'left'
+                ? scrollLeft - clientWidth * 0.8
+                : scrollLeft + clientWidth * 0.8;
+            carouselRef.current.scrollTo({ left: scrollTo, behavior: 'smooth' });
+        }
+    };
+
+    if (!isVisible || flashSale.products.length === 0) return null;
+
+    return (
+        <section className="bg-gradient-to-r from-[#0d1430] via-[#121c44] to-[#0d1430] text-white py-12 px-4 md:py-16 md:px-10 border-b border-[#1e293b] relative overflow-hidden select-none w-full my-6">
+            <div className="absolute top-0 right-0 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none" />
+            <div className="absolute bottom-0 left-0 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl -ml-20 -mb-20 pointer-events-none" />
+
+            <div className="max-w-[1280px] mx-auto flex flex-col items-center gap-10">
+                <div className="flex flex-col items-center text-center gap-4">
+                    <div className="flex items-center justify-center gap-2">
+                        <span className="font-extrabold text-3xl sm:text-5xl tracking-[0.15em] text-white flex items-center gap-1.5 uppercase drop-shadow-md">
+                            F<span className="text-yellow-400 animate-pulse text-2xl sm:text-4xl">⚡</span>ash Sale
+                        </span>
+                    </div>
+
+                    {(flashSale.start_time || flashSale.end_time) && (
+                        <div className="flex flex-col sm:flex-row items-center gap-4 bg-black/30 backdrop-blur-md px-6 py-3.5 border border-white/10 rounded-xl mt-2">
+                            <span className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#eeeeee]">{statusText}</span>
+                            <div className="flex items-center gap-3">
+                                <div className="flex flex-col items-center min-w-[36px]">
+                                    <span className="text-xl sm:text-2xl font-bold tracking-tight text-white">{timeLeft.h}</span>
+                                    <span className="text-[8px] font-bold tracking-widest text-white/50 uppercase mt-0.5">Jam</span>
+                                </div>
+                                <span className="text-lg font-bold text-white/60 -mt-2.5">:</span>
+                                <div className="flex flex-col items-center min-w-[36px]">
+                                    <span className="text-xl sm:text-2xl font-bold tracking-tight text-white">{timeLeft.m}</span>
+                                    <span className="text-[8px] font-bold tracking-widest text-white/50 uppercase mt-0.5">Menit</span>
+                                </div>
+                                <span className="text-lg font-bold text-white/60 -mt-2.5">:</span>
+                                <div className="flex flex-col items-center min-w-[36px]">
+                                    <span className="text-xl sm:text-2xl font-bold tracking-tight text-white">{timeLeft.s}</span>
+                                    <span className="text-[8px] font-bold tracking-widest text-white/50 uppercase mt-0.5">Detik</span>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+
+                <div className="relative w-full group">
+                    <button
+                        onClick={() => scroll('left')}
+                        className="absolute left-0 md:-left-8 top-1/2 -translate-y-1/2 z-30 text-white/70 hover:text-white hover:scale-110 transition-all opacity-0 group-hover:opacity-100 hidden md:flex items-center justify-center cursor-pointer bg-transparent border-none outline-none"
+                    >
+                        <ChevronLeft className="w-8 h-8" />
+                    </button>
+
+                    <button
+                        onClick={() => scroll('right')}
+                        className="absolute right-0 md:-right-8 top-1/2 -translate-y-1/2 z-30 text-white/70 hover:text-white hover:scale-110 transition-all opacity-0 group-hover:opacity-100 hidden md:flex items-center justify-center cursor-pointer bg-transparent border-none outline-none"
+                    >
+                        <ChevronRight className="w-8 h-8" />
+                    </button>
+
+                    <div
+                        ref={carouselRef}
+                        className="flex overflow-x-auto scroll-smooth gap-4 sm:gap-6 pb-4 pt-1 snap-x snap-mandatory no-scrollbar"
+                        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+                    >
+                        {flashSale.products.map((item) => {
+                            const mainImage = item.images?.[0] || 'https://images.unsplash.com/photo-1434389677669-e08b4cac3105?w=800&auto=format&fit=crop&q=60';
+                            
+                            return (
+                                <div key={item.id} className="min-w-[190px] w-[190px] sm:min-w-[240px] sm:w-[240px] snap-start bg-white text-black rounded-none overflow-hidden border-none shadow-sm flex flex-col group/card hover:shadow-md transition-all duration-300 transform hover:-translate-y-0.5">
+                                    <div className="relative aspect-[3/4] bg-gray-50 overflow-hidden">
+                                        <img
+                                            src={mainImage}
+                                            alt={item.name}
+                                            className="w-full h-full object-cover group-hover/card:scale-105 transition-transform duration-500"
+                                        />
+
+                                        <span className="absolute top-0 left-0 bg-[#c22e2e] text-white text-[10px] font-bold px-2 py-0.75 uppercase tracking-wider rounded-none shadow-sm select-none">
+                                            {item.discount_type === 'percentage' 
+                                                ? `-${Math.round(item.discount_value)}%` 
+                                                : `-${formatCurrency(item.discount_value)}`}
+                                        </span>
+
+                                        <Link
+                                            href={route('storefront.product', item.slug)}
+                                            className="absolute bottom-0 left-0 right-0 bg-black/95 text-white py-3 text-[10px] font-bold tracking-[0.15em] uppercase text-center transform translate-y-full group-hover/card:translate-y-0 transition-transform duration-300"
+                                        >
+                                            BELI SEKARANG
+                                        </Link>
+                                    </div>
+
+                                    <div className="p-4 flex-grow flex flex-col justify-between gap-1 bg-white">
+                                        <div>
+                                            <p className="text-[11px] font-bold uppercase tracking-wider text-black truncate leading-none">
+                                                {item.category_name}
+                                            </p>
+                                            <Link href={route('storefront.product', item.slug)}>
+                                                <h3 className="text-xs sm:text-[13px] font-normal text-[#333333] hover:text-black transition-colors line-clamp-1 mt-1">
+                                                    {item.name}
+                                                </h3>
+                                            </Link>
+                                        </div>
+                                        <div className="flex items-center gap-2 pt-1 mt-1">
+                                            <span className="text-[11px] text-gray-400 line-through">
+                                                {formatCurrency(item.base_price)}
+                                            </span>
+                                            <span className="text-xs sm:text-[13px] font-bold text-[#c22e2e]">
+                                                {formatCurrency(item.flash_sale_price)}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+            </div>
+        </section>
+    );
+}
 
 export default function Home({ products, categories, filters }) {
+    const { flashSale } = usePage().props;
 
     const [countdown, setCountdown] = useState({ h: '02', m: '45', s: '30' });
 
@@ -127,41 +326,11 @@ export default function Home({ products, categories, filters }) {
                     </div>
                 </div>
             </section>
+            {/* Dynamic Flash Sale Banner */}
+            {flashSale && flashSale.is_active && flashSale.products && flashSale.products.length > 0 && (
+                <FlashSaleBanner flashSale={flashSale} />
+            )}
 
-            {/* Flash Sale Banner */}
-            <section className="bg-[#111111] py-8 px-6 md:py-10 md:px-10 text-white">
-                <div className="max-w-[1280px] mx-auto flex flex-col md:flex-row justify-between items-center gap-6 text-center md:text-left">
-                    <div className="flex flex-col sm:flex-row items-center gap-4">
-                        <Zap className="w-8 h-8 text-white animate-pulse" />
-                        <div>
-                            <h2 className="text-xl sm:text-2xl font-bold uppercase tracking-widest">Flash Sale</h2>
-                            <p className="text-xs text-white/60 mt-0.5">Penawaran terbatas, segera berakhir</p>
-                        </div>
-                    </div>
-                    <div className="flex gap-3 sm:gap-4 items-center justify-center my-2 md:my-0">
-                        <div className="flex flex-col items-center min-w-[45px] sm:min-w-[50px]">
-                            <span className="text-3xl sm:text-4xl font-bold">{countdown.h}</span>
-                            <span className="text-[9px] font-bold tracking-[0.05em] opacity-60 uppercase">Jam</span>
-                        </div>
-                        <span className="text-3xl sm:text-4xl font-bold mb-4">:</span>
-                        <div className="flex flex-col items-center min-w-[45px] sm:min-w-[50px]">
-                            <span className="text-3xl sm:text-4xl font-bold">{countdown.m}</span>
-                            <span className="text-[9px] font-bold tracking-[0.05em] opacity-60 uppercase">Menit</span>
-                        </div>
-                        <span className="text-3xl sm:text-4xl font-bold mb-4">:</span>
-                        <div className="flex flex-col items-center min-w-[45px] sm:min-w-[50px]">
-                            <span className="text-3xl sm:text-4xl font-bold">{countdown.s}</span>
-                            <span className="text-[9px] font-bold tracking-[0.05em] opacity-60 uppercase">Detik</span>
-                        </div>
-                    </div>
-                    <button
-                        onClick={() => handleCategoryClick(null)}
-                        className="w-full md:w-auto border border-white px-8 py-3 text-[10px] font-bold tracking-[0.1em] uppercase hover:bg-white hover:text-black transition-all"
-                    >
-                        LIHAT SEMUA
-                    </button>
-                </div>
-            </section>
 
             {/* New Arrivals Grid */}
             <section id="catalog" className="py-12 px-4 md:py-20 md:px-10 max-w-[1280px] mx-auto bg-white">
@@ -222,9 +391,14 @@ export default function Home({ products, categories, filters }) {
                             const mainImage = product.images && product.images[0]
                                 ? product.images[0]
                                 : 'https://images.unsplash.com/photo-1434389677669-e08b4cac3105?w=800&auto=format&fit=crop&q=60';
-                            const discount = product.sale_price && product.base_price
-                                ? Math.round((1 - product.sale_price / product.base_price) * 100)
-                                : null;
+                            const isFlashSale = product.is_flash_sale_active;
+                            const discount = isFlashSale
+                                ? (product.flash_sale?.discount_type === 'percentage' 
+                                    ? Math.round(product.flash_sale.discount_value) 
+                                    : Math.round((1 - product.flash_sale_price / product.base_price) * 100))
+                                : (product.sale_price && product.base_price
+                                    ? Math.round((1 - product.sale_price / product.base_price) * 100)
+                                    : null);
                             return (
                                 <Link
                                     key={product.id}
@@ -239,8 +413,8 @@ export default function Home({ products, categories, filters }) {
                                             className="w-full h-full object-cover group-hover:scale-102 transition-transform duration-500"
                                         />
                                         {discount && (
-                                            <span className="absolute top-3 left-3 bg-[#530A0C] text-white text-[9px] font-bold px-2 py-0.5 uppercase tracking-wider">
-                                                {discount}% OFF
+                                            <span className="absolute top-3 left-3 bg-[#c22e2e] text-white text-[9px] font-bold px-2 py-0.5 uppercase tracking-wider rounded-sm">
+                                                {isFlashSale ? '⚡ ' : ''}{discount}% OFF
                                             </span>
                                         )}
                                         {/* Hover Slide-up Button */}
@@ -255,13 +429,26 @@ export default function Home({ products, categories, filters }) {
                                         </p>
                                         <h3 className="text-[13px] font-normal text-[#333333] group-hover:text-black transition-colors line-clamp-1">{product.name}</h3>
                                         <div className="flex items-center gap-2 pt-0.5">
-                                            <span className="text-[13px] font-bold text-black">
-                                                {formatCurrency(product.sale_price || product.base_price)}
-                                            </span>
-                                            {product.sale_price && (
-                                                <span className="text-[11px] text-[#888888] line-through">
-                                                    {formatCurrency(product.base_price)}
-                                                </span>
+                                            {isFlashSale ? (
+                                                <>
+                                                    <span className="text-[13px] font-bold text-[#c22e2e]">
+                                                        {formatCurrency(product.flash_sale_price)}
+                                                    </span>
+                                                    <span className="text-[11px] text-[#888888] line-through">
+                                                        {formatCurrency(product.base_price)}
+                                                    </span>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <span className="text-[13px] font-bold text-black">
+                                                        {formatCurrency(product.sale_price || product.base_price)}
+                                                    </span>
+                                                    {product.sale_price && (
+                                                        <span className="text-[11px] text-[#888888] line-through">
+                                                            {formatCurrency(product.base_price)}
+                                                        </span>
+                                                    )}
+                                                </>
                                             )}
                                         </div>
                                     </div>

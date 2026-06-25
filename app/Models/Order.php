@@ -20,12 +20,15 @@ class Order extends Model
         'payment_status',
         'snap_token',
         'ginee_order_id',
+        'coupon_code',
+        'coupon_discount',
     ];
 
     protected $casts = [
         'subtotal' => 'float',
         'shipping_cost' => 'float',
         'total_amount' => 'float',
+        'coupon_discount' => 'float',
     ];
 
     public function user(): BelongsTo

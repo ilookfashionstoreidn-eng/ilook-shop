@@ -13,7 +13,8 @@ import {
     Info,
     Star,
     MessageSquare,
-    X
+    X,
+    Zap
 } from 'lucide-react';
 import axios from 'axios';
 
@@ -74,6 +75,142 @@ export default function ProductDetail({ product, related, origin }) {
         }
     };
 
+    // Parse variants into color & size properties
+    const parsedVariants = React.useMemo(() => {
+        return (product.variants || []).map(v => {
+            let size = null;
+            let color = null;
+            
+            if (v.name) {
+                if (v.name.includes('/')) {
+                    const parts = v.name.split('/').map(p => p.trim());
+                    const looksLikeSize = (str) => {
+                        const s = str.toUpperCase();
+                        return ['S', 'M', 'L', 'XL', 'XXL', 'XXXL', 'XS', 'ALL SIZE', 'ALLSIZE', 'ONE SIZE', 'ONESIZE', '27', '28', '29', '30', '31', '32', '33', '34', '35', '36', '37', '38', '39', '40', '41', '42', '43', '44', '45'].includes(s) 
+                            || /^\d+$/.test(s) 
+                            || s.startsWith('FIT') 
+                            || s.includes('UKURAN') 
+                            || s.includes('SIZE');
+                    };
+                    if (looksLikeSize(parts[0])) {
+                        size = parts[0];
+                        color = parts[1] || null;
+                    } else if (looksLikeSize(parts[1])) {
+                        size = parts[1];
+                        color = parts[0] || null;
+                    } else {
+                        size = parts[0];
+                        color = parts[1] || null;
+                    }
+                } else {
+                    const s = v.name.toUpperCase();
+                    const isSz = ['S', 'M', 'L', 'XL', 'XXL', 'XXXL', 'XS', 'ALL SIZE', 'ALLSIZE', 'ONE SIZE', 'ONESIZE'].includes(s) 
+                        || /^\d+$/.test(s) 
+                        || s.startsWith('FIT')
+                        || s.includes('UKURAN') 
+                        || s.includes('SIZE');
+                    if (isSz) {
+                        size = v.name;
+                    } else {
+                        color = v.name;
+                    }
+                }
+            }
+            return {
+                ...v,
+                parsedColor: color,
+                parsedSize: size
+            };
+        });
+    }, [product.variants]);
+
+    const uniqueColors = React.useMemo(() => {
+        const colors = [];
+        parsedVariants.forEach(v => {
+            if (v.parsedColor && !colors.some(c => c.name.toLowerCase() === v.parsedColor.toLowerCase())) {
+                colors.push({
+                    name: v.parsedColor,
+                    image: v.image || null,
+                    variant: v
+                });
+            }
+        });
+        return colors;
+    }, [parsedVariants]);
+
+    const uniqueSizes = React.useMemo(() => {
+        const sizes = [];
+        parsedVariants.forEach(v => {
+            if (v.parsedSize && !sizes.some(s => s.toLowerCase() === v.parsedSize.toLowerCase())) {
+                sizes.push(v.parsedSize);
+            }
+        });
+        return sizes;
+    }, [parsedVariants]);
+
+    const hasColors = uniqueColors.length > 0;
+    const hasSizes = uniqueSizes.length > 0;
+
+    const [selectedColor, setSelectedColor] = useState(null);
+    const [selectedSize, setSelectedSize] = useState(null);
+
+    // Sync selected color and size when selectedVariant is changed (e.g. from thumbnail click)
+    useEffect(() => {
+        if (selectedVariant) {
+            const pv = parsedVariants.find(v => v.id === selectedVariant.id);
+            if (pv) {
+                if (pv.parsedColor !== selectedColor) {
+                    setSelectedColor(pv.parsedColor);
+                }
+                if (pv.parsedSize !== selectedSize) {
+                    setSelectedSize(pv.parsedSize);
+                }
+            }
+        }
+    }, [selectedVariant, parsedVariants]);
+
+    const handleColorSelect = (colorName) => {
+        setSelectedColor(colorName);
+        
+        const colorVariants = parsedVariants.filter(
+            v => v.parsedColor && v.parsedColor.toLowerCase() === colorName.toLowerCase()
+        );
+        
+        const hasSizesForColor = colorVariants.some(v => v.parsedSize);
+        
+        if (hasSizesForColor) {
+            setSelectedSize(null);
+            setSelectedVariant(null);
+        } else {
+            if (colorVariants.length > 0) {
+                setSelectedVariant(colorVariants[0]);
+            }
+        }
+    };
+
+    const handleSizeSelect = (sizeName) => {
+        setSelectedSize(sizeName);
+        
+        const match = parsedVariants.find(
+            v => v.parsedColor && v.parsedColor.toLowerCase() === selectedColor?.toLowerCase() &&
+                 v.parsedSize && v.parsedSize.toLowerCase() === sizeName.toLowerCase()
+        );
+        
+        if (match) {
+            setSelectedVariant(match);
+        }
+    };
+
+    const handleSizeOnlySelect = (sizeName) => {
+        setSelectedSize(sizeName);
+        const match = parsedVariants.find(
+            v => v.parsedSize && v.parsedSize.toLowerCase() === sizeName.toLowerCase()
+        );
+        if (match) {
+            setSelectedVariant(match);
+        }
+    };
+
     // Auto adjust quantity if it exceeds selected variant's stock
     // Also switch the active image to the variant's own photo when variant changes
     useEffect(() => {
@@ -104,7 +241,7 @@ export default function ProductDetail({ product, related, origin }) {
                 product_name: product.name,
                 variant_name: selectedVariant.name,
                 sku: selectedVariant.sku,
-                price: selectedVariant.price ?? product.sale_price ?? product.base_price,
+                price: currentPrice,
                 image: getVariantImage(selectedVariant),
                 quantity: quantity,
                 weight: product.weight
@@ -170,7 +307,14 @@ export default function ProductDetail({ product, related, origin }) {
         }
     };
 
-    const currentPrice = selectedVariant?.price ?? product.sale_price ?? product.base_price;
+    const isFlashSale = product.is_flash_sale_active;
+    const currentPrice = isFlashSale
+        ? (selectedVariant?.price 
+            ? (product.flash_sale?.discount_type === 'percentage'
+                ? Math.max(0, selectedVariant.price * (1 - (product.flash_sale?.discount_value ?? 0) / 100))
+                : Math.max(0, selectedVariant.price - (product.flash_sale?.discount_value ?? 0)))
+            : product.flash_sale_price)
+        : (selectedVariant?.price ?? product.sale_price ?? product.base_price);
 
     return (
         <StorefrontLayout>
@@ -279,65 +423,234 @@ export default function ProductDetail({ product, related, origin }) {
 
                         {/* Price Details */}
                         <div className="border-b border-[#eeeeee] pb-6">
-                            <div className="flex items-baseline gap-3">
-                                <span className={`text-2xl font-bold ${product.sale_price ? 'text-[#c22e2e]' : 'text-black'}`}>
-                                    {formatCurrency(currentPrice)}
-                                </span>
-                                {product.sale_price && !selectedVariant?.price && (
-                                    <span className="text-sm text-[#888888] line-through">
-                                        {formatCurrency(product.base_price)}
-                                    </span>
+                            <div className="flex items-center gap-3">
+                                {isFlashSale ? (
+                                    <>
+                                        <span className="text-2xl font-bold text-[#c22e2e]">
+                                            {formatCurrency(currentPrice)}
+                                        </span>
+                                        <span className="text-sm text-[#888888] line-through">
+                                            {formatCurrency(selectedVariant?.price ?? product.base_price)}
+                                        </span>
+                                        <span className="inline-flex items-center gap-1 bg-[#c22e2e] text-white text-[10px] font-bold px-2 py-0.5 uppercase tracking-wider rounded-sm shadow-sm">
+                                            <Zap className="w-3 h-3 fill-white" />
+                                            <span>Flash Sale</span>
+                                        </span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <span className={`text-2xl font-bold ${product.sale_price ? 'text-[#c22e2e]' : 'text-black'}`}>
+                                            {formatCurrency(currentPrice)}
+                                        </span>
+                                        {product.sale_price && !selectedVariant?.price && (
+                                            <span className="text-sm text-[#888888] line-through">
+                                                {formatCurrency(product.base_price)}
+                                            </span>
+                                        )}
+                                    </>
                                 )}
                             </div>
                         </div>
 
                         {/* Variant Selection */}
-                        <div className="space-y-4">
-                            <div className="flex justify-between items-center">
-                                <h3 className="text-xs font-bold uppercase tracking-widest text-black">Pilih Ukuran & Warna</h3>
-                                <button 
-                                    onClick={() => toggleAccordion('sizeGuide')}
-                                    className="text-[10px] text-[#666666] hover:text-black uppercase tracking-wider underline font-bold"
-                                >
-                                    Panduan Ukuran
-                                </button>
-                            </div>
-                            <div className="grid grid-cols-2 gap-2.5">
-                                {product.variants.map((v) => {
-                                    const isSelected = selectedVariant?.id === v.id;
-                                    const vThumb = v.image || null;
-                                    return (
-                                        <button
-                                            key={v.id}
-                                            type="button"
-                                            onClick={() => setSelectedVariant(v)}
-                                            className={`p-3 rounded-none border text-left flex items-center gap-2.5 transition-all ${
-                                                isSelected 
-                                                    ? 'border-black bg-black text-white' 
-                                                    : 'border-[#eeeeee] bg-white text-[#666666] hover:text-black hover:border-black'
-                                            }`}
-                                        >
-                                            {vThumb && (
-                                                <img
-                                                    src={vThumb}
-                                                    alt={v.name}
-                                                    className={`w-8 h-8 object-cover rounded-sm flex-shrink-0 border ${
-                                                        isSelected ? 'border-white/30' : 'border-[#eeeeee]'
+                        <div className="space-y-6">
+                            {hasColors && (
+                                <div className="space-y-3">
+                                    <span className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#888888]">Pilih Warna</span>
+                                    <div className="grid grid-cols-2 gap-2.5">
+                                        {uniqueColors.map((colorObj) => {
+                                            const isSelected = selectedColor?.toLowerCase() === colorObj.name.toLowerCase();
+                                            const vThumb = colorObj.image || null;
+                                            return (
+                                                <button
+                                                    key={colorObj.name}
+                                                    type="button"
+                                                    onClick={() => handleColorSelect(colorObj.name)}
+                                                    className={`p-3 rounded-none border text-left flex items-center gap-2.5 transition-all duration-300 ${
+                                                        isSelected 
+                                                            ? 'border-black bg-black text-white' 
+                                                            : 'border-[#eeeeee] bg-white text-[#666666] hover:text-black hover:border-black'
                                                     }`}
-                                                />
-                                            )}
-                                            <div className="flex flex-col justify-between gap-0.5 min-w-0">
-                                                <span className="text-xs font-bold truncate uppercase tracking-wider leading-tight">{v.name}</span>
-                                                <span className={`text-[10px] font-bold ${
-                                                    v.stock === 0 ? 'text-[#c22e2e]' : v.stock <= 5 ? 'text-amber-600' : isSelected ? 'text-white/60' : 'text-[#888888]'
-                                                }`}>
-                                                    {v.stock === 0 ? 'Stok Habis' : `Stok: ${v.stock} pcs`}
-                                                </span>
-                                            </div>
+                                                >
+                                                    {vThumb && (
+                                                        <img
+                                                            src={vThumb}
+                                                            alt={colorObj.name}
+                                                            className={`w-8 h-8 object-cover rounded-sm flex-shrink-0 border ${
+                                                                isSelected ? 'border-white/30' : 'border-[#eeeeee]'
+                                                            }`}
+                                                        />
+                                                    )}
+                                                    <div className="flex flex-col justify-between gap-0.5 min-w-0">
+                                                        <span className="text-xs font-bold truncate uppercase tracking-wider leading-tight">{colorObj.name}</span>
+                                                    </div>
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            )}
+
+                            {hasColors && hasSizes && (
+                                <div className="space-y-3 pt-2">
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#888888]">Pilih Ukuran</span>
+                                        <button 
+                                            onClick={() => toggleAccordion('sizeGuide')}
+                                            className="text-[10px] text-[#666666] hover:text-black uppercase tracking-wider underline font-bold"
+                                        >
+                                            Panduan Ukuran
                                         </button>
-                                    );
-                                })}
-                            </div>
+                                    </div>
+                                    
+                                    {selectedColor ? (
+                                        <div className="grid grid-cols-3 gap-2.5">
+                                            {uniqueSizes.map((size) => {
+                                                const matchingVariant = parsedVariants.find(
+                                                    v => v.parsedColor && v.parsedColor.toLowerCase() === selectedColor.toLowerCase() &&
+                                                         v.parsedSize && v.parsedSize.toLowerCase() === size.toLowerCase()
+                                                );
+                                                
+                                                if (!matchingVariant) return null;
+                                                
+                                                const isSelected = selectedSize?.toLowerCase() === size.toLowerCase();
+                                                const isOutOfStock = matchingVariant.stock === 0;
+                                                
+                                                return (
+                                                    <button
+                                                        key={size}
+                                                        type="button"
+                                                        onClick={() => handleSizeSelect(size)}
+                                                        className={`p-2.5 rounded-none border text-center transition-all duration-300 ${
+                                                            isSelected 
+                                                                ? 'border-black bg-black text-white' 
+                                                                : 'border-[#eeeeee] bg-white text-[#666666] hover:text-black hover:border-black'
+                                                        }`}
+                                                    >
+                                                        <div className="text-xs font-bold uppercase tracking-wider">{size}</div>
+                                                        <div className={`text-[9px] font-bold mt-0.5 ${
+                                                            isOutOfStock 
+                                                                ? 'text-[#c22e2e]' 
+                                                                : matchingVariant.stock <= 5 
+                                                                    ? 'text-amber-600' 
+                                                                    : isSelected 
+                                                                        ? 'text-white/60' 
+                                                                        : 'text-[#888888]'
+                                                        }`}>
+                                                            {isOutOfStock ? 'Habis' : `${matchingVariant.stock} pcs`}
+                                                        </div>
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+                                    ) : (
+                                        <div className="p-4 border border-[#eeeeee] bg-[#fcfcfc] text-center text-xs text-[#888888] font-medium tracking-wide">
+                                            Silakan pilih warna terlebih dahulu untuk melihat ukuran yang tersedia.
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
+                            {!hasColors && hasSizes && (
+                                <div className="space-y-3">
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#888888]">Pilih Ukuran</span>
+                                        <button 
+                                            onClick={() => toggleAccordion('sizeGuide')}
+                                            className="text-[10px] text-[#666666] hover:text-black uppercase tracking-wider underline font-bold"
+                                        >
+                                            Panduan Ukuran
+                                        </button>
+                                    </div>
+                                    <div className="grid grid-cols-3 gap-2.5">
+                                        {uniqueSizes.map((size) => {
+                                            const matchingVariant = parsedVariants.find(
+                                                v => v.parsedSize && v.parsedSize.toLowerCase() === size.toLowerCase()
+                                            );
+                                            if (!matchingVariant) return null;
+                                            
+                                            const isSelected = selectedSize?.toLowerCase() === size.toLowerCase();
+                                            const isOutOfStock = matchingVariant.stock === 0;
+                                            
+                                            return (
+                                                <button
+                                                    key={size}
+                                                    type="button"
+                                                    onClick={() => handleSizeOnlySelect(size)}
+                                                    className={`p-2.5 rounded-none border text-center transition-all duration-300 ${
+                                                        isSelected 
+                                                            ? 'border-black bg-black text-white' 
+                                                            : 'border-[#eeeeee] bg-white text-[#666666] hover:text-black hover:border-black'
+                                                    }`}
+                                                >
+                                                    <div className="text-xs font-bold uppercase tracking-wider">{size}</div>
+                                                    <div className={`text-[9px] font-bold mt-0.5 ${
+                                                        isOutOfStock 
+                                                            ? 'text-[#c22e2e]' 
+                                                            : matchingVariant.stock <= 5 
+                                                                ? 'text-amber-600' 
+                                                                : isSelected 
+                                                                    ? 'text-white/60' 
+                                                                    : 'text-[#888888]'
+                                                    }`}>
+                                                        {isOutOfStock ? 'Habis' : `${matchingVariant.stock} pcs`}
+                                                    </div>
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            )}
+
+                            {!hasColors && !hasSizes && (
+                                <div className="space-y-3">
+                                    <div className="flex justify-between items-center">
+                                        <h3 className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#888888]">Pilih Variasi</h3>
+                                        <button 
+                                            onClick={() => toggleAccordion('sizeGuide')}
+                                            className="text-[10px] text-[#666666] hover:text-black uppercase tracking-wider underline font-bold"
+                                        >
+                                            Panduan Ukuran
+                                        </button>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-2.5">
+                                        {product.variants.map((v) => {
+                                            const isSelected = selectedVariant?.id === v.id;
+                                            const vThumb = v.image || null;
+                                            return (
+                                                <button
+                                                    key={v.id}
+                                                    type="button"
+                                                    onClick={() => setSelectedVariant(v)}
+                                                    className={`p-3 rounded-none border text-left flex items-center gap-2.5 transition-all duration-300 ${
+                                                        isSelected 
+                                                            ? 'border-black bg-black text-white' 
+                                                            : 'border-[#eeeeee] bg-white text-[#666666] hover:text-black hover:border-black'
+                                                    }`}
+                                                >
+                                                    {vThumb && (
+                                                        <img
+                                                            src={vThumb}
+                                                            alt={v.name}
+                                                            className={`w-8 h-8 object-cover rounded-sm flex-shrink-0 border ${
+                                                                isSelected ? 'border-white/30' : 'border-[#eeeeee]'
+                                                            }`}
+                                                        />
+                                                    )}
+                                                    <div className="flex flex-col justify-between gap-0.5 min-w-0">
+                                                        <span className="text-xs font-bold truncate uppercase tracking-wider leading-tight">{v.name}</span>
+                                                        <span className={`text-[10px] font-bold ${
+                                                            v.stock === 0 ? 'text-[#c22e2e]' : v.stock <= 5 ? 'text-amber-600' : isSelected ? 'text-white/60' : 'text-[#888888]'
+                                                        }`}>
+                                                            {v.stock === 0 ? 'Stok Habis' : `Stok: ${v.stock} pcs`}
+                                                        </span>
+                                                    </div>
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            )}
                         </div>
 
                         {/* Action Row Add to Cart */}

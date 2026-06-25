@@ -52,6 +52,16 @@ class PaymentService
             ];
         }
 
+        // Tambahkan diskon kupon jika ada
+        if ($order->coupon_discount > 0) {
+            $itemDetails[] = [
+                'id'       => 'DISCOUNT',
+                'price'    => -(int) $order->coupon_discount,
+                'quantity' => 1,
+                'name'     => 'Diskon Kupon (' . $order->coupon_code . ')',
+            ];
+        }
+
         // Customer details
         $customerDetails = [
             'first_name' => $order->shipping?->recipient_name ?? 'Pembeli',

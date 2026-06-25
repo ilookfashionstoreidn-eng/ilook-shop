@@ -406,6 +406,12 @@ export default function OrderDetail({ order: initialOrder, midtransClientKey, mi
                                     <span className="text-[#747878]">Subtotal</span>
                                     <span className="font-bold text-[#212121]">{formatCurrency(order.subtotal)}</span>
                                 </div>
+                                {order.coupon_discount > 0 && (
+                                    <div className="flex justify-between text-green-700 font-semibold">
+                                        <span>Potongan Kupon ({order.coupon_code})</span>
+                                        <span>-{formatCurrency(order.coupon_discount)}</span>
+                                    </div>
+                                )}
                                 <div className="flex justify-between">
                                     <span className="text-[#747878]">Ongkos Kirim</span>
                                     <span className="font-bold text-[#212121]">{formatCurrency(order.shipping_cost)}</span>
