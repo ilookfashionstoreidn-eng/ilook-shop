@@ -149,4 +149,65 @@ class CouponTest extends TestCase
         ]);
         $response->assertStatus(404);
     }
+
+    /**
+     * Test coupon apply fails when flash sale item is present.
+     */
+    public function test_coupon_apply_fails_when_flash_sale_product_present(): void
+    {
+        // 1. Setup Flash Sale settings
+        \App\Models\Setting::create(['key' => 'flash_sale_is_active', 'value' => '1']);
+        \App\Models\Setting::create(['key' => 'flash_sale_start_time', 'value' => now()->subDay()->toDateTimeString()]);
+        \App\Models\Setting::create(['key' => 'flash_sale_end_time', 'value' => now()->addDay()->toDateTimeString()]);
+
+        // 2. Create coupon
+        $coupon = Coupon::create([
+            'code' => 'DISCOUNT20',
+            'type' => 'percentage',
+            'value' => 20,
+            'min_spend' => 50000,
+            'is_active' => true,
+        ]);
+
+        // 3. Create flash sale product and variant
+        $category = \App\Models\Category::create(['name' => 'Dress', 'slug' => 'dress', 'sort_order' => 1]);
+        $product = Product::create([
+            'category_id' => $category->id,
+            'name' => 'Flash Sale Dress',
+            'slug' => 'flash-sale-dress',
+            'sku' => 'FS-DRS',
+            'weight' => 500,
+            'base_price' => 100000,
+            'status' => 'active',
+        ]);
+        
+        $variant = ProductVariant::create([
+            'product_id' => $product->id,
+            'sku' => 'FS-DRS-S',
+            'name' => 'S',
+            'price' => 100000,
+            'stock' => 10,
+        ]);
+
+        \App\Models\FlashSaleProduct::create([
+            'product_id' => $product->id,
+            'discount_type' => 'percentage',
+            'discount_value' => 10,
+        ]);
+
+        // 4. Test apply coupon API with the flash sale item
+        $response = $this->postJson(route('storefront.coupon.apply'), [
+            'code' => 'DISCOUNT20',
+            'subtotal' => 90000,
+            'items' => [
+                ['variant_id' => $variant->id, 'quantity' => 1]
+            ]
+        ]);
+
+        $response->assertStatus(400)
+            ->assertJson([
+                'success' => false,
+                'message' => 'Kupon diskon tidak dapat digunakan karena terdapat produk Flash Sale di keranjang belanja Anda.',
+            ]);
+    }
 }

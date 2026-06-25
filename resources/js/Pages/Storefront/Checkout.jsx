@@ -19,6 +19,7 @@ import {
     Tag,
 } from 'lucide-react';
 import axios from 'axios';
+import Swal from 'sweetalert2';
 
 export default function Checkout({ provinces, activeCouriers, originCityId, midtransClientKey, midtransSnapUrl }) {
     const [cartItems, setCartItems] = useState([]);
@@ -76,7 +77,11 @@ export default function Checkout({ provinces, activeCouriers, originCityId, midt
         try {
             const res = await axios.post('/api/coupon/apply', {
                 code: couponCode,
-                subtotal: subtotal
+                subtotal: subtotal,
+                items: cartItems.map(i => ({
+                    variant_id: i.variant_id,
+                    quantity: i.quantity
+                }))
             });
 
             if (res.data?.success) {
@@ -86,9 +91,25 @@ export default function Checkout({ provinces, activeCouriers, originCityId, midt
             }
         } catch (err) {
             console.error(err);
-            setCouponError(err.response?.data?.message || 'Gagal menerapkan kupon diskon.');
+            const errMsg = err.response?.data?.message || 'Gagal menerapkan kupon diskon.';
+            setCouponError(errMsg);
             setAppliedCoupon(null);
             setCouponDiscount(0);
+
+            // SweetAlert warning for Flash Sale items
+            if (errMsg.includes('Flash Sale')) {
+                Swal.fire({
+                    title: 'Kupon Tidak Berlaku',
+                    text: errMsg,
+                    icon: 'warning',
+                    confirmButtonText: 'Baik, Saya Mengerti',
+                    confirmButtonColor: '#212121', // Dark style
+                    customClass: {
+                        popup: 'rounded-none border border-[#E0E0E0] font-sans',
+                        confirmButton: 'rounded-none px-6 py-2.5 text-xs font-bold uppercase tracking-wider'
+                    }
+                });
+            }
         } finally {
             setApplyingCoupon(false);
         }
