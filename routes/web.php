@@ -42,6 +42,10 @@ Route::middleware('auth')->group(function () {
     Route::get('/my-orders', [StorefrontController::class, 'myOrders'])->name('storefront.my-orders');
     Route::get('/my-orders/{order}', [StorefrontController::class, 'orderDetail'])->name('storefront.order.detail');
     Route::get('/my-orders/{order}/tracking', [StorefrontController::class, 'trackOrder'])->name('storefront.order.tracking');
+    
+    // Alur Force Input Nomor HP
+    Route::get('/enter-phone', [\App\Http\Controllers\Auth\PhoneEntryController::class, 'show'])->name('phone.entry');
+    Route::post('/enter-phone', [\App\Http\Controllers\Auth\PhoneEntryController::class, 'store'])->name('phone.store');
 });
 
 Route::get('/dashboard', function () {
