@@ -1,0 +1,114 @@
+<?php
+
+use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\ProductController;
+use App\Http\Controllers\Admin\CategoryController;
+use App\Http\Controllers\Admin\StockController;
+use App\Http\Controllers\Admin\OrderController;
+use App\Http\Controllers\Admin\SettingController;
+use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\Admin\ReviewController;
+use App\Http\Controllers\StorefrontController;
+use App\Http\Controllers\MidtransWebhookController;
+use App\Http\Controllers\GineeWebhookController;
+use Illuminate\Foundation\Application;
+use Illuminate\Support\Facades\Route;
+use Inertia\Inertia;
+
+// Public Storefront Routes
+Route::get('/', [StorefrontController::class, 'home'])->name('storefront.home');
+Route::get('/product/{slug}', [StorefrontController::class, 'productDetail'])->name('storefront.product');
+Route::get('/cart', [StorefrontController::class, 'cart'])->name('storefront.cart');
+Route::get('/checkout', [StorefrontController::class, 'checkoutPage'])->name('storefront.checkout');
+Route::post('/checkout', [StorefrontController::class, 'placeOrder'])->name('storefront.checkout.store');
+Route::get('/order/{order}/success', [StorefrontController::class, 'orderSuccess'])->name('storefront.order.success');
+Route::get('/order/{order}/pending', [StorefrontController::class, 'orderPending'])->name('storefront.order.pending');
+Route::post('/orders/{order}/payment/initiate', [StorefrontController::class, 'initiatePayment'])->name('storefront.payment.initiate');
+Route::get('/orders/{order}/payment/status', [StorefrontController::class, 'checkPaymentStatus'])->name('storefront.payment.status');
+Route::post('/api/shipping/cost', [StorefrontController::class, 'calculateShipping']);
+Route::get('/api/shipping/cities/{province}', [StorefrontController::class, 'getCities']);
+Route::get('/api/shipping/search-destination', [StorefrontController::class, 'searchDestination']);
+
+// Midtrans & Ginee Webhooks — dikecualikan dari CSRF di bootstrap/app.php
+Route::post('/api/webhooks/midtrans', [MidtransWebhookController::class, 'handle'])->name('webhooks.midtrans');
+Route::post('/api/webhooks/ginee', [GineeWebhookController::class, 'handle'])->name('webhooks.ginee');
+
+// Pesanan Saya — harus login
+Route::middleware('auth')->group(function () {
+    Route::get('/my-orders', [StorefrontController::class, 'myOrders'])->name('storefront.my-orders');
+    Route::get('/my-orders/{order}', [StorefrontController::class, 'orderDetail'])->name('storefront.order.detail');
+    Route::get('/my-orders/{order}/tracking', [StorefrontController::class, 'trackOrder'])->name('storefront.order.tracking');
+});
+
+Route::get('/dashboard', function () {
+    if (auth()->user() && auth()->user()->role === 'admin') {
+        return redirect()->route('admin.dashboard');
+    }
+    return redirect()->route('storefront.home');
+})->middleware(['auth', 'verified'])->name('dashboard');
+
+Route::middleware('auth')->group(function () {
+    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+});
+
+// Admin Panel routes protected by Auth and Admin middleware
+Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
+    Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
+    
+    // Products CRUD
+    Route::get('/products', [ProductController::class, 'index'])->name('products');
+    Route::post('/products', [ProductController::class, 'store'])->name('products.store');
+    Route::put('/products/{product}', [ProductController::class, 'update'])->name('products.update');
+    Route::delete('/products/{product}', [ProductController::class, 'destroy'])->name('products.destroy');
+    Route::post('/products/{product}/sync-ginee', [ProductController::class, 'syncGinee'])->name('products.sync-ginee');
+    Route::post('/products/sync-all-ginee', [ProductController::class, 'syncAllGinee'])->name('products.sync-all-ginee');
+
+    // Categories CRUD
+    Route::get('/categories', [CategoryController::class, 'index'])->name('categories');
+    Route::post('/categories', [CategoryController::class, 'store'])->name('categories.store');
+    Route::put('/categories/{category}', [CategoryController::class, 'update'])->name('categories.update');
+    Route::delete('/categories/{category}', [CategoryController::class, 'destroy'])->name('categories.destroy');
+
+    // Stocks
+    Route::get('/stocks', [StockController::class, 'index'])->name('stocks');
+    Route::put('/stocks/{variant}', [StockController::class, 'update'])->name('stocks.update');
+
+    // Orders
+    Route::get('/orders', [OrderController::class, 'index'])->name('orders');
+    Route::put('/orders/{order}/status', [OrderController::class, 'updateStatus'])->name('orders.update-status');
+    Route::put('/orders/{order}/resi', [OrderController::class, 'updateResi'])->name('orders.update-resi');
+    Route::post('/orders/{order}/sync-ginee', [OrderController::class, 'syncGinee'])->name('orders.sync-ginee');
+    Route::get('/orders/{order}/invoice', [OrderController::class, 'showInvoice'])->name('orders.invoice');
+
+    // Settings
+    Route::get('/settings', [SettingController::class, 'index'])->name('settings');
+    Route::post('/settings', [SettingController::class, 'update'])->name('settings.update');
+
+    // Users CRUD
+    Route::get('/users', [UserController::class, 'index'])->name('users');
+    Route::post('/users', [UserController::class, 'store'])->name('users.store');
+    Route::put('/users/{user}', [UserController::class, 'update'])->name('users.update');
+    Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
+
+    // Reviews CRUD
+    Route::get('/reviews', [ReviewController::class, 'index'])->name('reviews');
+    Route::post('/reviews', [ReviewController::class, 'store'])->name('reviews.store');
+    Route::put('/reviews/{review}', [ReviewController::class, 'update'])->name('reviews.update');
+    Route::delete('/reviews/{review}', [ReviewController::class, 'destroy'])->name('reviews.destroy');
+});
+
+Route::get('/test-ongkir', function () {
+    $service = new \App\Services\RajaOngkirService();
+    $provinces = $service->getProvinces();
+    return response()->json([
+        'api_url' => env('RAJAONGKIR_API_URL'),
+        'total_provinces' => count($provinces),
+        'sample' => array_slice($provinces, 0, 5)
+    ]);
+});
+
+require __DIR__.'/auth.php';
+

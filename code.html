@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+
+<html class="light" lang="id">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>iLook Fashion | High-End Modern Wear</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;600;700&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "sale-red": "#530A0C",
+                        "surface-bright": "#f9f9f9",
+                        "secondary": "#5d5f5f",
+                        "on-secondary-container": "#616363",
+                        "on-primary": "#ffffff",
+                        "surface-container-low": "#f3f3f3",
+                        "tertiary": "#090a0a",
+                        "on-surface": "#1a1c1c",
+                        "border-light": "#E0E0E0",
+                        "on-secondary": "#ffffff",
+                        "surface-container-lowest": "#ffffff",
+                        "error-container": "#ffdad6",
+                        "on-background": "#1a1c1c",
+                        "tertiary-container": "#202121",
+                        "secondary-fixed-dim": "#c6c6c7",
+                        "on-primary-fixed-variant": "#474746",
+                        "surface-container-highest": "#e2e2e2",
+                        "surface-tint": "#5f5e5e",
+                        "inverse-on-surface": "#f1f1f1",
+                        "inverse-primary": "#c8c6c5",
+                        "background": "#f9f9f9",
+                        "error": "#ba1a1a",
+                        "inverse-surface": "#2f3131",
+                        "on-tertiary": "#ffffff",
+                        "surface-container": "#eeeeee",
+                        "surface-container-high": "#e8e8e8",
+                        "secondary-container": "#dfe0e0",
+                        "primary": "#0a0a0a",
+                        "primary-fixed": "#e5e2e1",
+                        "surface-variant": "#e2e2e2",
+                        "surface-dim": "#dadada",
+                        "on-primary-container": "#898888",
+                        "outline": "#747878",
+                        "on-error": "#ffffff",
+                        "tertiary-fixed-dim": "#c7c6c6",
+                        "secondary-fixed": "#e2e2e2",
+                        "on-tertiary-fixed": "#1b1c1c",
+                        "primary-container": "#212121",
+                        "on-secondary-fixed": "#1a1c1c",
+                        "on-error-container": "#93000a",
+                        "tertiary-fixed": "#e3e2e2",
+                        "on-tertiary-fixed-variant": "#464747",
+                        "on-surface-variant": "#444748",
+                        "accent-navy": "#2E2E78",
+                        "outline-variant": "#c4c7c7",
+                        "on-secondary-fixed-variant": "#454747",
+                        "surface": "#f9f9f9",
+                        "on-tertiary-container": "#888888",
+                        "on-primary-fixed": "#1b1c1c",
+                        "primary-fixed-dim": "#c8c6c5"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "margin-mobile": "16px",
+                        "margin-desktop": "40px",
+                        "container-max": "1280px",
+                        "gutter": "16px",
+                        "section-gap": "80px",
+                        "base": "4px"
+                    },
+                    "fontFamily": {
+                        "display-lg": ["Hanken Grotesk"],
+                        "body-lg": ["Hanken Grotesk"],
+                        "headline-lg": ["Hanken Grotesk"],
+                        "body-sm": ["Hanken Grotesk"],
+                        "title-md": ["Hanken Grotesk"],
+                        "label-caps": ["Hanken Grotesk"],
+                        "headline-lg-mobile": ["Hanken Grotesk"]
+                    },
+                    "fontSize": {
+                        "display-lg": ["48px", { "lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "body-lg": ["16px", { "lineHeight": "26px", "fontWeight": "400" }],
+                        "headline-lg": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+                        "body-sm": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "title-md": ["18px", { "lineHeight": "24px", "fontWeight": "600" }],
+                        "label-caps": ["12px", { "lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "700" }],
+                        "headline-lg-mobile": ["24px", { "lineHeight": "32px", "fontWeight": "600" }]
+                    }
+                },
+            },
+        }
+    </script>
+    <style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        .hero-zoom:hover img {
+            transform: scale(1.05);
+        }
+    </style>
+</head>
+
+<body class="bg-background text-on-background font-body-lg overflow-x-hidden">
+    <!-- TopAppBar -->
+    <header
+        class="bg-surface-container-lowest flex justify-between items-center w-full px-margin-desktop h-20 sticky top-0 z-50 border-b border-border-light">
+        <div class="flex items-center gap-8">
+            <span class="material-symbols-outlined text-primary cursor-pointer" data-icon="menu">menu</span>
+            <nav class="hidden md:flex gap-6 items-center">
+                <a class="font-label-caps text-label-caps text-primary border-b-2 border-primary pb-1"
+                    href="#">WOMEN</a>
+                <a class="font-label-caps text-label-caps text-secondary hover:text-primary transition-opacity duration-200"
+                    href="#">MEN</a>
+                <a class="font-label-caps text-label-caps text-secondary hover:text-primary transition-opacity duration-200"
+                    href="#">TIRAJEANS</a>
+                <a class="font-label-caps text-label-caps text-secondary hover:text-primary transition-opacity duration-200"
+                    href="#">#ILOOKACTIVE</a>
+            </nav>
+        </div>
+        <div class="absolute left-1/2 -translate-x-1/2">
+            <img alt="iLook Fashion" class="h-12 w-auto object-contain"
+                src="https://lh3.googleusercontent.com/aida-public/AB6AXuCgfe4PhOg5O3vDRjemDVqqvkO_zUGMRdNgwss8RVcD8cHQky30BMCcuCfkslDSBQASRysuDSKEzjqzlAIBA82BNuD_pLMw3zFogsYjkwuMvlpjoY6115xa-P4FWCFBCab_ug0Hsgs_jBTJPQ64ydlvZNdgiYKSPNt7UltPe_IptAWoJp6B62nLkBhUwX1Ehaiq8HdSdNJvauj-VO32y_lAe1fkIJpOqNXo6tPRDrehu0DofT0jqnhtsAg1jN3OX0Wdxyak5gQYaw" />
+        </div>
+        <div class="flex items-center gap-6">
+            <button
+                class="font-label-caps text-label-caps text-primary hover:opacity-80 transition-opacity duration-200">SEARCH</button>
+            <div class="flex items-center gap-4">
+                <span class="material-symbols-outlined text-primary cursor-pointer" data-icon="person">person</span>
+                <span class="material-symbols-outlined text-primary cursor-pointer" data-icon="favorite">favorite</span>
+                <div class="relative">
+                    <span class="material-symbols-outlined text-primary cursor-pointer"
+                        data-icon="shopping_bag">shopping_bag</span>
+                    <span
+                        class="absolute -top-1 -right-1 bg-primary text-on-primary text-[10px] w-4 h-4 flex items-center justify-center rounded-full">0</span>
+                </div>
+            </div>
+        </div>
+    </header>
+    <main>
+        <!-- Hero Carousel -->
+        <section class="relative w-full h-[85vh] overflow-hidden group">
+            <div class="flex transition-transform duration-700 ease-out h-full" id="hero-slider">
+                <!-- Slide 1 -->
+                <div class="min-w-full relative h-full">
+                    <div class="absolute inset-0 bg-primary/10 z-10"></div>
+                    <img class="w-full h-full object-cover"
+                        data-alt="A cinematic high-fashion wide shot of a model wearing an architectural black blazer against a brutalist concrete background. The lighting is sharp, creating dramatic shadows that emphasize the minimalist editorial style. The overall tone is monochrome and sophisticated, reflecting a premium urban professional aesthetic."
+                        src="https://lh3.googleusercontent.com/aida-public/AB6AXuA9eQtUw_W8GGVv6qe-ZMRXb9W0vLoYJBcwXAeC_DyD-En4nP3sI3K7dn6-hczWozKDed4NCOfdtL8Z16YCBmpeVnv3KvIsAxwijnfwFCknyFqi4hHWQfk2GsWgxnFSSnrITAYduM15gnkS5psRRlLom7-mUcjjcEpKk4bM6u6VdGhvSwGdfawZcxynexdbfCiDvrTvdxatiGagv_XuYz274zUBGHxXvYjr-PC9NhKDeF7ji2QR3WhFwUPx1VFW17JdG2gK3XdOow" />
+                    <div class="absolute inset-0 z-20 flex flex-col justify-center items-center text-center px-4">
+                        <span class="font-label-caps text-label-caps text-surface-bright mb-4 tracking-[0.3em]">NEW
+                            SEASON 2024</span>
+                        <h1
+                            class="font-display-lg text-display-lg md:text-[80px] md:leading-[1] text-surface-bright mb-8 max-w-4xl uppercase">
+                            Urban Sophistication</h1>
+                        <button
+                            class="bg-surface-bright text-primary px-10 py-4 font-label-caps text-label-caps hover:bg-opacity-90 transition-all">BELANJA
+                            SEKARANG</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <!-- Flash Sale Section -->
+        <section class="bg-primary py-12 px-margin-desktop text-on-primary">
+            <div class="max-w-container-max mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
+                <div class="flex items-center gap-4">
+                    <span class="material-symbols-outlined text-4xl" data-icon="bolt">bolt</span>
+                    <div>
+                        <h2 class="font-headline-lg text-headline-lg uppercase">Flash Sale</h2>
+                        <p class="font-body-sm text-body-sm opacity-70">Berakhir dalam waktu terbatas</p>
+                    </div>
+                </div>
+                <div class="flex gap-4" id="countdown">
+                    <div class="flex flex-col items-center min-w-[60px]">
+                        <span class="font-display-lg text-display-lg" id="hours">02</span>
+                        <span class="font-label-caps text-[10px] opacity-60">JAM</span>
+                    </div>
+                    <span class="font-display-lg text-display-lg">:</span>
+                    <div class="flex flex-col items-center min-w-[60px]">
+                        <span class="font-display-lg text-display-lg" id="minutes">45</span>
+                        <span class="font-label-caps text-[10px] opacity-60">MENIT</span>
+                    </div>
+                    <span class="font-display-lg text-display-lg">:</span>
+                    <div class="flex flex-col items-center min-w-[60px]">
+                        <span class="font-display-lg text-display-lg" id="seconds">30</span>
+                        <span class="font-label-caps text-[10px] opacity-60">DETIK</span>
+                    </div>
+                </div>
+                <a class="border border-on-primary px-8 py-3 font-label-caps text-label-caps hover:bg-on-primary hover:text-primary transition-all"
+                    href="#">LIHAT SEMUA</a>
+            </div>
+        </section>
+        <!-- New Arrival Grid -->
+        <section class="py-section-gap px-margin-desktop max-w-container-max mx-auto">
+            <div class="flex justify-between items-end mb-10">
+                <div>
+                    <span class="font-label-caps text-label-caps text-secondary">CURATED COLLECTION</span>
+                    <h2 class="font-headline-lg text-headline-lg mt-2">NEW ARRIVALS</h2>
+                </div>
+                <a class="font-label-caps text-label-caps text-primary border-b border-primary" href="#">VIEW ALL</a>
+            </div>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-gutter">
+                <!-- Product 1 -->
+                <div class="group cursor-pointer">
+                    <div class="relative aspect-[3/4] overflow-hidden bg-surface-container-low">
+                        <img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                            data-alt="A professional studio product shot of a beige minimalist vest on a clean, light grey background. The lighting is soft and even, highlighting the texture of the fabric. High-fashion editorial style with crisp lines and a focus on craftsmanship."
+                            src="https://lh3.googleusercontent.com/aida-public/AB6AXuAzwy0xhBEnOUbdv1GolU9KXzay3BeVv0hbshXZRaZ-vBQL17D9vVrSdNgqOTdo_Ga7_9uME78wylr8Udf16JWeaWqYCErmRergGMJ0ESIM1qrQ5dfUnjuP8K91gz32tQpgHdaAhDxpx9WWNDJi1zjUiD-bDGukACturVfsreXQHt8QBrJ1zXtZkwlrecALBK5UyFiK4-zckouBmAD5yLJlGf1jW_r1ljA91W7cQaahUiVwMwCF0nUQXdhQkg8tH7iLLZdPikJWWw" />
+                        <span
+                            class="absolute top-4 left-4 bg-sale-red text-on-primary font-label-caps text-[10px] px-2 py-1">10%
+                            OFF</span>
+                        <button
+                            class="absolute bottom-4 left-4 right-4 bg-primary text-on-primary py-3 font-label-caps text-label-caps opacity-0 group-hover:opacity-100 transition-opacity">TAMBAH
+                            KE KERANJANG</button>
+                    </div>
+                    <div class="mt-4 space-y-1">
+                        <p class="font-label-caps text-[10px] text-secondary">VEST</p>
+                        <h3 class="font-body-lg text-body-lg truncate">Slim Fit V-Neck Peplum Vest</h3>
+                        <div class="flex items-center gap-3">
+                            <span class="font-body-lg text-body-lg font-bold">Rp 314.910</span>
+                            <span class="font-body-sm text-body-sm text-secondary line-through opacity-50">Rp
+                                349.900</span>
+                        </div>
+                    </div>
+                </div>
+                <!-- Product 2 -->
+                <div class="group cursor-pointer">
+                    <div class="relative aspect-[3/4] overflow-hidden bg-surface-container-low">
+                        <img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                            data-alt="A high-quality studio shot of a white long-sleeve polo shirt. The garment is presented in a minimalist way with clean folds. Natural, soft daylight effect against a neutral white backdrop, emphasizing a clean and urban professional aesthetic."
+                            src="https://lh3.googleusercontent.com/aida-public/AB6AXuDQ3rbcBn_3QQq5w00MIoIFtSVXrGNjvsgci8_P8Pqzp5OeG7tjJR2XiYvi0oFVvbFKdWlC0dOwLc5ym9VAzrtW1NamrMaNv4BnVdF7uzpRWpyKB0mFbjA6JmeoQeQLIrHAD03YLgIzBlt_8OFi5DxBXeDX4k0cWzBLiJzIrZ1Xb0AxEAA2ZfhTDAYJXNlmL35-FZjjQ33W7RQPazyWAcVDOjJVEb801WVH1zVJnhphChJMnXwOCsHt08N04nbWb9eXZJWgBSyvtA" />
+                        <span
+                            class="absolute top-4 left-4 bg-sale-red text-on-primary font-label-caps text-[10px] px-2 py-1">15%
+                            OFF</span>
+                        <button
+                            class="absolute bottom-4 left-4 right-4 bg-primary text-on-primary py-3 font-label-caps text-label-caps opacity-0 group-hover:opacity-100 transition-opacity">TAMBAH
+                            KE KERANJANG</button>
+                    </div>
+                    <div class="mt-4 space-y-1">
+                        <p class="font-label-caps text-[10px] text-secondary">POLO SHIRT</p>
+                        <h3 class="font-body-lg text-body-lg truncate">Regular Fit Long Sleeve Polo</h3>
+                        <div class="flex items-center gap-3">
+                            <span class="font-body-lg text-body-lg font-bold">Rp 254.915</span>
+                            <span class="font-body-sm text-body-sm text-secondary line-through opacity-50">Rp
+                                299.900</span>
+                        </div>
+                    </div>
+                </div>
+                <!-- Product 3 -->
+                <div class="group cursor-pointer">
+                    <div class="relative aspect-[3/4] overflow-hidden bg-surface-container-low">
+                        <img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                            data-alt="A clean product image of a high-waisted black midi skirt. High-contrast lighting captures the flow and silhouette of the garment against a bright white background. Minimalist fashion catalog style with professional clarity."
+                            src="https://lh3.googleusercontent.com/aida-public/AB6AXuAf9GHR6CcgGxK6Ei6MdVtrAFHY93h3-V9m0G3_Oyx06uF83VZTDy4TYTcRPFzfDy9vmvOM1VOSFkJxofy4cGE-hn968Kg0UIWHcHzfFGAs4RYJfHgOHhLeBDmjvZIR-wbAOpoOS_6185o7lE2RF7m8M5862CkObRVTzpsQu1R1wiAUgFEkwzyubNFurWC7l76-XYjBJe5YpK1sTPNLiF9N4Fsc8lvc8IHbTLrEjAlPd6oA9Dq2rz-9tj3ZDC562wxi7bLdPyihog" />
+                        <span
+                            class="absolute top-4 left-4 bg-sale-red text-on-primary font-label-caps text-[10px] px-2 py-1">30%
+                            OFF</span>
+                        <button
+                            class="absolute bottom-4 left-4 right-4 bg-primary text-on-primary py-3 font-label-caps text-label-caps opacity-0 group-hover:opacity-100 transition-opacity">TAMBAH
+                            KE KERANJANG</button>
+                    </div>
+                    <div class="mt-4 space-y-1">
+                        <p class="font-label-caps text-[10px] text-secondary">SKIRTS</p>
+                        <h3 class="font-body-lg text-body-lg truncate">Floral Sheer Midi Skirt</h3>
+                        <div class="flex items-center gap-3">
+                            <span class="font-body-lg text-body-lg font-bold">Rp 349.930</span>
+                            <span class="font-body-sm text-body-sm text-secondary line-through opacity-50">Rp
+                                499.900</span>
+                        </div>
+                    </div>
+                </div>
+                <!-- Product 4 -->
+                <div class="group cursor-pointer">
+                    <div class="relative aspect-[3/4] overflow-hidden bg-surface-container-low">
+                        <img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                            data-alt="Studio photography of a tailored white shirt, showcasing crisp lines and high-quality fabric. The lighting is bright and clean, characteristic of luxury fashion labels. Minimalist aesthetic with a neutral, high-key background."
+                            src="https://lh3.googleusercontent.com/aida-public/AB6AXuB0iDBhTz8XuBK9PsNDEVN9yXi9u-rGez9QLnjY_yCIHn_K4LuavWhvm0IQta1L8pRdiJClNKDUR3cXtU8BbPkKqXInRGi3CQV5ZnwCPdBVvv3Be_4LzRPr8EKdlFwerzhJFRk-Wq0rwhQUlk1ikuRR61TRSC2ljj5f0davJxKqeXWtsat7sFjIg9WAuoUv8hjQUKF4Om4qeMIoxaTVsALL6KIEK-11oW5Hu2uFeF39XzOheblLrgyPMNZqJ_DMIr_n-ZnjOfPBKg" />
+                        <span
+                            class="absolute top-4 left-4 bg-sale-red text-on-primary font-label-caps text-[10px] px-2 py-1">20%
+                            OFF</span>
+                        <button
+                            class="absolute bottom-4 left-4 right-4 bg-primary text-on-primary py-3 font-label-caps text-label-caps opacity-0 group-hover:opacity-100 transition-opacity">TAMBAH
+                            KE KERANJANG</button>
+                    </div>
+                    <div class="mt-4 space-y-1">
+                        <p class="font-label-caps text-[10px] text-secondary">SHIRT</p>
+                        <h3 class="font-body-lg text-body-lg truncate">Garment Dyed Button Down</h3>
+                        <div class="flex items-center gap-3">
+                            <span class="font-body-lg text-body-lg font-bold">Rp 244.930</span>
+                            <span class="font-body-sm text-body-sm text-secondary line-through opacity-50">Rp
+                                349.900</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <!-- Category Sections (Bento Grid Style) -->
+        <section class="pb-section-gap px-margin-desktop max-w-container-max mx-auto">
+            <h2 class="font-headline-lg text-headline-lg mb-10 uppercase tracking-tight">Kategori Populer</h2>
+            <div class="grid grid-cols-1 md:grid-cols-4 md:grid-rows-2 gap-gutter h-[1000px] md:h-[800px]">
+                <!-- Category: Blouse -->
+                <div
+                    class="md:col-span-2 md:row-span-2 relative group overflow-hidden bg-surface-container cursor-pointer">
+                    <img class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                        data-alt="A stunning fashion editorial image of a woman in an elegant, flowing white blouse against a minimalist grey architectural background. The lighting is cinematic and high-contrast, creating a luxury professional feel. The palette is strictly neutral with blacks, whites, and greys."
+                        src="https://lh3.googleusercontent.com/aida-public/AB6AXuCvLsivwQiGcVru8BLjr_KtljaaRBXIB73zL8G7yy-NhV6ozb8W_N_dDWviA6mWRNjHgGspQNRcRn4a-rwJa4fwhOANUOgogQqHX25n_HyA0wxEoe6FMu8Y0YsE8tOdfNAltnyGuxvKFhuBdtwCjp_DouA2q0cYs-H95lUcQZqon9TXQwXEc_8iEsMNLo6XLsqbI8Eu1SKi2s0N7P_AAYkt0Iyo7Rzwlil9kxe9dNPkJpQnPLhZK4YrE02Y6fTZdlcsu5jvy5NPvw" />
+                    <div
+                        class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex flex-col justify-end p-8">
+                        <h3 class="font-display-lg text-[40px] text-on-primary mb-2">BLOUSE</h3>
+                        <p class="font-label-caps text-on-primary opacity-80">JELAJAHI KOLEKSI</p>
+                    </div>
+                </div>
+                <!-- Category: Knitwear -->
+                <div
+                    class="md:col-span-2 md:row-span-1 relative group overflow-hidden bg-surface-container cursor-pointer">
+                    <img class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                        data-alt="High-detail close-up of textured knitwear in a clean, off-white tone. The lighting is soft and diffused to accentuate the intricate patterns. Minimalist luxury aesthetic with a high-key, modern feel."
+                        src="https://lh3.googleusercontent.com/aida-public/AB6AXuCOEty68PiknUD-OOdC6gwh65HQFlzDCnnOPrxO5vJIScCjwf0bq1Sj8Owf5HYOaz7c5INgNvNlxGwdTFAhRe3525AFj-U7PvVTgGiK2-55CoKQaOLijo0L24qd2-rzQm1ERB8JBKEahBiwsWQcVb2klkbRMg-m7oSDW-t8NK9e8qmgjKIhDYrW_hpY6UTX7FPZbcWWY6OrSSSEY0EWR8n_HQbZQ-2oO-wWjiUOJURVYzAe6tliiAnk3pFVCBQ9_XmGr-6F7hH6qA" />
+                    <div
+                        class="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-colors flex flex-col justify-center items-center">
+                        <h3 class="font-headline-lg text-on-primary text-center">KNITWEAR</h3>
+                    </div>
+                </div>
+                <!-- Category: Pants -->
+                <div
+                    class="md:col-span-1 md:row-span-1 relative group overflow-hidden bg-surface-container cursor-pointer">
+                    <img class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                        data-alt="Studio shot focused on tailored trouser silhouettes. Minimalist styling with clean lines and premium fabric textures. Neutral grey lighting, creating a sleek, urban professional atmosphere."
+                        src="https://lh3.googleusercontent.com/aida-public/AB6AXuAcdcdgh0I7azoCKY9wg2jL23a9rG12MjcwWcQM71JPdFE6_ISsnawP78H3PVszeQro4C1kxO41XbUyYuTmnbGVc1-Rz2KcRoEXGzr8ebIywD_9QvzALnuzyGNi6r2AvtakpDhDOASnwf_tPDDNTCNjDuA73e2qD7iIffUQRPoTAPVrOwlq0boc1pgfQtE1Jto4-zfVzBsIBHHzylu-Xt9n4Nzjl3ZQ1SoLouwSvA5UeABh1XGD7x3NRR7MpvW25CnXOm3fzXCfcA" />
+                    <div class="absolute inset-0 bg-black/20 flex flex-col justify-center items-center">
+                        <h3 class="font-headline-lg text-on-primary">PANTS</h3>
+                    </div>
+                </div>
+                <!-- Category: Dress -->
+                <div
+                    class="md:col-span-1 md:row-span-1 relative group overflow-hidden bg-surface-container cursor-pointer">
+                    <img class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                        data-alt="Ethereal fashion shot of a minimalist black dress. Dramatic lighting with strong shadows, set in a stark, modern gallery-like environment. Monochrome color story emphasizing elegance and luxury."
+                        src="https://lh3.googleusercontent.com/aida-public/AB6AXuAWYtGyk1feUeTohZnCDYJcj3HKjT_3uF4hAsErd_9R3sWrlEekPgB4xlVdK7UcFtSRwa9LwH2PGFsGlJqnrphU-I316_G-mhJc7dakVBuwVgk2Q6ylc_MkbowXFSdA9DmPPz9yRg_biovkKe1igqKWbdcmktn8H8EBX82oubGQYDLnZ1krXT8RZ57xdJCZTQj95gLsARcy2wZ7GiR_EX59toYovD2QOEp4lLUwcTFamFu83cszfxHiDhLnXR1w9RIGZE09yedHCw" />
+                    <div class="absolute inset-0 bg-black/20 flex flex-col justify-center items-center">
+                        <h3 class="font-headline-lg text-on-primary">DRESS</h3>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <!-- Service Highlights -->
+        <section class="border-y border-border-light py-16 px-margin-desktop bg-surface-container-lowest">
+            <div class="max-w-container-max mx-auto grid grid-cols-1 md:grid-cols-3 gap-12">
+                <div class="flex flex-col items-center text-center">
+                    <span class="material-symbols-outlined text-4xl mb-4"
+                        data-icon="local_shipping">local_shipping</span>
+                    <h4 class="font-title-md text-title-md mb-2">Free Shipping</h4>
+                    <p class="font-body-sm text-body-sm text-secondary">Gratis ongkir hingga IDR 10.000 tanpa minimum
+                        transaksi</p>
+                </div>
+                <div class="flex flex-col items-center text-center">
+                    <span class="material-symbols-outlined text-4xl mb-4" data-icon="replay">replay</span>
+                    <h4 class="font-title-md text-title-md mb-2">Easy Returns</h4>
+                    <p class="font-body-sm text-body-sm text-secondary">Gratis pengembalian barang maksimal 7 hari
+                        setelah diterima</p>
+                </div>
+                <div class="flex flex-col items-center text-center">
+                    <span class="material-symbols-outlined text-4xl mb-4" data-icon="store">store</span>
+                    <h4 class="font-title-md text-title-md mb-2">Click &amp; Collect</h4>
+                    <p class="font-body-sm text-body-sm text-secondary">Belanja online, ambil di store pilihan tanpa
+                        minimum transaksi</p>
+                </div>
+            </div>
+        </section>
+    </main>
+    <!-- Footer -->
+    <footer class="bg-surface-container-lowest border-t border-border-light pt-20 pb-10 px-margin-desktop w-full">
+        <div class="max-w-container-max mx-auto grid grid-cols-1 md:grid-cols-4 gap-12 mb-20">
+            <!-- Brand & App -->
+            <div class="space-y-8">
+                <img alt="iLook Fashion" class="h-10 w-auto"
+                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuCgfe4PhOg5O3vDRjemDVqqvkO_zUGMRdNgwss8RVcD8cHQky30BMCcuCfkslDSBQASRysuDSKEzjqzlAIBA82BNuD_pLMw3zFogsYjkwuMvlpjoY6115xa-P4FWCFBCab_ug0Hsgs_jBTJPQ64ydlvZNdgiYKSPNt7UltPe_IptAWoJp6B62nLkBhUwX1Ehaiq8HdSdNJvauj-VO32y_lAe1fkIJpOqNXo6tPRDrehu0DofT0jqnhtsAg1jN3OX0Wdxyak5gQYaw" />
+                <div>
+                    <h6 class="font-label-caps text-label-caps mb-4">DOWNLOAD APLIKASI</h6>
+                    <div class="flex gap-4">
+                        <div
+                            class="w-32 h-10 bg-primary flex items-center justify-center cursor-pointer hover:opacity-80 transition-opacity">
+                            <span class="text-on-primary font-label-caps text-[10px]">APP STORE</span>
+                        </div>
+                        <div
+                            class="w-32 h-10 bg-primary flex items-center justify-center cursor-pointer hover:opacity-80 transition-opacity">
+                            <span class="text-on-primary font-label-caps text-[10px]">PLAY STORE</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Find Us -->
+            <div>
+                <h6 class="font-label-caps text-label-caps mb-6">TEMUKAN KAMI</h6>
+                <ul class="space-y-4 font-body-sm text-body-sm text-secondary">
+                    <li class="hover:text-primary transition-colors cursor-pointer">Instagram</li>
+                    <li class="hover:text-primary transition-colors cursor-pointer">Facebook</li>
+                    <li class="hover:text-primary transition-colors cursor-pointer">TikTok</li>
+                    <li class="hover:text-primary transition-colors cursor-pointer">Youtube</li>
+                </ul>
+            </div>
+            <!-- Information -->
+            <div>
+                <h6 class="font-label-caps text-label-caps mb-6">INFORMASI KAMI</h6>
+                <ul class="space-y-4 font-body-sm text-body-sm text-secondary">
+                    <li class="hover:text-primary transition-colors cursor-pointer">Tentang iLook Fashion</li>
+                    <li class="hover:text-primary transition-colors cursor-pointer">Kontak</li>
+                    <li class="hover:text-primary transition-colors cursor-pointer">Kebijakan Privasi</li>
+                    <li class="hover:text-primary transition-colors cursor-pointer">Ketentuan Layanan</li>
+                    <li class="hover:text-primary transition-colors cursor-pointer">Lokasi Toko</li>
+                </ul>
+            </div>
+            <!-- Help & Tracking -->
+            <div>
+                <h6 class="font-label-caps text-label-caps mb-6">PUSAT BANTUAN</h6>
+                <ul class="space-y-4 font-body-sm text-body-sm text-secondary mb-8">
+                    <li class="hover:text-primary transition-colors cursor-pointer">FAQ</li>
+                    <li class="hover:text-primary transition-colors cursor-pointer">Kebijakan Pengiriman</li>
+                    <li class="hover:text-primary transition-colors cursor-pointer">Click &amp; Collect</li>
+                </ul>
+                <h6 class="font-label-caps text-label-caps mb-4">LACAK PESANAN</h6>
+                <div class="relative">
+                    <input
+                        class="w-full border-b border-outline bg-transparent py-2 px-0 focus:outline-none focus:border-primary font-label-caps text-[10px]"
+                        placeholder="NOMOR ORDER" type="text" />
+                    <button class="absolute right-0 top-2 material-symbols-outlined text-primary"
+                        data-icon="search">search</button>
+                </div>
+            </div>
+        </div>
+        <div
+            class="max-w-container-max mx-auto flex flex-col md:flex-row justify-between items-center pt-8 border-t border-border-light gap-4">
+            <p class="font-label-caps text-[10px] text-secondary">© 2024 ILOOK FASHION. ALL RIGHTS RESERVED.</p>
+            <div class="flex gap-6 font-label-caps text-[10px] text-secondary">
+                <span>IDR - INDONESIA</span>
+                <span class="hover:text-primary cursor-pointer">BAHASA</span>
+            </div>
+        </div>
+    </footer>
+    <script>
+        // Simple Countdown Timer Logic
+        function updateTimer() {
+            const hoursEl = document.getElementById('hours');
+            const minutesEl = document.getElementById('minutes');
+            const secondsEl = document.getElementById('seconds');
+
+            let h = parseInt(hoursEl.innerText);
+            let m = parseInt(minutesEl.innerText);
+            let s = parseInt(secondsEl.innerText);
+
+            setInterval(() => {
+                if (s > 0) s--;
+                else {
+                    s = 59;
+                    if (m > 0) m--;
+                    else {
+                        m = 59;
+                        if (h > 0) h--;
+                    }
+                }
+
+                hoursEl.innerText = String(h).padStart(2, '0');
+                minutesEl.innerText = String(m).padStart(2, '0');
+                secondsEl.innerText = String(s).padStart(2, '0');
+            }, 1000);
+        }
+
+        document.addEventListener('DOMContentLoaded', updateTimer);
+
+        // Simple Smooth Scroll Micro-interaction
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                document.querySelector(this.getAttribute('href')).scrollIntoView({
+                    behavior: 'smooth'
+                });
+            });
+        });
+    </script>
+</body>
+
+</html>
