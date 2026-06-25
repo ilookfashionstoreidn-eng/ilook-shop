@@ -132,6 +132,9 @@ export default function Checkout({ provinces, activeCouriers, originCityId, midt
         if (auth && auth.user) {
             setBuyerName(auth.user.name);
             setBuyerEmail(auth.user.email);
+            if (auth.user.phone) {
+                setBuyerPhone(auth.user.phone);
+            }
         }
     }, []);
 
