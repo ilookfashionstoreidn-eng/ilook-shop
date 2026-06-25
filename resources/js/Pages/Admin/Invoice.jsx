@@ -120,8 +120,14 @@ export default function Invoice({ order }) {
 
                 {/* Summary Calculations */}
                 <div className="border-t border-slate-150 pt-4 flex justify-end">
-                    <div className="w-72 space-y-1.5 text-xs text-right text-slate-600">
+                    <div className="w-72 space-y-1.5 text-xs text-right text-slate-650">
                         <div className="flex justify-between"><span className="text-slate-500">Total Harga Barang:</span> <span className="font-medium text-slate-800">{formatCurrency(order.subtotal)}</span></div>
+                        {order.coupon_discount > 0 && (
+                            <div className="flex justify-between text-green-700 font-semibold">
+                                <span className="text-slate-500">Potongan Kupon ({order.coupon_code}):</span>
+                                <span>-{formatCurrency(order.coupon_discount)}</span>
+                            </div>
+                        )}
                         <div className="flex justify-between"><span className="text-slate-500">Ongkos Kirim Raja Ongkir:</span> <span className="font-medium text-slate-800">{formatCurrency(order.shipping_cost)}</span></div>
                         <div className="flex justify-between border-t border-slate-200 pt-2"><span className="text-slate-950 font-bold text-sm">Grand Total:</span> <span className="text-sm font-bold text-emerald-600">{formatCurrency(order.total_amount)}</span></div>
                     </div>

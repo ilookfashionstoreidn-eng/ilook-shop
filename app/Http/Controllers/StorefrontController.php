@@ -10,6 +10,7 @@ use App\Models\OrderItem;
 use App\Models\OrderShipping;
 use App\Models\StockLog;
 use App\Models\Setting;
+use App\Models\Coupon;
 use App\Services\RajaOngkirService;
 use App\Services\GineeService;
 use App\Services\PaymentService;
@@ -168,11 +169,23 @@ class StorefrontController extends Controller
             // Format to standard format for frontend: array of { date, time, description, location }
             $formattedHistory = [];
             foreach ($history as $h) {
+                // Parse date
+                $dateStr = $h['manifest_date'] ?? $h['date'] ?? $h['dateTime'] ?? $h['time'] ?? '';
+                if ($dateStr && preg_match('/^\d{4}-\d{2}-\d{2}$/', $dateStr)) {
+                    $dateStr = \Carbon\Carbon::parse($dateStr)->translatedFormat('d M Y');
+                }
+
+                // Parse time
+                $timeStr = $h['manifest_time'] ?? $h['time'] ?? '';
+                if ($timeStr && preg_match('/^\d{2}:\d{2}:\d{2}$/', $timeStr)) {
+                    $timeStr = \Carbon\Carbon::parse($timeStr)->format('H:i');
+                }
+
                 $formattedHistory[] = [
-                    'date' => $h['date'] ?? $h['dateTime'] ?? $h['time'] ?? '',
-                    'time' => $h['time'] ?? '',
-                    'description' => $h['description'] ?? $h['note'] ?? $h['desc'] ?? '',
-                    'location' => $h['location'] ?? $h['city'] ?? '',
+                    'date' => $dateStr,
+                    'time' => $timeStr,
+                    'description' => $h['manifest_description'] ?? $h['description'] ?? $h['note'] ?? $h['desc'] ?? '',
+                    'location' => $h['city_name'] ?? $h['location'] ?? $h['city'] ?? '',
                 ];
             }
 
@@ -333,6 +346,7 @@ class StorefrontController extends Controller
             'shipping_service' => 'required|string',
             'shipping_cost' => 'required|numeric|min:0',
             'weight' => 'required|integer|min:1',
+            'coupon_code' => 'nullable|string',
             'items' => 'required|array|min:1',
             'items.*.variant_id' => 'required|exists:product_variants,id',
             'items.*.quantity' => 'required|integer|min:1',
@@ -355,6 +369,14 @@ class StorefrontController extends Controller
                     }
 
                     $unitPrice = $variant->price ?? $variant->product->base_price;
+                    if ($variant->product->is_flash_sale_active) {
+                        $flashSale = $variant->product->flashSale;
+                        if ($flashSale->discount_type === 'percentage') {
+                            $unitPrice = max(0, $unitPrice * (1 - ($flashSale->discount_value / 100)));
+                        } else {
+                            $unitPrice = max(0, $unitPrice - $flashSale->discount_value);
+                        }
+                    }
                     $totalPrice = $unitPrice * $cartItem['quantity'];
                     $subtotal += $totalPrice;
 
@@ -383,8 +405,24 @@ class StorefrontController extends Controller
                     ];
                 }
 
+                // Coupon calculation
+                $couponCode = $request->input('coupon_code') ? strtoupper(trim($request->input('coupon_code'))) : null;
+                $couponDiscount = 0.00;
+
+                if ($couponCode) {
+                    $coupon = Coupon::where('code', $couponCode)->first();
+                    if ($coupon) {
+                        if (!$coupon->isValidForSubtotal($subtotal)) {
+                            throw new \Exception("Kupon tidak valid untuk transaksi ini.");
+                        }
+                        $couponDiscount = $coupon->calculateDiscount($subtotal);
+                    } else {
+                        throw new \Exception("Kupon tidak ditemukan.");
+                    }
+                }
+
                 $shippingCost = $request->input('shipping_cost');
-                $totalAmount = $subtotal + $shippingCost;
+                $totalAmount = max(0, $subtotal + $shippingCost - $couponDiscount);
 
                 // Create Order record — status awal pending_payment, akan diupdate setelah Midtrans callback
                 $order = Order::create([
@@ -396,6 +434,8 @@ class StorefrontController extends Controller
                     'total_amount'   => $totalAmount,
                     'payment_method' => null,
                     'payment_status' => 'unpaid',
+                    'coupon_code'    => $couponCode,
+                    'coupon_discount' => $couponDiscount,
                 ]);
 
                 // Create Order Items
@@ -694,6 +734,62 @@ class StorefrontController extends Controller
         return response()->json([
             'success' => true,
             'destinations' => $destinations
+        ]);
+    }
+
+    /**
+     * Validate and Apply Coupon API
+     * POST /api/coupon/apply
+     */
+    public function applyCoupon(Request $request): JsonResponse
+    {
+        $request->validate([
+            'code' => 'required|string',
+            'subtotal' => 'required|numeric|min:0',
+        ]);
+
+        $code = strtoupper(trim($request->input('code')));
+        $subtotal = (float) $request->input('subtotal');
+
+        $coupon = Coupon::where('code', $code)->first();
+
+        if (!$coupon) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Kode kupon tidak ditemukan.',
+            ], 404);
+        }
+
+        if (!$coupon->is_active) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Kupon ini sudah tidak aktif.',
+            ], 400);
+        }
+
+        if ($coupon->expires_at && \Carbon\Carbon::now()->greaterThan($coupon->expires_at)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Kupon ini sudah kedaluwarsa.',
+            ], 400);
+        }
+
+        if ($subtotal < $coupon->min_spend) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Minimal pembelanjaan untuk kupon ini adalah Rp' . number_format($coupon->min_spend, 0, ',', '.') . '.',
+            ], 400);
+        }
+
+        $discount = $coupon->calculateDiscount($subtotal);
+
+        return response()->json([
+            'success' => true,
+            'code' => $coupon->code,
+            'type' => $coupon->type,
+            'value' => $coupon->value,
+            'discount_amount' => $discount,
+            'message' => 'Kupon berhasil diterapkan.',
         ]);
     }
 }

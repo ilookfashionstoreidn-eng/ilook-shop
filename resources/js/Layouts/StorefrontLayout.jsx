@@ -3,7 +3,8 @@ import { Link, usePage, router } from '@inertiajs/react';
 import { ShoppingBag, Search, User, LogOut, Lock, Menu, X, Heart } from 'lucide-react';
 
 export default function StorefrontLayout({ children }) {
-    const { auth, flash = {} } = usePage().props;
+    const { auth, flash = {}, flashSale } = usePage().props;
+    const isHomePage = route().current('storefront.home');
     const [cartCount, setCartCount] = useState(0);
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [showSearch, setShowSearch] = useState(false);
@@ -231,6 +232,7 @@ export default function StorefrontLayout({ children }) {
                     <span className="text-[11px] font-bold uppercase tracking-[0.05em]">{flash.error}</span>
                 </div>
             )}
+
 
             {/* Main Content */}
             <main className="flex-grow">

@@ -9,6 +9,8 @@ use App\Http\Controllers\Admin\OrderController;
 use App\Http\Controllers\Admin\SettingController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\ReviewController;
+use App\Http\Controllers\Admin\FlashSaleController;
+use App\Http\Controllers\Admin\CouponController;
 use App\Http\Controllers\StorefrontController;
 use App\Http\Controllers\MidtransWebhookController;
 use App\Http\Controllers\GineeWebhookController;
@@ -29,6 +31,7 @@ Route::get('/orders/{order}/payment/status', [StorefrontController::class, 'chec
 Route::post('/api/shipping/cost', [StorefrontController::class, 'calculateShipping']);
 Route::get('/api/shipping/cities/{province}', [StorefrontController::class, 'getCities']);
 Route::get('/api/shipping/search-destination', [StorefrontController::class, 'searchDestination']);
+Route::post('/api/coupon/apply', [StorefrontController::class, 'applyCoupon'])->name('storefront.coupon.apply');
 
 // Midtrans & Ginee Webhooks — dikecualikan dari CSRF di bootstrap/app.php
 Route::post('/api/webhooks/midtrans', [MidtransWebhookController::class, 'handle'])->name('webhooks.midtrans');
@@ -98,6 +101,19 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::post('/reviews', [ReviewController::class, 'store'])->name('reviews.store');
     Route::put('/reviews/{review}', [ReviewController::class, 'update'])->name('reviews.update');
     Route::delete('/reviews/{review}', [ReviewController::class, 'destroy'])->name('reviews.destroy');
+
+    // Flash Sale Management
+    Route::get('/flash-sales', [FlashSaleController::class, 'index'])->name('flash-sales');
+    Route::post('/flash-sales', [FlashSaleController::class, 'store'])->name('flash-sales.store');
+    Route::put('/flash-sales/{flashSaleProduct}', [FlashSaleController::class, 'update'])->name('flash-sales.update');
+    Route::delete('/flash-sales/{flashSaleProduct}', [FlashSaleController::class, 'destroy'])->name('flash-sales.destroy');
+    Route::post('/flash-sales/settings', [FlashSaleController::class, 'updateSettings'])->name('flash-sales.settings.update');
+
+    // Coupons CRUD
+    Route::get('/coupons', [CouponController::class, 'index'])->name('coupons');
+    Route::post('/coupons', [CouponController::class, 'store'])->name('coupons.store');
+    Route::put('/coupons/{coupon}', [CouponController::class, 'update'])->name('coupons.update');
+    Route::delete('/coupons/{coupon}', [CouponController::class, 'destroy'])->name('coupons.destroy');
 });
 
 Route::get('/test-ongkir', function () {

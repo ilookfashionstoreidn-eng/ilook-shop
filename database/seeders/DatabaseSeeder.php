@@ -11,6 +11,7 @@ use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\OrderShipping;
 use App\Models\Setting;
+use App\Models\Coupon;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Str;
 use Carbon\Carbon;
@@ -253,6 +254,34 @@ class DatabaseSeeder extends Seeder
         Setting::create(['key' => 'min_stock_alert', 'value' => '5']);
         Setting::create(['key' => 'ginee_sync_enabled', 'value' => '1']);
         Setting::create(['key' => 'couriers_active', 'value' => json_encode(['jne', 'jnt', 'sicepat', 'anteraja'])]);
+
+        // 4.5. Coupons
+        Coupon::create([
+            'code' => 'DISKON10',
+            'type' => 'percentage',
+            'value' => 10.00,
+            'min_spend' => 100000.00,
+            'is_active' => true,
+            'expires_at' => Carbon::now()->addDays(30),
+        ]);
+
+        Coupon::create([
+            'code' => 'CASHBACK50K',
+            'type' => 'fixed',
+            'value' => 50000.00,
+            'min_spend' => 150000.00,
+            'is_active' => true,
+            'expires_at' => Carbon::now()->addDays(30),
+        ]);
+
+        Coupon::create([
+            'code' => 'KODEEXPIRED',
+            'type' => 'percentage',
+            'value' => 15.00,
+            'min_spend' => 50000.00,
+            'is_active' => true,
+            'expires_at' => Carbon::now()->subDays(1),
+        ]);
 
 
         // 5. Orders (seed 10 orders across the last 7 days)

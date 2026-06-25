@@ -165,11 +165,12 @@ class RajaOngkirService
     public function trackWaybill(string $waybill, string $courier): array
     {
         try {
-            $response = Http::withHeaders([
+            // Komerce API expects form urlencoded payload with 'awb' parameter instead of 'waybill'
+            $response = Http::asForm()->withHeaders([
                 'key' => $this->apiKey,
                 'x-api-key' => $this->apiKey,
             ])->timeout(10)->post($this->baseUrl . '/track/waybill', [
-                'waybill' => $waybill,
+                'awb' => $waybill,
                 'courier' => $courier,
             ]);
 
@@ -178,6 +179,7 @@ class RajaOngkirService
             }
             
             \Log::error('Komerce Waybill Error: ' . $response->body());
+
             return [];
         } catch (\Exception $e) {
             \Log::error('Komerce Waybill Exception: ' . $e->getMessage());

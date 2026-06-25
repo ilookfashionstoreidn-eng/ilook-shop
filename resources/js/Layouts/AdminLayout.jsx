@@ -16,6 +16,7 @@ import {
     Search,
     Sparkles,
     Star,
+    Tag,
 } from 'lucide-react';
 
 export default function AdminLayout({ children }) {
@@ -27,11 +28,13 @@ export default function AdminLayout({ children }) {
     const navItems = [
         { name: 'Dashboard', icon: LayoutDashboard, route: 'admin.dashboard', path: '/admin' },
         { name: 'Produk iLook', icon: ShoppingBag, route: 'admin.products', path: '/admin/products' },
+        { name: 'Flash Sale', icon: Sparkles, route: 'admin.flash-sales', path: '/admin/flash-sales' },
         { name: 'Kategori', icon: FolderTree, route: 'admin.categories', path: '/admin/categories' },
         { name: 'Manajemen Stok', icon: Boxes, route: 'admin.stocks', path: '/admin/stocks' },
         { name: 'Pesanan Masuk', icon: ReceiptText, route: 'admin.orders', path: '/admin/orders' },
         { name: 'Manajemen User', icon: User, route: 'admin.users', path: '/admin/users' },
         { name: 'Review Pembeli', icon: Star, route: 'admin.reviews', path: '/admin/reviews' },
+        { name: 'Kupon Diskon', icon: Tag, route: 'admin.coupons', path: '/admin/coupons' },
         { name: 'Pengaturan Toko', icon: Settings, route: 'admin.settings', path: '/admin/settings' },
     ];
 
