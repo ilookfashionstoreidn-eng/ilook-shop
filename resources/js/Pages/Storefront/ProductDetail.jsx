@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import StorefrontLayout from '@/Layouts/StorefrontLayout';
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
 import { 
     ChevronLeft, 
     ShoppingCart, 
@@ -14,15 +14,20 @@ import {
     Star,
     MessageSquare,
     X,
-    Zap
+    Zap,
+    Send
 } from 'lucide-react';
 import axios from 'axios';
 
-export default function ProductDetail({ product, related, origin }) {
+export default function ProductDetail({ product, related, origin, whatsappNumber = '6281234567890' }) {
     const totalReviews = product.reviews ? product.reviews.length : 0;
     const avgRating = totalReviews > 0 
         ? (product.reviews.reduce((sum, r) => sum + r.rating, 0) / totalReviews).toFixed(1)
         : 0;
+
+    const { auth } = usePage().props;
+
+
 
     // Determine best initial image: first variant's image > product images[0] > placeholder
     const FALLBACK_IMG = 'https://images.unsplash.com/photo-1434389677669-e08b4cac3105?w=800&auto=format&fit=crop&q=60';
@@ -697,7 +702,7 @@ export default function ProductDetail({ product, related, origin }) {
 
                             {/* WhatsApp Inquiry Button (Direct executive style touch) */}
                             <a
-                                href={`https://wa.me/6281234567890?text=Halo%20iLook%20Fashion,%20saya%20ingin%20tanya%20detail%20mengenai%20produk%20${encodeURIComponent(product.name)}%20(SKU:%20${selectedVariant?.sku || product.sku})`}
+                                href={`https://wa.me/${whatsappNumber}?text=Halo%20iLook%20Fashion,%20saya%20ingin%20tanya%20detail%20mengenai%20produk%20${encodeURIComponent(product.name)}%20(SKU:%20${selectedVariant?.sku || product.sku})`}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="w-full h-14 flex items-center justify-center gap-2 border border-[#25D366] text-[#25D366] hover:bg-[#25D366] hover:text-white transition-all duration-300 rounded-none text-xs font-bold uppercase tracking-widest"
@@ -707,6 +712,18 @@ export default function ProductDetail({ product, related, origin }) {
                                 </svg>
                                 <span>Tanya Detail Via WhatsApp</span>
                             </a>
+
+                            {/* System Chat Inquiry Button */}
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    window.dispatchEvent(new CustomEvent('open-system-chat', { detail: { product: product } }));
+                                }}
+                                className="w-full h-14 mt-3 flex items-center justify-center gap-2 border border-black text-black hover:bg-black hover:text-white transition-all duration-300 rounded-none text-xs font-bold uppercase tracking-widest"
+                            >
+                                <MessageSquare className="w-4 h-4" />
+                                <span>Tanya Detail Via Chat Sistem</span>
+                            </button>
                         </div>
 
                         {/* Collapsible Accordion sections */}
@@ -1100,6 +1117,8 @@ export default function ProductDetail({ product, related, origin }) {
                     </div>
                 )}
             </div>
+
+
         </StorefrontLayout>
     );
 }
