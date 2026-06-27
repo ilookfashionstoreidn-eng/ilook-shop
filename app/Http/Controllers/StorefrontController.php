@@ -241,6 +241,13 @@ class StorefrontController extends Controller
         $originCityId = Setting::where('key', 'origin_city_id')->first()->value ?? '152';
         $originCityName = Setting::where('key', 'origin_city_name')->first()->value ?? 'Jakarta Barat';
 
+        // Get whatsapp number
+        $whatsappNumber = Setting::where('key', 'whatsapp_number')->first()->value ?? '081234567890';
+        $whatsappNumber = preg_replace('/[^0-9]/', '', $whatsappNumber);
+        if (str_starts_with($whatsappNumber, '0')) {
+            $whatsappNumber = '62' . substr($whatsappNumber, 1);
+        }
+
         // Load 4 related products in same category
         $related = Product::with(['category', 'variants'])
             ->where('category_id', $product->category_id)
@@ -255,7 +262,8 @@ class StorefrontController extends Controller
             'origin' => [
                 'city_id' => $originCityId,
                 'city_name' => $originCityName,
-            ]
+            ],
+            'whatsappNumber' => $whatsappNumber,
         ]);
     }
 

@@ -46,6 +46,11 @@ Route::middleware('auth')->group(function () {
     // Alur Force Input Nomor HP
     Route::get('/enter-phone', [\App\Http\Controllers\Auth\PhoneEntryController::class, 'show'])->name('phone.entry');
     Route::post('/enter-phone', [\App\Http\Controllers\Auth\PhoneEntryController::class, 'store'])->name('phone.store');
+
+    // System Chat APIs
+    Route::get('/api/chats/messages', [\App\Http\Controllers\ChatMessageController::class, 'getMessages']);
+    Route::post('/api/chats/messages', [\App\Http\Controllers\ChatMessageController::class, 'sendMessage']);
+    Route::post('/api/chats/read', [\App\Http\Controllers\ChatMessageController::class, 'markAsRead']);
 });
 
 Route::get('/dashboard', function () {
@@ -118,6 +123,10 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::post('/coupons', [CouponController::class, 'store'])->name('coupons.store');
     Route::put('/coupons/{coupon}', [CouponController::class, 'update'])->name('coupons.update');
     Route::delete('/coupons/{coupon}', [CouponController::class, 'destroy'])->name('coupons.destroy');
+
+    // Admin Chats
+    Route::get('/chats', [\App\Http\Controllers\Admin\ChatController::class, 'index'])->name('chats');
+    Route::get('/api/chats/users', [\App\Http\Controllers\ChatMessageController::class, 'getChatUsers']);
 });
 
 Route::get('/test-ongkir', function () {
