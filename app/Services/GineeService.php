@@ -205,4 +205,80 @@ class GineeService
             return [];
         }
     }
+
+    /**
+     * Format and push a local Order to Ginee OMS
+     */
+    public function pushOrder(\App\Models\Order $order): ?array
+    {
+        try {
+            // Load items.variant to access the variant SKU (since order_items doesn't have sku)
+            $order->load(['items.variant', 'shipping', 'user']);
+
+            $shops      = $this->getShops();
+            $warehouses = $this->getWarehouses();
+
+            $shopId      = $shops['content'][0]['shopId'] ?? ($shops[0]['shopId'] ?? 'sp-mock-1001');
+            $warehouseId = $warehouses['content'][0]['id'] ?? ($warehouses[0]['id'] ?? 'wh-mock-1001');
+
+            $gineeOrderItems = $order->items->map(function ($item) use ($warehouseId) {
+                return [
+                    'sku'         => $item->variant->sku ?? '',
+                    'quantity'    => $item->quantity,
+                    'actualPrice' => $item->unit_price,
+                    'warehouseId' => $warehouseId,
+                ];
+            })->toArray();
+
+            $gineePayload = [
+                'externalOrderSn' => $order->order_number,
+                'shopId'          => $shopId,
+                'customerName'    => $order->shipping?->recipient_name ?? $order->user?->name ?? '',
+                'customerEmail'   => $order->user?->email ?? '',
+                'customerMobile'  => $order->shipping?->phone ?? $order->user?->phone ?? '',
+                'paymentMethod'   => 'PREPAY',
+                'payAmount'       => $order->total_amount,
+                'payAtDatetime'   => gmdate('Y-m-d\TH:i:s\Z'),
+                'orderItems'      => $gineeOrderItems,
+                'shippingAddress' => [
+                    'name'          => $order->shipping?->recipient_name ?? $order->user?->name ?? '',
+                    'phoneNumber'   => $order->shipping?->phone ?? $order->user?->phone ?? '',
+                    'country'       => 'ID',
+                    'province'      => $order->shipping?->province ?? '',
+                    'city'          => $order->shipping?->city ?? '',
+                    'district'      => $order->shipping?->city ?? '',
+                    'detailAddress' => $order->shipping?->address ?? '',
+                ],
+                'logisticsInfos'  => [
+                    [
+                        'courierCode'    => strtoupper($order->shipping?->courier ?? ''),
+                        'shippingMethod' => $order->shipping?->service ?? '',
+                        'shippingFee'    => $order->shipping_cost,
+                    ],
+                ],
+            ];
+
+            Log::info('Pushing order to Ginee OMS', ['order_number' => $order->order_number, 'payload' => $gineePayload]);
+            $gineeResponse = $this->createManualOrder($gineePayload);
+
+            if ($gineeResponse && isset($gineeResponse['gineeOrderId'])) {
+                $order->update(['ginee_order_id' => $gineeResponse['gineeOrderId']]);
+                Log::info('Order pushed to Ginee successfully', [
+                    'order_number'   => $order->order_number,
+                    'ginee_order_id' => $gineeResponse['gineeOrderId'],
+                ]);
+                return $gineeResponse;
+            } else {
+                Log::warning('Ginee push failed', [
+                    'order_number' => $order->order_number,
+                    'response'     => $gineeResponse,
+                ]);
+            }
+        } catch (\Exception $e) {
+            Log::error('Failed to push order to Ginee: ' . $e->getMessage(), [
+                'order_number' => $order->order_number,
+            ]);
+        }
+        return null;
+    }
 }

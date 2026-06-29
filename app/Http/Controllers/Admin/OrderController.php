@@ -19,7 +19,7 @@ class OrderController extends Controller
         $search = $request->input('search');
         $status = $request->input('status'); // filter by status
 
-        $query = Order::with(['user', 'items.variant.product', 'shipping']);
+        $query = Order::with(['user', 'items.variant.product', 'shipping', 'bankAccount']);
 
         if ($search) {
             $query->where(function ($q) use ($search) {
@@ -80,6 +80,17 @@ class OrderController extends Controller
                 }
             }
         });
+
+        $order->refresh();
+        // If paid or processing and not pushed to Ginee yet, push to Ginee OMS
+        if (in_array($order->status, ['paid', 'processing']) && empty($order->ginee_order_id)) {
+            try {
+                $gineeService = app(\App\Services\GineeService::class);
+                $gineeService->pushOrder($order);
+            } catch (\Exception $e) {
+                \Log::error('Admin update status Ginee push error: ' . $e->getMessage());
+            }
+        }
 
         return redirect()->route('admin.orders')->with('success', "Status pesanan {$order->order_number} berhasil diubah.");
     }

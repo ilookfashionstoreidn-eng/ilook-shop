@@ -15,6 +15,9 @@ import {
     Shield,
     ChevronRight,
     Loader2,
+    Upload,
+    Building2,
+    FileText,
 } from 'lucide-react';
 import axios from 'axios';
 
@@ -24,6 +27,54 @@ export default function OrderDetail({ order: initialOrder, midtransClientKey, mi
     const [copied, setCopied] = useState(false);
     const [syncing, setSyncing] = useState(false);
     const snapScriptLoaded = useRef(false);
+
+    useEffect(() => {
+        setOrder(initialOrder);
+    }, [initialOrder]);
+
+    // Manual transfer states
+    const [proofFile, setProofFile] = useState(null);
+    const [uploading, setUploading] = useState(false);
+    const [uploadError, setUploadError] = useState('');
+
+    const handleFileChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            if (file.size > 2 * 1024 * 1024) {
+                setUploadError('Ukuran file maksimal 2MB.');
+                setProofFile(null);
+            } else {
+                setUploadError('');
+                setProofFile(file);
+            }
+        }
+    };
+
+    const handleUploadProof = (e) => {
+        e.preventDefault();
+        if (!proofFile) return;
+
+        setUploading(true);
+        setUploadError('');
+
+        const formData = new FormData();
+        formData.append('payment_proof', proofFile);
+
+        router.post(route('storefront.order.payment-proof', order.id), formData, {
+            forceFormData: true,
+            onSuccess: () => {
+                setUploading(false);
+                setProofFile(null);
+            },
+            onError: (errors) => {
+                setUploading(false);
+                setUploadError(errors.payment_proof || 'Gagal mengunggah bukti transfer.');
+            },
+            onFinish: () => {
+                setUploading(false);
+            }
+        });
+    };
 
     // Tracking states
     const [trackingData, setTrackingData] = useState(null);
@@ -181,23 +232,31 @@ export default function OrderDetail({ order: initialOrder, midtransClientKey, mi
                     <div className="flex items-center gap-2 flex-wrap">
                         {order.payment_status !== 'paid' && !isCancelled && (
                             <>
-                                <button
-                                    onClick={handleSyncStatus}
-                                    disabled={syncing}
-                                    className="flex items-center gap-1.5 px-3 py-1.5 border border-current text-[10px] font-bold uppercase tracking-wider hover:bg-white/50 transition-all disabled:opacity-50"
-                                >
-                                    <RefreshCw className={`w-3 h-3 ${syncing ? 'animate-spin' : ''}`} />
-                                    {syncing ? 'Mengecek...' : 'Cek Status'}
-                                </button>
-                                <button
-                                    id="btn-retry-payment"
-                                    onClick={handleRetryPayment}
-                                    disabled={retryLoading}
-                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-[#212121] text-white text-[10px] font-bold uppercase tracking-wider hover:opacity-90 transition-all disabled:opacity-50"
-                                >
-                                    {retryLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <CreditCard className="w-3 h-3" />}
-                                    Bayar Sekarang
-                                </button>
+                                {order.payment_method !== 'manual_transfer' ? (
+                                    <>
+                                        <button
+                                            onClick={handleSyncStatus}
+                                            disabled={syncing}
+                                            className="flex items-center gap-1.5 px-3 py-1.5 border border-current text-[10px] font-bold uppercase tracking-wider hover:bg-white/50 transition-all disabled:opacity-50"
+                                        >
+                                            <RefreshCw className={`w-3 h-3 ${syncing ? 'animate-spin' : ''}`} />
+                                            {syncing ? 'Mengecek...' : 'Cek Status'}
+                                        </button>
+                                        <button
+                                            id="btn-retry-payment"
+                                            onClick={handleRetryPayment}
+                                            disabled={retryLoading}
+                                            className="flex items-center gap-1.5 px-3 py-1.5 bg-[#212121] text-white text-[10px] font-bold uppercase tracking-wider hover:opacity-90 transition-all disabled:opacity-50"
+                                        >
+                                            {retryLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <CreditCard className="w-3 h-3" />}
+                                            Bayar Sekarang
+                                        </button>
+                                    </>
+                                ) : (
+                                    <span className="text-[10px] font-bold bg-amber-50 border border-amber-200 text-amber-800 px-3 py-1.5">
+                                        TRANSFER MANUAL BANK
+                                    </span>
+                                )}
                             </>
                         )}
                     </div>
@@ -260,6 +319,101 @@ export default function OrderDetail({ order: initialOrder, midtransClientKey, mi
                                 ))}
                             </div>
                         </div>
+
+                        {/* Manual Transfer Info */}
+                        {order.payment_method === 'manual_transfer' && (
+                            <div className="bg-white border border-[#E0E0E0] p-5 space-y-4 text-xs">
+                                <div className="border-b border-[#E0E0E0] pb-2 flex items-center gap-2">
+                                    <Building2 className="w-4 h-4 text-[#212121]" />
+                                    <span className="text-xs font-extrabold uppercase tracking-widest text-[#212121]">Informasi Transfer Bank</span>
+                                </div>
+
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <div className="bg-gray-50 border border-[#E0E0E0] p-3.5 space-y-2">
+                                        <p className="text-[#747878] leading-relaxed">
+                                            Silakan transfer ke rekening resmi berikut sebesar:
+                                        </p>
+                                        <div>
+                                            <span className="text-[9px] text-[#747878] uppercase font-bold tracking-wider block">Total Transfer</span>
+                                            <span className="text-base font-extrabold text-[#530A0C]">{formatCurrency(order.total_amount)}</span>
+                                        </div>
+                                        {order.bank_account ? (
+                                            <div className="pt-2 border-t border-[#E0E0E0] space-y-1">
+                                                <div>
+                                                    <span className="text-[9px] text-[#747878] uppercase font-bold tracking-wider block">Bank Tujuan</span>
+                                                    <span className="font-extrabold text-xs text-[#212121]">{order.bank_account.bank_name}</span>
+                                                </div>
+                                                <div>
+                                                    <span className="text-[9px] text-[#747878] uppercase font-bold tracking-wider block">Nomor Rekening</span>
+                                                    <span className="font-mono text-xs font-extrabold text-[#212121]">{order.bank_account.account_number}</span>
+                                                </div>
+                                                <div>
+                                                    <span className="text-[9px] text-[#747878] uppercase font-bold tracking-wider block">Atas Nama</span>
+                                                    <span className="font-bold text-[#212121]">{order.bank_account.account_holder}</span>
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <p className="text-red-600 font-bold text-[10px]">Data rekening tidak ditemukan.</p>
+                                        )}
+                                    </div>
+
+                                    <div className="space-y-3">
+                                        <span className="text-[9px] text-[#747878] uppercase font-bold tracking-wider block">Bukti Transfer</span>
+                                        
+                                        {order.payment_proof ? (
+                                            <div className="space-y-2">
+                                                <div className="p-2.5 bg-green-50 border border-green-200 text-green-700 rounded-none flex items-start gap-1.5">
+                                                    <CheckCircle2 className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
+                                                    <div>
+                                                        <p className="font-bold">Bukti sudah diunggah</p>
+                                                        <p className="text-[9px] opacity-95">Admin sedang memverifikasi pembayaran Anda.</p>
+                                                    </div>
+                                                </div>
+                                                <div className="border border-[#E0E0E0] p-2 bg-gray-50 flex items-center justify-between">
+                                                    <span className="text-[9px] text-[#747878] font-mono truncate">File bukti transfer</span>
+                                                    <a 
+                                                        href={order.payment_proof} 
+                                                        target="_blank" 
+                                                        rel="noreferrer"
+                                                        className="text-[9px] font-extrabold uppercase tracking-wider text-[#212121] hover:underline"
+                                                    >
+                                                        Buka Bukti
+                                                    </a>
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <div className="p-2.5 bg-amber-50 border border-amber-200 text-amber-800 rounded-none">
+                                                Belum mengunggah bukti pembayaran. Silakan transfer lalu unggah bukti di bawah.
+                                            </div>
+                                        )}
+
+                                        {order.payment_status !== 'paid' && (
+                                            <form onSubmit={handleUploadProof} className="space-y-2 pt-1">
+                                                <input 
+                                                    type="file" 
+                                                    required
+                                                    onChange={handleFileChange}
+                                                    accept="image/*,application/pdf"
+                                                    className="w-full bg-white border border-[#E0E0E0] p-1.5 text-[10px] focus:outline-none focus:border-[#212121]"
+                                                />
+                                                {uploadError && <p className="text-[10px] text-red-600 font-bold">{uploadError}</p>}
+                                                <button
+                                                    type="submit"
+                                                    disabled={uploading || !proofFile}
+                                                    className="w-full flex items-center justify-center gap-1.5 py-2 bg-[#212121] text-white text-[10px] font-bold uppercase tracking-wider hover:opacity-90 disabled:opacity-50 transition-all"
+                                                >
+                                                    {uploading ? (
+                                                        <><Loader2 className="w-3 h-3 animate-spin" /><span>Mengunggah...</span></>
+                                                    ) : (
+                                                        <><Upload className="w-3.5 h-3.5" /><span>Kirim Bukti</span></>
+                                                    )}
+                                                </button>
+                                            </form>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
 
                         {/* Shipping Info */}
                         {order.shipping && (
@@ -423,7 +577,10 @@ export default function OrderDetail({ order: initialOrder, midtransClientKey, mi
                                 {order.payment_method && (
                                     <div className="pt-2 border-t border-[#E0E0E0]">
                                         <p className="text-[10px] text-[#747878] uppercase tracking-wider">Metode Bayar</p>
-                                        <p className="font-bold text-[#212121] mt-1">{order.payment_method}</p>
+                                        <p className="font-bold text-[#212121] mt-1">
+                                            {order.payment_method === 'manual_transfer' ? 'Transfer Bank Manual' : order.payment_method}
+                                            {order.bank_account && ` (${order.bank_account.bank_name})`}
+                                        </p>
                                     </div>
                                 )}
 

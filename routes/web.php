@@ -11,6 +11,7 @@ use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\ReviewController;
 use App\Http\Controllers\Admin\FlashSaleController;
 use App\Http\Controllers\Admin\CouponController;
+use App\Http\Controllers\Admin\BankAccountController;
 use App\Http\Controllers\StorefrontController;
 use App\Http\Controllers\MidtransWebhookController;
 use App\Http\Controllers\GineeWebhookController;
@@ -42,6 +43,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/my-orders', [StorefrontController::class, 'myOrders'])->name('storefront.my-orders');
     Route::get('/my-orders/{order}', [StorefrontController::class, 'orderDetail'])->name('storefront.order.detail');
     Route::get('/my-orders/{order}/tracking', [StorefrontController::class, 'trackOrder'])->name('storefront.order.tracking');
+    Route::post('/my-orders/{order}/payment-proof', [StorefrontController::class, 'uploadPaymentProof'])->name('storefront.order.payment-proof');
     
     // Alur Force Input Nomor HP
     Route::get('/enter-phone', [\App\Http\Controllers\Auth\PhoneEntryController::class, 'show'])->name('phone.entry');
@@ -123,6 +125,12 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::post('/coupons', [CouponController::class, 'store'])->name('coupons.store');
     Route::put('/coupons/{coupon}', [CouponController::class, 'update'])->name('coupons.update');
     Route::delete('/coupons/{coupon}', [CouponController::class, 'destroy'])->name('coupons.destroy');
+
+    // Payments CRUD
+    Route::get('/payments', [BankAccountController::class, 'index'])->name('payments');
+    Route::post('/payments', [BankAccountController::class, 'store'])->name('payments.store');
+    Route::put('/payments/{bankAccount}', [BankAccountController::class, 'update'])->name('payments.update');
+    Route::delete('/payments/{bankAccount}', [BankAccountController::class, 'destroy'])->name('payments.destroy');
 
     // Admin Chats
     Route::get('/chats', [\App\Http\Controllers\Admin\ChatController::class, 'index'])->name('chats');

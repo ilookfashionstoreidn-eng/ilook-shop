@@ -54,7 +54,7 @@ export default function DeleteUserForm({ className = '', isAdmin = false }) {
 
                 <button
                     onClick={confirmUserDeletion}
-                    className="px-6 py-2.5 bg-red-650 hover:bg-red-700 text-white rounded-xl transition-all font-semibold text-sm"
+                    className="px-6 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl transition-all font-semibold text-sm"
                 >
                     Hapus Akun Saya
                 </button>

@@ -22,6 +22,8 @@ class Order extends Model
         'ginee_order_id',
         'coupon_code',
         'coupon_discount',
+        'bank_account_id',
+        'payment_proof',
     ];
 
     protected $casts = [
@@ -44,5 +46,10 @@ class Order extends Model
     public function shipping(): HasOne
     {
         return $this->hasOne(OrderShipping::class);
+    }
+
+    public function bankAccount(): BelongsTo
+    {
+        return $this->belongsTo(BankAccount::class);
     }
 }
