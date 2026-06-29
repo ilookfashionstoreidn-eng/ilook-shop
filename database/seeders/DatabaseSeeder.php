@@ -12,6 +12,7 @@ use App\Models\OrderItem;
 use App\Models\OrderShipping;
 use App\Models\Setting;
 use App\Models\Coupon;
+use App\Models\BankAccount;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Str;
 use Carbon\Carbon;
@@ -254,6 +255,20 @@ class DatabaseSeeder extends Seeder
         Setting::create(['key' => 'min_stock_alert', 'value' => '5']);
         Setting::create(['key' => 'ginee_sync_enabled', 'value' => '1']);
         Setting::create(['key' => 'couriers_active', 'value' => json_encode(['jne', 'jnt', 'sicepat', 'anteraja'])]);
+
+        // 4.3 Bank Accounts
+        BankAccount::create([
+            'bank_name' => 'BCA',
+            'account_number' => '8012345678',
+            'account_holder' => 'PT ILOOK FASHION IDN',
+            'is_active' => true,
+        ]);
+        BankAccount::create([
+            'bank_name' => 'Mandiri',
+            'account_number' => '1310023456789',
+            'account_holder' => 'PT ILOOK FASHION IDN',
+            'is_active' => true,
+        ]);
 
         // 4.5. Coupons
         Coupon::create([

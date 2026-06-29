@@ -68,12 +68,12 @@ class StorefrontController extends Controller
         }
 
         // Proactive sync dari Midtrans jika belum terbayar
-        if ($order->payment_status !== 'paid') {
+        if ($order->payment_status !== 'paid' && $order->payment_method !== 'manual_transfer') {
             $this->syncMidtransStatus($order);
             $order->refresh();
         }
 
-        $order->load(['items', 'shipping']);
+        $order->load(['items', 'shipping', 'bankAccount']);
 
         return Inertia::render('Storefront/OrderDetail', [
             'order'             => $order,
@@ -295,6 +295,7 @@ class StorefrontController extends Controller
             'originCityId'    => $settingsRaw['origin_city_id'] ?? '152',
             'midtransClientKey' => config('services.midtrans.client_key', ''),
             'midtransSnapUrl'   => config('services.midtrans.snap_url'),
+            'bankAccounts'    => \App\Models\BankAccount::where('is_active', true)->get(),
         ]);
     }
 
@@ -358,6 +359,8 @@ class StorefrontController extends Controller
             'items' => 'required|array|min:1',
             'items.*.variant_id' => 'required|exists:product_variants,id',
             'items.*.quantity' => 'required|integer|min:1',
+            'payment_method' => 'required|string|in:midtrans,manual_transfer',
+            'bank_account_id' => 'nullable|required_if:payment_method,manual_transfer|exists:bank_accounts,id',
         ]);
 
         try {
@@ -448,10 +451,11 @@ class StorefrontController extends Controller
                     'subtotal'       => $subtotal,
                     'shipping_cost'  => $shippingCost,
                     'total_amount'   => $totalAmount,
-                    'payment_method' => null,
+                    'payment_method' => $request->input('payment_method'),
                     'payment_status' => 'unpaid',
                     'coupon_code'    => $couponCode,
                     'coupon_discount' => $couponDiscount,
+                    'bank_account_id' => $request->input('bank_account_id'),
                 ]);
 
                 // Create Order Items
@@ -544,11 +548,10 @@ class StorefrontController extends Controller
      */
     public function orderSuccess(Order $order): Response
     {
-        $order->load(['items', 'shipping']);
+        $order->load(['items', 'shipping', 'bankAccount']);
 
         // Proactive status check: sync dari Midtrans jika order masih belum terbayar di DB
-        // (penting untuk localhost development karena webhook tidak bisa masuk)
-        if ($order->payment_status !== 'paid') {
+        if ($order->payment_status !== 'paid' && $order->payment_method !== 'manual_transfer') {
             $this->syncMidtransStatus($order);
             $order->refresh();
         }
@@ -563,10 +566,10 @@ class StorefrontController extends Controller
      */
     public function orderPending(Order $order): Response|\Illuminate\Http\RedirectResponse
     {
-        $order->load(['items', 'shipping']);
+        $order->load(['items', 'shipping', 'bankAccount']);
 
         // Cek status terbaru dari Midtrans setiap kali halaman ini dibuka
-        if ($order->payment_status !== 'paid') {
+        if ($order->payment_status !== 'paid' && $order->payment_method !== 'manual_transfer') {
             $this->syncMidtransStatus($order);
             $order->refresh();
         }
@@ -576,7 +579,7 @@ class StorefrontController extends Controller
             return redirect()->route('storefront.order.success', $order->id);
         }
 
-        $order->load(['items', 'shipping']);
+        $order->load(['items', 'shipping', 'bankAccount']);
         return Inertia::render('Storefront/OrderPending', [
             'order'             => $order,
             'midtransClientKey' => config('services.midtrans.client_key', ''),
@@ -592,8 +595,10 @@ class StorefrontController extends Controller
      */
     public function checkPaymentStatus(Order $order): JsonResponse
     {
-        $this->syncMidtransStatus($order);
-        $order->refresh();
+        if ($order->payment_method !== 'manual_transfer') {
+            $this->syncMidtransStatus($order);
+            $order->refresh();
+        }
 
         return response()->json([
             'payment_status' => $order->payment_status,
@@ -601,6 +606,61 @@ class StorefrontController extends Controller
             'payment_method' => $order->payment_method,
             'is_paid'        => $order->payment_status === 'paid',
         ]);
+    }
+
+    /**
+     * Upload proof of payment for manual transfer orders
+     */
+    public function uploadPaymentProof(Request $request, Order $order): \Illuminate\Http\RedirectResponse
+    {
+        // Ensure owner
+        if ($order->user_id !== auth()->id()) {
+            abort(403, 'Akses ditolak.');
+        }
+
+        if ($order->payment_method !== 'manual_transfer') {
+            return back()->with('error', 'Pesanan ini tidak menggunakan metode transfer manual.');
+        }
+
+        if ($order->payment_status === 'paid') {
+            return back()->with('error', 'Pesanan ini sudah lunas.');
+        }
+
+        $request->validate([
+            'payment_proof' => 'required|image|mimes:jpeg,png,jpg,gif,svg,pdf|max:2048',
+        ]);
+
+        try {
+            if ($request->hasFile('payment_proof')) {
+                $file = $request->file('payment_proof');
+                $filename = 'proof-' . $order->order_number . '-' . time() . '.' . $file->getClientOriginalExtension();
+                
+                // Ensure target directory exists in public/uploads/payment_proofs
+                $targetDir = public_path('uploads/payment_proofs');
+                if (!file_exists($targetDir)) {
+                    mkdir($targetDir, 0755, true);
+                }
+                
+                $file->move($targetDir, $filename);
+                $filePath = '/uploads/payment_proofs/' . $filename;
+
+                // Delete old proof if exists
+                if ($order->payment_proof && file_exists(public_path($order->payment_proof))) {
+                    @unlink(public_path($order->payment_proof));
+                }
+
+                $order->update([
+                    'payment_proof' => $filePath,
+                ]);
+
+                return back()->with('success', 'Bukti transfer berhasil diunggah. Menunggu konfirmasi admin.');
+            }
+        } catch (\Exception $e) {
+            Log::error('Upload payment proof error: ' . $e->getMessage());
+            return back()->with('error', 'Gagal mengunggah bukti transfer: ' . $e->getMessage());
+        }
+
+        return back()->with('error', 'File tidak ditemukan.');
     }
 
     /**

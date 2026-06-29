@@ -248,7 +248,9 @@ export default function Orders({ orders, filters }) {
                                                 {order.shipping?.recipient_name || order.user?.name || '-'}
                                             </td>
                                             <td className="px-6 py-4 text-gray-500 text-xs">
-                                                {order.payment_method || '-'}
+                                                {order.payment_method === 'manual_transfer' 
+                                                    ? `Transfer Manual${order.bank_account ? ` (${order.bank_account.bank_name})` : ''}` 
+                                                    : (order.payment_method || '-')}
                                             </td>
                                             <td className="px-6 py-4 font-semibold text-gray-800">
                                                 {formatCurrency(order.total_amount)}
@@ -379,7 +381,7 @@ export default function Orders({ orders, filters }) {
                                                     handleUpdateStatus(selectedOrder.id, 'cancelled', 'failed');
                                                 }
                                             }}
-                                            className="flex items-center gap-1.5 px-4 py-2 text-xs font-bold rounded-lg border border-red-200 bg-red-50 text-red-650 hover:bg-red-100 transition-all"
+                                            className="flex items-center gap-1.5 px-4 py-2 text-xs font-bold rounded-lg border border-red-200 bg-red-50 text-red-600 hover:bg-red-100 transition-all"
                                         >
                                             <Ban className="w-4 h-4" />
                                             Batalkan Pesanan
@@ -421,6 +423,77 @@ export default function Orders({ orders, filters }) {
                                     </div>
                                 </div>
                             </div>
+
+                            {/* Payment details grid (for manual transfer / proof) */}
+                            {selectedOrder.payment_method === 'manual_transfer' && (
+                                <div className="p-4 rounded-xl border border-gray-100 bg-gray-50/50 space-y-4">
+                                    <h3 className="font-bold text-gray-800 border-b border-gray-100 pb-2">Informasi Pembayaran Manual</h3>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div className="space-y-1.5 text-xs text-gray-600">
+                                            <p><span className="text-gray-400">Metode:</span> <span className="font-bold text-gray-800">Transfer Bank Manual</span></p>
+                                            {selectedOrder.bank_account ? (
+                                                <>
+                                                    <p><span className="text-gray-400">Bank Tujuan:</span> <span className="font-bold text-gray-800">{selectedOrder.bank_account.bank_name}</span></p>
+                                                    <p><span className="text-gray-400">No. Rekening:</span> <span className="font-mono font-bold text-gray-800">{selectedOrder.bank_account.account_number}</span></p>
+                                                    <p><span className="text-gray-400">Atas Nama:</span> <span className="font-bold text-gray-800">{selectedOrder.bank_account.account_holder}</span></p>
+                                                </>
+                                            ) : (
+                                                <p className="text-red-500 font-semibold">Rekening tujuan tidak ditemukan</p>
+                                            )}
+                                            <p className="pt-1.5 border-t border-gray-150">
+                                                <span className="text-gray-400">Status Pembayaran:</span>&nbsp;
+                                                <span className={`font-bold ${selectedOrder.payment_status === 'paid' ? 'text-green-600' : 'text-amber-600'}`}>
+                                                    {selectedOrder.payment_status === 'paid' ? 'LUNAS (TERVERIFIKASI)' : 'MENUNGGU VERIFIKASI'}
+                                                </span>
+                                            </p>
+                                        </div>
+
+                                        <div className="space-y-2">
+                                            <span className="text-xs font-semibold text-gray-500 uppercase block">Bukti Transfer:</span>
+                                            {selectedOrder.payment_proof ? (
+                                                <div className="space-y-2">
+                                                    <div className="border border-gray-200 rounded-lg overflow-hidden max-w-[250px] bg-white shadow-sm">
+                                                        <a href={selectedOrder.payment_proof} target="_blank" rel="noreferrer">
+                                                            <img 
+                                                                src={selectedOrder.payment_proof} 
+                                                                alt="Bukti Transfer" 
+                                                                className="w-full max-h-40 object-contain hover:scale-105 transition-transform duration-300"
+                                                            />
+                                                        </a>
+                                                    </div>
+                                                    <a 
+                                                        href={selectedOrder.payment_proof} 
+                                                        target="_blank" 
+                                                        rel="noreferrer" 
+                                                        className="text-xs text-emerald-600 hover:text-emerald-700 font-semibold inline-block hover:underline"
+                                                    >
+                                                        Lihat File Asli (Unduh/Buka Tab Baru)
+                                                    </a>
+                                                </div>
+                                            ) : (
+                                                <p className="text-xs text-gray-400 italic">Pembeli belum mengunggah bukti transfer.</p>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    {/* Action button to confirm payment directly */}
+                                    {selectedOrder.payment_status !== 'paid' && selectedOrder.payment_proof && (
+                                        <div className="pt-3 border-t border-gray-100 flex justify-end">
+                                            <button
+                                                onClick={() => {
+                                                    if (confirm('Apakah Anda yakin bukti transfer ini valid dan ingin mengonfirmasi pembayaran?')) {
+                                                        handleUpdateStatus(selectedOrder.id, 'paid', 'paid');
+                                                    }
+                                                }}
+                                                className="flex items-center gap-1.5 px-4 py-2 text-xs font-bold rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white shadow transition-all"
+                                            >
+                                                <CheckCircle className="w-4 h-4" />
+                                                Konfirmasi Pembayaran Lunas
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
 
                             {/* Item details list */}
                             <div className="p-4 rounded-xl border border-gray-100 bg-gray-50/50 space-y-4">

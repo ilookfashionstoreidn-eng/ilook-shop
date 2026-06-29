@@ -21,7 +21,7 @@ import {
 import axios from 'axios';
 import Swal from 'sweetalert2';
 
-export default function Checkout({ provinces, activeCouriers, originCityId, midtransClientKey, midtransSnapUrl }) {
+export default function Checkout({ provinces, activeCouriers, originCityId, midtransClientKey, midtransSnapUrl, bankAccounts = [] }) {
     const [cartItems, setCartItems] = useState([]);
     
     // Form States
@@ -56,6 +56,16 @@ export default function Checkout({ provinces, activeCouriers, originCityId, midt
     const [couponDiscount, setCouponDiscount] = useState(0);
     const [couponError, setCouponError] = useState('');
     const [applyingCoupon, setApplyingCoupon] = useState(false);
+
+    // Payment States
+    const [paymentMethod, setPaymentMethod] = useState('midtrans'); // midtrans | manual_transfer
+    const [selectedBankAccountId, setSelectedBankAccountId] = useState(bankAccounts[0]?.id || null);
+
+    useEffect(() => {
+        if (bankAccounts && bankAccounts.length > 0 && !selectedBankAccountId) {
+            setSelectedBankAccountId(bankAccounts[0].id);
+        }
+    }, [bankAccounts]);
 
     // Snap.js script loaded state
     const snapScriptLoaded = useRef(false);
@@ -283,6 +293,8 @@ export default function Checkout({ provinces, activeCouriers, originCityId, midt
             weight: totalWeight,
             postal_code: postalCode,
             coupon_code: appliedCoupon ? appliedCoupon.code : null,
+            payment_method: paymentMethod,
+            bank_account_id: paymentMethod === 'manual_transfer' ? selectedBankAccountId : null,
             items: cartItems.map(i => ({
                 variant_id: i.variant_id,
                 quantity: i.quantity
@@ -301,6 +313,14 @@ export default function Checkout({ provinces, activeCouriers, originCityId, midt
 
             const orderId = orderRes.data.order_id;
             setSubmittingOrder(false);
+
+            if (paymentMethod === 'manual_transfer') {
+                localStorage.removeItem('ilook_cart');
+                window.dispatchEvent(new Event('cart-updated'));
+                router.get(route('storefront.order.pending', orderId));
+                return;
+            }
+
             setPaymentLoading(true);
 
             // Step 2: Ambil Snap Token dari Midtrans
@@ -586,33 +606,108 @@ export default function Checkout({ provinces, activeCouriers, originCityId, midt
                                         )}
                                     </div>
 
-                                    {/* Step 3: Payment — Midtrans Snap */}
+                                    {/* Step 3: Payment */}
                                     <div className="bg-white p-6 rounded-none border border-[#E0E0E0] space-y-4 text-xs">
                                         <h3 className="text-sm font-bold text-[#212121] border-b border-[#E0E0E0] pb-2 flex items-center gap-2 uppercase tracking-widest">
                                             <CreditCard className="w-4.5 h-4.5 text-[#212121]" />
                                             <span>Metode Pembayaran</span>
                                         </h3>
 
-                                        {/* Payment method preview grid */}
-                                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-                                            {paymentMethods.map((method, idx) => (
-                                                <div key={idx} className="p-3 border border-[#E0E0E0] bg-[#f9f9f9] rounded-none flex flex-col items-center gap-1.5 text-center">
-                                                    <method.icon className="w-5 h-5 text-[#212121]" />
-                                                    <span className="font-bold text-[10px] text-[#212121] uppercase tracking-wider">{method.label}</span>
-                                                    <span className="text-[9px] text-[#747878] leading-tight">{method.desc}</span>
+                                        {/* Tabs for Payment Type */}
+                                        <div className="grid grid-cols-2 gap-3 mb-4">
+                                            <button
+                                                type="button"
+                                                onClick={() => setPaymentMethod('midtrans')}
+                                                className={`py-3 px-4 border text-center font-bold uppercase tracking-wider text-[10px] transition-all flex flex-col items-center justify-center gap-1.5 ${
+                                                    paymentMethod === 'midtrans'
+                                                        ? 'border-[#212121] bg-[#212121] text-white'
+                                                        : 'border-[#E0E0E0] bg-white text-[#747878] hover:border-[#212121] hover:text-[#212121]'
+                                                }`}
+                                            >
+                                                <CreditCard className="w-4 h-4" />
+                                                <span>Pembayaran Otomatis</span>
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => setPaymentMethod('manual_transfer')}
+                                                className={`py-3 px-4 border text-center font-bold uppercase tracking-wider text-[10px] transition-all flex flex-col items-center justify-center gap-1.5 ${
+                                                    paymentMethod === 'manual_transfer'
+                                                        ? 'border-[#212121] bg-[#212121] text-white'
+                                                        : 'border-[#E0E0E0] bg-white text-[#747878] hover:border-[#212121] hover:text-[#212121]'
+                                                }`}
+                                            >
+                                                <Building2 className="w-4 h-4" />
+                                                <span>Transfer Bank Manual</span>
+                                            </button>
+                                        </div>
+
+                                        {paymentMethod === 'midtrans' ? (
+                                            <>
+                                                {/* Payment method preview grid */}
+                                                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                                                    {paymentMethods.map((method, idx) => (
+                                                        <div key={idx} className="p-3 border border-[#E0E0E0] bg-[#f9f9f9] rounded-none flex flex-col items-center gap-1.5 text-center">
+                                                            <method.icon className="w-5 h-5 text-[#212121]" />
+                                                            <span className="font-bold text-[10px] text-[#212121] uppercase tracking-wider">{method.label}</span>
+                                                            <span className="text-[9px] text-[#747878] leading-tight">{method.desc}</span>
+                                                        </div>
+                                                    ))}
                                                 </div>
-                                            ))}
-                                        </div>
 
-                                        {/* Security badge */}
-                                        <div className="flex items-center gap-2 p-3 border border-[#E0E0E0] bg-[#f9f9f9] rounded-none text-[10px] text-[#747878]">
-                                            <Shield className="w-4 h-4 text-[#212121] flex-shrink-0" />
-                                            <span>Pembayaran diproses secara aman oleh <strong className="text-[#212121]">Midtrans</strong> — tersertifikasi PCI DSS. Data kartu tidak pernah menyentuh server iLook Fashion.</span>
-                                        </div>
+                                                {/* Security badge */}
+                                                <div className="flex items-center gap-2 p-3 border border-[#E0E0E0] bg-[#f9f9f9] rounded-none text-[10px] text-[#747878]">
+                                                    <Shield className="w-4 h-4 text-[#212121] flex-shrink-0" />
+                                                    <span>Pembayaran diproses secara aman oleh <strong className="text-[#212121]">Midtrans</strong> — tersertifikasi PCI DSS. Data kartu tidak pernah menyentuh server iLook Fashion.</span>
+                                                </div>
 
-                                        <p className="text-[10px] text-[#747878] leading-relaxed">
-                                            Klik <strong className="text-[#212121]">"Bayar Sekarang"</strong> untuk melanjutkan ke halaman pembayaran Midtrans. Pilih metode pembayaran favorit Anda di popup yang muncul.
-                                        </p>
+                                                <p className="text-[10px] text-[#747878] leading-relaxed">
+                                                    Klik <strong className="text-[#212121]">"Bayar Sekarang"</strong> untuk melanjutkan ke halaman pembayaran Midtrans. Pilih metode pembayaran favorit Anda di popup yang muncul.
+                                                </p>
+                                            </>
+                                        ) : (
+                                            <div className="space-y-3">
+                                                <p className="text-[11px] text-[#747878] font-bold leading-relaxed uppercase tracking-wider">
+                                                    Pilih Rekening Tujuan Transfer:
+                                                </p>
+                                                {bankAccounts.length === 0 ? (
+                                                    <div className="p-4 border border-dashed border-[#E0E0E0] text-center text-[#747878]">
+                                                        Belum ada rekening transfer manual yang aktif. Silakan hubungi admin toko.
+                                                    </div>
+                                                ) : (
+                                                    <div className="space-y-2">
+                                                        {bankAccounts.map((bank) => {
+                                                            const isBankSelected = selectedBankAccountId === bank.id;
+                                                            return (
+                                                                <button
+                                                                    key={bank.id}
+                                                                    type="button"
+                                                                    onClick={() => setSelectedBankAccountId(bank.id)}
+                                                                    className={`w-full flex items-center justify-between p-3.5 border rounded-none text-left transition-all ${
+                                                                        isBankSelected
+                                                                            ? 'border-[#212121] bg-[#f9f9f9] text-[#212121]'
+                                                                            : 'border-[#E0E0E0] bg-white text-[#747878] hover:text-[#212121] hover:border-[#212121]'
+                                                                    }`}
+                                                                >
+                                                                    <div className="flex items-center gap-3">
+                                                                        <div className={`w-4 h-4 rounded-none border flex items-center justify-center ${isBankSelected ? 'bg-[#212121] border-[#212121] text-white' : 'border-[#747878]'}`}>
+                                                                            {isBankSelected && <Check className="w-3 h-3 stroke-[3]" />}
+                                                                        </div>
+                                                                        <div>
+                                                                            <span className="font-extrabold text-sm text-[#212121]">{bank.bank_name}</span>
+                                                                            <span className="text-[10px] text-[#747878] block">No. Rek: <strong className="text-[#212121] font-mono">{bank.account_number}</strong> &nbsp;·&nbsp; a/n: {bank.account_holder}</span>
+                                                                        </div>
+                                                                    </div>
+                                                                    <Building2 className="w-5 h-5 text-[#212121] opacity-40" />
+                                                                </button>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                )}
+                                                <p className="text-[10px] text-[#747878] leading-relaxed pt-1.5 border-t border-[#E0E0E0]">
+                                                    Setelah membuat pesanan, silakan transfer ke rekening yang dipilih di atas lalu unggah bukti transfer di halaman detail pesanan. Admin akan memverifikasi pesanan Anda.
+                                                </p>
+                                            </div>
+                                        )}
 
                                         <div className="flex gap-3 pt-2">
                                             <button 
@@ -623,27 +718,12 @@ export default function Checkout({ provinces, activeCouriers, originCityId, midt
                                                 Kembali ke Alamat
                                             </button>
                                             <button 
-                                                id="btn-pay-now"
                                                 onClick={handleSubmitCheckout}
-                                                disabled={isProcessing || !selectedService}
-                                                className="flex-1 flex items-center justify-center gap-2 py-4 px-6 rounded-none text-xs font-bold bg-[#212121] hover:opacity-90 text-white transition-all disabled:opacity-50 uppercase tracking-wider"
+                                                disabled={isProcessing || (paymentMethod === 'manual_transfer' && !selectedBankAccountId)}
+                                                className="flex-1 flex items-center justify-center gap-2 py-4 px-6 rounded-none text-xs font-extrabold bg-[#212121] hover:opacity-90 text-white transition-all uppercase tracking-widest disabled:opacity-50"
                                             >
-                                                {submittingOrder ? (
-                                                    <>
-                                                        <Loader2 className="w-4 h-4 animate-spin" />
-                                                        <span>Membuat Pesanan...</span>
-                                                    </>
-                                                ) : paymentLoading ? (
-                                                    <>
-                                                        <Loader2 className="w-4 h-4 animate-spin" />
-                                                        <span>Menghubungi Gateway...</span>
-                                                    </>
-                                                ) : (
-                                                    <>
-                                                        <Shield className="w-4 h-4" />
-                                                        <span>Bayar Sekarang via Midtrans</span>
-                                                    </>
-                                                )}
+                                                <span>{paymentLoading ? 'Menghubungkan...' : submittingOrder ? 'Memproses...' : paymentMethod === 'manual_transfer' ? 'Buat Pesanan (Transfer Manual)' : 'Bayar Sekarang'}</span>
+                                                <ArrowRight className="w-4 h-4" />
                                             </button>
                                         </div>
                                     </div>
@@ -683,7 +763,7 @@ export default function Checkout({ provinces, activeCouriers, originCityId, midt
                                         <button 
                                             type="button" 
                                             onClick={handleRemoveCoupon}
-                                            className="text-xs font-bold text-red-650 hover:text-red-800 transition-colors uppercase tracking-wider"
+                                            className="text-xs font-bold text-red-600 hover:text-red-800 transition-colors uppercase tracking-wider"
                                         >
                                             Hapus
                                         </button>
@@ -707,7 +787,7 @@ export default function Checkout({ provinces, activeCouriers, originCityId, midt
                                     </form>
                                 )}
                                 {couponError && (
-                                    <p className="text-[10px] text-red-650 font-bold uppercase tracking-wider flex items-center gap-1">
+                                    <p className="text-[10px] text-red-600 font-bold uppercase tracking-wider flex items-center gap-1">
                                         <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
                                         <span>{couponError}</span>
                                     </p>

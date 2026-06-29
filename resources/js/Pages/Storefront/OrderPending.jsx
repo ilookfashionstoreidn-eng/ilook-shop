@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import StorefrontLayout from '@/Layouts/StorefrontLayout';
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
 import {
     Clock,
     CreditCard,
@@ -12,6 +12,9 @@ import {
     QrCode,
     Shield,
     RefreshCw,
+    Upload,
+    FileText,
+    Check,
 } from 'lucide-react';
 import axios from 'axios';
 
@@ -19,8 +22,14 @@ export default function OrderPending({ order, midtransClientKey, midtransSnapUrl
     const snapScriptLoaded = useRef(false);
     const [retryLoading, setRetryLoading] = useState(false);
     const [copied, setCopied] = useState(false);
+    const [copiedAmount, setCopiedAmount] = useState(false);
     const [pollingStatus, setPollingStatus] = useState('checking'); // checking | paid | pending | failed
     const pollingRef = useRef(null);
+
+    // Manual payment upload states
+    const [proofFile, setProofFile] = useState(null);
+    const [uploading, setUploading] = useState(false);
+    const [uploadError, setUploadError] = useState('');
 
     // Auto-polling: cek status pembayaran setiap 5 detik
     useEffect(() => {
@@ -107,6 +116,58 @@ export default function OrderPending({ order, midtransClientKey, midtransSnapUrl
         });
     };
 
+    const handleCopyAmount = () => {
+        navigator.clipboard.writeText(Math.round(order.total_amount).toString()).then(() => {
+            setCopiedAmount(true);
+            setTimeout(() => setCopiedAmount(false), 2000);
+        });
+    };
+
+    const handleCopyAccount = (num) => {
+        navigator.clipboard.writeText(num).then(() => {
+            alert('Nomor rekening berhasil disalin!');
+        });
+    };
+
+    const handleFileChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            if (file.size > 2 * 1024 * 1024) {
+                setUploadError('Ukuran file maksimal 2MB.');
+                setProofFile(null);
+            } else {
+                setUploadError('');
+                setProofFile(file);
+            }
+        }
+    };
+
+    const handleUploadProof = (e) => {
+        e.preventDefault();
+        if (!proofFile) return;
+
+        setUploading(true);
+        setUploadError('');
+
+        const formData = new FormData();
+        formData.append('payment_proof', proofFile);
+
+        router.post(route('storefront.order.payment-proof', order.id), formData, {
+            forceFormData: true,
+            onSuccess: () => {
+                setUploading(false);
+                setProofFile(null);
+            },
+            onError: (errors) => {
+                setUploading(false);
+                setUploadError(errors.payment_proof || 'Gagal mengunggah bukti transfer.');
+            },
+            onFinish: () => {
+                setUploading(false);
+            }
+        });
+    };
+
     const statusSteps = [
         { label: 'Pesanan Dibuat', done: true },
         { label: 'Menunggu Pembayaran', done: order.payment_status !== 'unpaid', active: order.payment_status === 'unpaid' },
@@ -135,6 +196,8 @@ export default function OrderPending({ order, midtransClientKey, midtransSnapUrl
                             <p className="text-[#747878] text-xs mt-0.5 flex items-center gap-1.5">
                                 {pollingStatus === 'paid' ? (
                                     <span className="text-green-600 font-bold">✓ Mengalihkan ke halaman sukses...</span>
+                                ) : order.payment_method === 'manual_transfer' ? (
+                                    <span>Lengkapi pembayaran transfer Anda dan unggah bukti transfer.</span>
                                 ) : (
                                     <>
                                         <span className="inline-block w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping" />
@@ -196,61 +259,185 @@ export default function OrderPending({ order, midtransClientKey, midtransSnapUrl
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {/* Left: Payment Methods */}
-                    <div className="bg-white border border-[#E0E0E0] p-5 space-y-4">
-                        <h2 className="text-sm font-extrabold text-[#212121] uppercase tracking-widest flex items-center gap-2">
-                            <CreditCard className="w-4 h-4" />
-                            Selesaikan Pembayaran
-                        </h2>
+                    {order.payment_method === 'manual_transfer' ? (
+                        <div className="bg-white border border-[#E0E0E0] p-5 space-y-4">
+                            <h2 className="text-sm font-extrabold text-[#212121] uppercase tracking-widest flex items-center gap-2">
+                                <Building2 className="w-4 h-4" />
+                                Transfer Bank Manual
+                            </h2>
 
-                        <p className="text-[11px] text-[#747878] leading-relaxed">
-                            Klik tombol di bawah untuk melanjutkan ke halaman pembayaran Midtrans. Pilih metode yang sesuai:
-                        </p>
+                            <div className="bg-gray-50 border border-[#E0E0E0] p-4 text-xs space-y-3">
+                                <p className="text-[#747878] leading-relaxed">
+                                    Silakan transfer tepat sebesar jumlah di bawah ke salah satu rekening resmi berikut:
+                                </p>
 
-                        <div className="grid grid-cols-2 gap-2">
-                            {[
-                                { icon: Building2, label: 'Virtual Account', desc: 'BCA, BNI, BRI, Mandiri' },
-                                { icon: Wallet, label: 'E-Wallet', desc: 'GoPay, OVO, Dana' },
-                                { icon: QrCode, label: 'QRIS', desc: 'Semua dompet digital' },
-                                { icon: CreditCard, label: 'Kartu Kredit', desc: 'Visa, Mastercard' },
-                            ].map((m, i) => (
-                                <div key={i} className="p-2.5 border border-[#E0E0E0] bg-[#f9f9f9] flex items-center gap-2">
-                                    <m.icon className="w-4 h-4 text-[#212121] flex-shrink-0" />
+                                <div className="p-3 bg-white border border-[#E0E0E0] flex justify-between items-center">
                                     <div>
-                                        <p className="text-[9px] font-bold uppercase tracking-wide text-[#212121]">{m.label}</p>
-                                        <p className="text-[8px] text-[#747878]">{m.desc}</p>
+                                        <span className="text-[10px] text-[#747878] uppercase font-bold tracking-wider block">Total Transfer</span>
+                                        <span className="text-base font-extrabold text-[#530A0C]">{formatCurrency(order.total_amount)}</span>
                                     </div>
+                                    <button
+                                        onClick={handleCopyAmount}
+                                        className="text-[#747878] hover:text-[#212121] transition-colors flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider border border-[#E0E0E0] px-2.5 py-1"
+                                    >
+                                        {copiedAmount ? <CheckCircle2 className="w-3.5 h-3.5 text-green-500" /> : <Copy className="w-3.5 h-3.5" />}
+                                        {copiedAmount ? 'Disalin' : 'Salin Jumlah'}
+                                    </button>
                                 </div>
-                            ))}
-                        </div>
 
-                        {/* Retry Payment Button */}
-                        {order.payment_status !== 'paid' && (
-                            <button
-                                id="btn-retry-payment"
-                                onClick={handleRetryPayment}
-                                disabled={retryLoading}
-                                className="w-full flex items-center justify-center gap-2 py-3.5 rounded-none bg-[#212121] text-white text-xs font-bold uppercase tracking-wider hover:opacity-90 disabled:opacity-50 transition-all"
-                            >
-                                {retryLoading ? (
-                                    <><RefreshCw className="w-4 h-4 animate-spin" /><span>Menghubungi Gateway...</span></>
+                                {order.bank_account ? (
+                                    <div className="p-3 bg-white border border-[#E0E0E0] space-y-2">
+                                        <div>
+                                            <span className="text-[10px] text-[#747878] uppercase font-bold tracking-wider block">Bank Tujuan</span>
+                                            <span className="font-extrabold text-sm text-[#212121]">{order.bank_account.bank_name}</span>
+                                        </div>
+                                        <div className="flex justify-between items-center">
+                                            <div>
+                                                <span className="text-[10px] text-[#747878] uppercase font-bold tracking-wider block">Nomor Rekening</span>
+                                                <span className="font-mono text-sm font-extrabold text-[#212121]">{order.bank_account.account_number}</span>
+                                            </div>
+                                            <button
+                                                onClick={() => handleCopyAccount(order.bank_account.account_number)}
+                                                className="p-1 border border-[#E0E0E0] text-[#747878] hover:text-[#212121]"
+                                                title="Salin No Rekening"
+                                            >
+                                                <Copy className="w-3.5 h-3.5" />
+                                            </button>
+                                        </div>
+                                        <div>
+                                            <span className="text-[10px] text-[#747878] uppercase font-bold tracking-wider block">Nama Penerima (Atas Nama)</span>
+                                            <span className="font-bold text-[#212121]">{order.bank_account.account_holder}</span>
+                                        </div>
+                                    </div>
                                 ) : (
-                                    <><CreditCard className="w-4 h-4" /><span>Lanjutkan Pembayaran</span><ArrowRight className="w-3 h-3" /></>
+                                    <div className="p-3 bg-red-50 border border-red-200 text-red-700">
+                                        Data rekening bank tidak ditemukan. Harap hubungi Customer Service.
+                                    </div>
                                 )}
-                            </button>
-                        )}
-
-                        {order.payment_status === 'paid' && (
-                            <div className="p-3 bg-green-50 border border-green-200 text-green-700 text-[11px] font-bold rounded-none flex items-center gap-2">
-                                <CheckCircle2 className="w-4 h-4" />
-                                Pembayaran Sudah Dikonfirmasi
                             </div>
-                        )}
 
-                        <div className="flex items-center gap-2 text-[9px] text-[#747878]">
-                            <Shield className="w-3 h-3 flex-shrink-0" />
-                            <span>Secured by <strong>Midtrans</strong> — PCI DSS Certified</span>
+                            {/* Payment proof upload / status */}
+                            <div className="border-t border-[#E0E0E0] pt-4 space-y-3">
+                                <h3 className="text-xs font-bold text-[#212121] uppercase tracking-wider">Bukti Pembayaran</h3>
+
+                                {order.payment_proof ? (
+                                    <div className="space-y-3">
+                                        <div className="p-3 bg-green-50 border border-green-200 text-green-700 text-xs rounded-none flex items-start gap-2">
+                                            <CheckCircle2 className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                                            <div>
+                                                <p className="font-bold">Bukti transfer sudah diunggah!</p>
+                                                <p className="text-[10px] opacity-90 mt-0.5">Admin sedang memverifikasi pembayaran Anda. Setelah dikonfirmasi, pesanan akan langsung diproses.</p>
+                                            </div>
+                                        </div>
+                                        
+                                        <div className="border border-[#E0E0E0] p-2 bg-gray-50 flex items-center justify-between">
+                                            <div className="flex items-center gap-2 min-w-0">
+                                                <FileText className="w-5 h-5 text-[#212121] flex-shrink-0" />
+                                                <span className="text-[10px] text-[#747878] truncate font-mono">Lihat Bukti Transfer</span>
+                                            </div>
+                                            <a 
+                                                href={order.payment_proof} 
+                                                target="_blank" 
+                                                rel="noreferrer"
+                                                className="text-[10px] font-extrabold uppercase tracking-wider text-[#212121] hover:underline"
+                                            >
+                                                Buka File
+                                            </a>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="p-3 bg-amber-50 border border-amber-200 text-amber-800 text-[11px] leading-relaxed rounded-none">
+                                        Belum ada bukti transfer yang diunggah. Silakan lakukan transfer terlebih dahulu, lalu upload foto/screenshot struk bukti transfer di bawah ini.
+                                    </div>
+                                )}
+
+                                {/* Form upload if unpaid */}
+                                {order.payment_status !== 'paid' && (
+                                    <form onSubmit={handleUploadProof} className="space-y-3">
+                                        <div className="space-y-1.5">
+                                            <label className="text-[10px] text-[#747878] font-bold uppercase tracking-wider block">Unggah File (Max 2MB, JPG/PNG/PDF)</label>
+                                            <input 
+                                                type="file" 
+                                                required
+                                                onChange={handleFileChange}
+                                                accept="image/*,application/pdf"
+                                                className="w-full bg-white border border-[#E0E0E0] p-2 text-xs focus:outline-none focus:border-[#212121]"
+                                            />
+                                            {uploadError && <p className="text-xs text-red-600 font-bold mt-1">{uploadError}</p>}
+                                        </div>
+
+                                        <button
+                                            type="submit"
+                                            disabled={uploading || !proofFile}
+                                            className="w-full flex items-center justify-center gap-2 py-3 bg-[#212121] text-white text-xs font-bold uppercase tracking-wider hover:opacity-90 disabled:opacity-50 transition-all"
+                                        >
+                                            {uploading ? (
+                                                <><RefreshCw className="w-4 h-4 animate-spin" /><span>Mengunggah Bukti...</span></>
+                                            ) : (
+                                                <><Upload className="w-4 h-4" /><span>Kirim Bukti Transfer</span></>
+                                            )}
+                                        </button>
+                                    </form>
+                                )}
+                            </div>
                         </div>
-                    </div>
+                    ) : (
+                        <div className="bg-white border border-[#E0E0E0] p-5 space-y-4">
+                            <h2 className="text-sm font-extrabold text-[#212121] uppercase tracking-widest flex items-center gap-2">
+                                <CreditCard className="w-4 h-4" />
+                                Selesaikan Pembayaran
+                            </h2>
+
+                            <p className="text-[11px] text-[#747878] leading-relaxed">
+                                Klik tombol di bawah untuk melanjutkan ke halaman pembayaran Midtrans. Pilih metode yang sesuai:
+                            </p>
+
+                            <div className="grid grid-cols-2 gap-2">
+                                {[
+                                    { icon: Building2, label: 'Virtual Account', desc: 'BCA, BNI, BRI, Mandiri' },
+                                    { icon: Wallet, label: 'E-Wallet', desc: 'GoPay, OVO, Dana' },
+                                    { icon: QrCode, label: 'QRIS', desc: 'Semua dompet digital' },
+                                    { icon: CreditCard, label: 'Kartu Kredit', desc: 'Visa, Mastercard' },
+                                ].map((m, i) => (
+                                    <div key={i} className="p-2.5 border border-[#E0E0E0] bg-[#f9f9f9] flex items-center gap-2">
+                                        <m.icon className="w-4 h-4 text-[#212121] flex-shrink-0" />
+                                        <div>
+                                            <p className="text-[9px] font-bold uppercase tracking-wide text-[#212121]">{m.label}</p>
+                                            <p className="text-[8px] text-[#747878]">{m.desc}</p>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+
+                            {/* Retry Payment Button */}
+                            {order.payment_status !== 'paid' && (
+                                <button
+                                    id="btn-retry-payment"
+                                    onClick={handleRetryPayment}
+                                    disabled={retryLoading}
+                                    className="w-full flex items-center justify-center gap-2 py-3.5 rounded-none bg-[#212121] text-white text-xs font-bold uppercase tracking-wider hover:opacity-90 disabled:opacity-50 transition-all"
+                                >
+                                    {retryLoading ? (
+                                        <><RefreshCw className="w-4 h-4 animate-spin" /><span>Menghubungi Gateway...</span></>
+                                    ) : (
+                                        <><CreditCard className="w-4 h-4" /><span>Lanjutkan Pembayaran</span><ArrowRight className="w-3 h-3" /></>
+                                    )}
+                                </button>
+                            )}
+
+                            {order.payment_status === 'paid' && (
+                                <div className="p-3 bg-green-50 border border-green-200 text-green-700 text-[11px] font-bold rounded-none flex items-center gap-2">
+                                    <CheckCircle2 className="w-4 h-4" />
+                                    Pembayaran Sudah Dikonfirmasi
+                                </div>
+                            )}
+
+                            <div className="flex items-center gap-2 text-[9px] text-[#747878]">
+                                <Shield className="w-3 h-3 flex-shrink-0" />
+                                <span>Secured by <strong>Midtrans</strong> — PCI DSS Certified</span>
+                            </div>
+                        </div>
+                    )}
 
                     {/* Right: Order Summary */}
                     <div className="bg-white border border-[#E0E0E0] p-5 space-y-4">
@@ -309,7 +496,9 @@ export default function OrderPending({ order, midtransClientKey, midtransSnapUrl
                         Lanjut Belanja
                     </Link>
                     <p className="text-[10px] text-[#747878] flex items-center">
-                        Pesanan akan diproses otomatis setelah pembayaran dikonfirmasi Midtrans.
+                        {order.payment_method === 'manual_transfer' 
+                            ? 'Pesanan Anda akan diproses setelah bukti transfer diverifikasi secara manual oleh admin.' 
+                            : 'Pesanan akan diproses otomatis setelah pembayaran dikonfirmasi Midtrans.'}
                     </p>
                 </div>
             </div>

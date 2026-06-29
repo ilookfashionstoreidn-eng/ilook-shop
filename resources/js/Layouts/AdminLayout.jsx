@@ -18,6 +18,7 @@ import {
     Star,
     Tag,
     MessageSquare,
+    CreditCard,
 } from 'lucide-react';
 
 export default function AdminLayout({ children }) {
@@ -37,6 +38,7 @@ export default function AdminLayout({ children }) {
         { name: 'Review Pembeli', icon: Star, route: 'admin.reviews', path: '/admin/reviews' },
         { name: 'Kupon Diskon', icon: Tag, route: 'admin.coupons', path: '/admin/coupons' },
         { name: 'Chat Pembeli', icon: MessageSquare, route: 'admin.chats', path: '/admin/chats' },
+        { name: 'Manajemen Rekening', icon: CreditCard, route: 'admin.payments', path: '/admin/payments' },
         { name: 'Pengaturan Toko', icon: Settings, route: 'admin.settings', path: '/admin/settings' },
     ];
 
