@@ -15,7 +15,10 @@ import {
     MessageSquare,
     X,
     Zap,
-    Send
+    Send,
+    Video,
+    Play,
+    Image as ImageIcon
 } from 'lucide-react';
 import axios from 'axios';
 
@@ -27,7 +30,43 @@ export default function ProductDetail({ product, related, origin, whatsappNumber
 
     const { auth } = usePage().props;
 
+    const isYouTube = (url) => {
+        if (!url) return false;
+        return url.includes('youtube.com') || url.includes('youtu.be');
+    };
 
+    const getYouTubeEmbedUrl = (url) => {
+        if (!url) return '';
+        let videoId = '';
+        if (url.includes('/shorts/')) {
+            const parts = url.split('/shorts/');
+            if (parts.length > 1) {
+                videoId = parts[1].split(/[?#&]/)[0];
+            }
+        } else {
+            const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+            const match = url.match(regExp);
+            if (match && match[2].length === 11) {
+                videoId = match[2];
+            }
+        }
+        return `https://www.youtube.com/embed/${videoId}?autoplay=1`;
+    };
+
+    const isTikTok = (url) => {
+        if (!url) return false;
+        return url.includes('tiktok.com');
+    };
+
+    const getTikTokEmbedUrl = (url) => {
+        if (!url) return '';
+        let videoId = '';
+        const match = url.match(/\/video\/(\d+)/);
+        if (match && match[1]) {
+            videoId = match[1];
+        }
+        return `https://www.tiktok.com/embed/v2/${videoId}`;
+    };
 
     // Determine best initial image: first variant's image > product images[0] > placeholder
     const FALLBACK_IMG = 'https://images.unsplash.com/photo-1434389677669-e08b4cac3105?w=800&auto=format&fit=crop&q=60';
@@ -36,6 +75,7 @@ export default function ProductDetail({ product, related, origin, whatsappNumber
     const [selectedVariant, setSelectedVariant] = useState(product.variants && product.variants[0] ? product.variants[0] : null);
     const [quantity, setQuantity] = useState(1);
     const [activeImage, setActiveImage] = useState(getVariantImage(product.variants && product.variants[0]));
+    const [activeMediaType, setActiveMediaType] = useState('image'); // 'image' or 'video'
     const [addedToCart, setAddedToCart] = useState(false);
     const [openAccordions, setOpenAccordions] = useState({
         description: true,
@@ -225,6 +265,7 @@ export default function ProductDetail({ product, related, origin, whatsappNumber
             }
             // Switch main image to variant photo if it has one
             setActiveImage(getVariantImage(selectedVariant));
+            setActiveMediaType('image');
         }
     }, [selectedVariant]);
 
@@ -341,13 +382,70 @@ export default function ProductDetail({ product, related, origin, whatsappNumber
                     <div className="lg:col-span-7 space-y-3">
                         {/* Main / Active Image */}
                         <div className="w-full aspect-[3/4] overflow-hidden bg-[#f7f7f7] relative">
-                            <img
-                                src={activeImage}
-                                alt={`${product.name} — ${selectedVariant?.name || ''}`}
-                                className="w-full h-full object-cover transition-all duration-500"
-                                key={activeImage} // forces re-render / fade on change
-                            />
-                            {selectedVariant && (
+                            {activeMediaType === 'video' && product.video_url ? (
+                                <div className="w-full h-full bg-black relative flex items-center justify-center">
+                                    {isYouTube(product.video_url) ? (
+                                        <iframe
+                                            src={getYouTubeEmbedUrl(product.video_url)}
+                                            className="w-full h-full aspect-[3/4] border-0"
+                                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                            allowFullScreen
+                                            title={product.name}
+                                        ></iframe>
+                                    ) : isTikTok(product.video_url) ? (
+                                        <iframe
+                                            src={getTikTokEmbedUrl(product.video_url)}
+                                            className="w-full h-full aspect-[3/4] border-0"
+                                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                            allowFullScreen
+                                            title={product.name}
+                                        ></iframe>
+                                    ) : (
+                                        <video
+                                            src={product.video_url}
+                                            controls
+                                            autoPlay
+                                            className="w-full h-full object-contain"
+                                        />
+                                    )}
+                                </div>
+                            ) : (
+                                <img
+                                    src={activeImage}
+                                    alt={`${product.name} — ${selectedVariant?.name || ''}`}
+                                    className="w-full h-full object-cover transition-all duration-500"
+                                    key={activeImage} // forces re-render / fade on change
+                                />
+                            )}
+
+                            {/* Premium Floating Video Overlay Button */}
+                            {product.video_url && (
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setActiveMediaType(prev => prev === 'video' ? 'image' : 'video');
+                                    }}
+                                    className="absolute top-3 right-3 bg-white/95 hover:bg-white text-black text-[10px] sm:text-xs font-bold uppercase tracking-widest px-3.5 py-2 rounded-full shadow-lg flex items-center gap-2 border border-gray-100 hover:scale-105 transition-all duration-300 z-10"
+                                >
+                                    {activeMediaType === 'video' ? (
+                                        <>
+                                            <ImageIcon className="w-3.5 h-3.5" />
+                                            <span>Lihat Foto</span>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <span className="relative flex h-2 w-2">
+                                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                                                <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
+                                            </span>
+                                            <Play className="w-3.5 h-3.5 fill-current" />
+                                            <span>Tonton Video</span>
+                                        </>
+                                    )}
+                                </button>
+                            )}
+
+                            {selectedVariant && activeMediaType === 'image' && (
                                 <span className="absolute bottom-3 left-3 bg-black/70 text-white text-[10px] font-bold uppercase tracking-widest px-2.5 py-1 rounded-sm">
                                     {selectedVariant.name}
                                 </span>
@@ -355,16 +453,34 @@ export default function ProductDetail({ product, related, origin, whatsappNumber
                         </div>
 
                         {/* Variant Thumbnail Strip */}
-                        {product.variants && product.variants.some(v => v.image) && (
+                        {((product.variants && product.variants.some(v => v.image)) || product.video_url) && (
                             <div className="flex gap-2 flex-wrap">
-                                {product.variants.map((v) => {
+                                {product.video_url && (
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setActiveMediaType('video');
+                                        }}
+                                        className={`w-16 h-16 rounded-none border-2 flex-shrink-0 transition-all duration-200 flex flex-col items-center justify-center bg-black/5 hover:bg-black/10 ${
+                                            activeMediaType === 'video' ? 'border-black scale-105' : 'border-transparent hover:border-[#aaa]'
+                                        }`}
+                                    >
+                                        <Play className="w-5 h-5 text-indigo-650 fill-indigo-650" />
+                                        <span className="text-[9px] font-extrabold uppercase tracking-widest mt-1 text-indigo-650">Video</span>
+                                    </button>
+                                )}
+                                {product.variants && product.variants.map((v) => {
+                                    if (!v.image) return null;
                                     const thumbImg = v.image || (product.images && product.images[0]) || FALLBACK_IMG;
-                                    const isActive = selectedVariant?.id === v.id;
+                                    const isActive = selectedVariant?.id === v.id && activeMediaType === 'image';
                                     return (
                                         <button
                                             key={v.id}
                                             type="button"
-                                            onClick={() => setSelectedVariant(v)}
+                                            onClick={() => {
+                                                setSelectedVariant(v);
+                                                setActiveMediaType('image');
+                                            }}
                                             title={v.name}
                                             className={`w-16 h-16 rounded-none overflow-hidden border-2 flex-shrink-0 transition-all duration-200 ${
                                                 isActive ? 'border-black scale-105' : 'border-transparent hover:border-[#aaa]'

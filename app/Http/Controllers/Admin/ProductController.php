@@ -66,6 +66,7 @@ class ProductController extends Controller
             'sale_price' => 'nullable|numeric|min:0',
             'status' => 'required|string|in:active,inactive,out_of_stock',
             'images' => 'nullable|array',
+            'video_url' => 'nullable|string|max:2048',
             'variants' => 'required|array|min:1',
             'variants.*.sku' => 'required|string|distinct',
             'variants.*.name' => 'required|string',
@@ -132,6 +133,7 @@ class ProductController extends Controller
             'sale_price' => 'nullable|numeric|min:0',
             'status' => 'required|string|in:active,inactive,out_of_stock',
             'images' => 'nullable|array',
+            'video_url' => 'nullable|string|max:2048',
             'variants' => 'required|array|min:1',
             'variants.*.id' => 'nullable|exists:product_variants,id',
             'variants.*.sku' => 'required|string|distinct',
@@ -469,5 +471,35 @@ class ProductController extends Controller
         });
 
         return redirect()->route('admin.products')->with('success', "Berhasil menarik & mensinkronisasi {$importedCount} produk dari Ginee.");
+    }
+
+    public function uploadVideo(Request $request): \Illuminate\Http\JsonResponse
+    {
+        $request->validate([
+            'video' => 'required|file|mimes:mp4,mov,avi,mkv,webm|max:20480', // Max 20MB
+        ]);
+
+        if ($request->hasFile('video')) {
+            $file = $request->file('video');
+            $filename = 'prod-video-' . time() . '-' . Str::random(5) . '.' . $file->getClientOriginalExtension();
+            
+            $targetDir = public_path('uploads/products/videos');
+            if (!file_exists($targetDir)) {
+                mkdir($targetDir, 0755, true);
+            }
+            
+            $file->move($targetDir, $filename);
+            $filePath = '/uploads/products/videos/' . $filename;
+
+            return response()->json([
+                'success' => true,
+                'url' => $filePath
+            ]);
+        }
+
+        return response()->json([
+            'success' => false,
+            'message' => 'Gagal mengunggah video.'
+        ], 400);
     }
 }

@@ -15,7 +15,10 @@ import {
     Check,
     ArrowRightLeft,
     Tag,
+    Video,
+    Upload,
 } from 'lucide-react';
+import axios from 'axios';
 
 export default function Products({ products, categories, filters }) {
     const [searchTerm, setSearchTerm] = useState(filters.search || '');
@@ -27,6 +30,48 @@ export default function Products({ products, categories, filters }) {
     const [syncingId, setSyncingId] = useState(null);
     const [syncingAll, setSyncingAll] = useState(false);
     const [expandedProducts, setExpandedProducts] = useState({});
+    const [uploadingVideo, setUploadingVideo] = useState(false);
+    const [uploadProgress, setUploadProgress] = useState(0);
+
+    const handleVideoUpload = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        if (file.size > 20 * 1024 * 1024) {
+            alert('File video terlalu besar. Batas maksimal adalah 20MB.');
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('video', file);
+
+        setUploadingVideo(true);
+        setUploadProgress(0);
+
+        try {
+            const response = await axios.post(route('admin.products.upload-video'), formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data'
+                },
+                onUploadProgress: (progressEvent) => {
+                    const progress = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+                    setUploadProgress(progress);
+                }
+            });
+
+            if (response.data && response.data.success) {
+                setData('video_url', response.data.url);
+            } else {
+                alert('Gagal mengunggah video.');
+            }
+        } catch (error) {
+            console.error('Error uploading video:', error);
+            const msg = error.response?.data?.message || 'Terjadi kesalahan saat mengunggah video.';
+            alert(msg);
+        } finally {
+            setUploadingVideo(false);
+        }
+    };
 
     const toggleExpandProduct = (productId) => {
         setExpandedProducts(prev => ({
@@ -49,6 +94,7 @@ export default function Products({ products, categories, filters }) {
         sale_price: '',
         status: 'active',
         images: [],
+        video_url: '',
         variants: [
             { name: 'Default', sku: '', price: '', stock: 10, image: '' }
         ]
@@ -105,6 +151,7 @@ export default function Products({ products, categories, filters }) {
             sale_price: product.sale_price || '',
             status: product.status,
             images: product.images || [],
+            video_url: product.video_url || '',
             variants: product.variants.map(v => ({
                 id: v.id,
                 sku: v.sku,
@@ -686,7 +733,7 @@ export default function Products({ products, categories, filters }) {
                                             updated[0] = e.target.value;
                                             setData('images', updated);
                                         }}
-                                        className="bg-white border border-gray-200 text-xs rounded-lg p-2 text-gray-750"
+                                        className="bg-white border border-gray-200 text-xs rounded-lg p-2 text-gray-755"
                                     />
                                     <input
                                         type="text"
@@ -700,6 +747,66 @@ export default function Products({ products, categories, filters }) {
                                         className="bg-white border border-gray-200 text-xs rounded-lg p-2 text-gray-755"
                                     />
                                 </div>
+                            </div>
+
+                            {/* Video Configuration */}
+                            <div className="p-4 rounded-xl border border-gray-150 bg-gray-50/30 space-y-4">
+                                <div className="flex items-center gap-2">
+                                    <Video className="w-5 h-5 text-indigo-500" />
+                                    <h3 className="text-sm font-bold text-gray-800">Video Produk</h3>
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                    <div className="space-y-1.5">
+                                        <label className="text-xs font-semibold text-gray-400 uppercase">URL Video (YouTube / Direct Link)</label>
+                                        <input
+                                            type="text"
+                                            placeholder="Contoh: https://www.youtube.com/watch?v=..."
+                                            value={data.video_url || ''}
+                                            onChange={e => setData('video_url', e.target.value)}
+                                            className="w-full bg-white border border-gray-200 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 text-sm rounded-xl px-4 py-2.5 text-gray-800 font-sans"
+                                        />
+                                        {errors.video_url && <p className="text-xs text-red-500">{errors.video_url}</p>}
+                                    </div>
+                                    <div className="space-y-1.5">
+                                        <label className="text-xs font-semibold text-gray-400 uppercase">Unggah File Video (.mp4, .mov, max 20MB)</label>
+                                        <div className="flex items-center gap-3">
+                                            <label className="flex items-center justify-center gap-2 px-4 py-2.5 border border-dashed border-gray-300 hover:border-indigo-500 hover:bg-indigo-50/30 rounded-xl cursor-pointer text-xs font-semibold text-gray-600 transition-all flex-1">
+                                                <Upload className="w-4 h-4 text-indigo-500" />
+                                                <span>{uploadingVideo ? 'Mengunggah...' : 'Pilih & Unggah Video'}</span>
+                                                <input
+                                                    type="file"
+                                                    accept="video/*"
+                                                    onChange={handleVideoUpload}
+                                                    disabled={uploadingVideo}
+                                                    className="hidden"
+                                                />
+                                            </label>
+                                            {data.video_url && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setData('video_url', '')}
+                                                    className="px-3 py-2.5 bg-red-50 hover:bg-red-100 text-red-650 hover:text-red-750 text-xs font-bold rounded-xl border border-red-150 transition-colors"
+                                                >
+                                                    Hapus
+                                                </button>
+                                            )}
+                                        </div>
+                                        {uploadProgress > 0 && uploadProgress < 100 && (
+                                            <div className="w-full bg-gray-200 rounded-full h-1.5 mt-2">
+                                                <div className="bg-indigo-650 h-1.5 rounded-full transition-all duration-300" style={{ width: `${uploadProgress}%` }}></div>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                                {data.video_url && (
+                                    <div className="p-3 bg-white rounded-lg border border-gray-100 flex items-center gap-3">
+                                        <span className="text-xs font-semibold text-gray-400">Aktif:</span>
+                                        <span className="text-xs text-indigo-650 font-mono truncate flex-1">{data.video_url}</span>
+                                        <div className="w-12 h-8 bg-gray-100 rounded border overflow-hidden flex items-center justify-center flex-shrink-0">
+                                            <Video className="w-4 h-4 text-gray-400" />
+                                        </div>
+                                    </div>
+                                )}
                             </div>
 
                             {/* Dynamic Variants Setup */}
