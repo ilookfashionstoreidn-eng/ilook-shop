@@ -218,11 +218,13 @@ class StorefrontController extends Controller
 
         $products = $query->orderBy('created_at', 'desc')->get();
         $categories = Category::withCount('products')->get();
+        $activeLivestreams = \App\Models\Livestream::where('is_active', true)->orderBy('created_at', 'desc')->get();
 
         return Inertia::render('Storefront/Home', [
             'products' => $products,
             'categories' => $categories,
             'filters' => $request->only(['category', 'search']),
+            'activeLivestreams' => $activeLivestreams,
         ]);
     }
 

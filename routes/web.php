@@ -136,6 +136,12 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     // Admin Chats
     Route::get('/chats', [\App\Http\Controllers\Admin\ChatController::class, 'index'])->name('chats');
     Route::get('/api/chats/users', [\App\Http\Controllers\ChatMessageController::class, 'getChatUsers']);
+
+    // Livestream Management
+    Route::get('/livestream', [\App\Http\Controllers\Admin\LivestreamController::class, 'index'])->name('livestream');
+    Route::post('/livestream', [\App\Http\Controllers\Admin\LivestreamController::class, 'store'])->name('livestream.store');
+    Route::put('/livestream/{livestream}', [\App\Http\Controllers\Admin\LivestreamController::class, 'update'])->name('livestream.update');
+    Route::delete('/livestream/{livestream}', [\App\Http\Controllers\Admin\LivestreamController::class, 'destroy'])->name('livestream.destroy');
 });
 
 Route::get('/test-ongkir', function () {
