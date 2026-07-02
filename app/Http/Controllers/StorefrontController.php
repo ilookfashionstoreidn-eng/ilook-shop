@@ -73,13 +73,97 @@ class StorefrontController extends Controller
             $order->refresh();
         }
 
-        $order->load(['items', 'shipping', 'bankAccount']);
+        $order->load(['items.variant.product', 'shipping', 'bankAccount']);
+
+        $reviewedProductIds = \App\Models\ProductReview::where('user_id', auth()->id())
+            ->where('order_id', $order->id)
+            ->pluck('product_id')
+            ->toArray();
 
         return Inertia::render('Storefront/OrderDetail', [
             'order'             => $order,
             'midtransClientKey' => config('services.midtrans.client_key', ''),
             'midtransSnapUrl'   => config('services.midtrans.snap_url'),
+            'reviewedProductIds'=> $reviewedProductIds,
         ]);
+    }
+
+    /**
+     * Selesaikan Pesanan (Mark order as completed)
+     * POST /my-orders/{order}/complete
+     */
+    public function completeOrder(Order $order): \Illuminate\Http\RedirectResponse
+    {
+        // Pastikan hanya pemilik order yang bisa menyelesaikan
+        if ($order->user_id !== auth()->id()) {
+            abort(403, 'Akses ditolak.');
+        }
+
+        // Hanya order dengan status shipped atau delivered yang bisa diselesaikan
+        if (!in_array($order->status, ['shipped', 'delivered'])) {
+            return back()->with('error', 'Status pesanan tidak valid untuk diselesaikan.');
+        }
+
+        $order->update([
+            'status' => 'completed',
+        ]);
+
+        return back()->with('success', 'Pesanan telah selesai. Terima kasih telah berbelanja di iLOOK!');
+    }
+
+    /**
+     * Kirim ulasan dan rating produk dari order yang selesai
+     * POST /my-orders/{order}/review
+     */
+    public function storeReview(Request $request, Order $order): \Illuminate\Http\RedirectResponse
+    {
+        if ($order->user_id !== auth()->id()) {
+            abort(403, 'Akses ditolak.');
+        }
+
+        // Pastikan pesanan sudah selesai atau terkirim
+        if (!in_array($order->status, ['completed', 'delivered'])) {
+            return back()->with('error', 'Anda hanya dapat memberikan ulasan untuk pesanan yang sudah selesai atau terkirim.');
+        }
+
+        $validated = $request->validate([
+            'product_id' => 'required|exists:products,id',
+            'rating' => 'required|integer|min:1|max:5',
+            'comment' => 'nullable|string|max:1000',
+        ]);
+
+        // Verifikasi bahwa produk tersebut memang dibeli dalam order ini
+        $order->load('items.variant');
+        $hasProduct = $order->items->contains(function ($item) use ($validated) {
+            return $item->variant && $item->variant->product_id == $validated['product_id'];
+        });
+
+        if (!$hasProduct) {
+            return back()->with('error', 'Produk tidak ditemukan dalam pesanan ini.');
+        }
+
+        // Cek jika sudah pernah diulas untuk order ini
+        $exists = \App\Models\ProductReview::where('order_id', $order->id)
+            ->where('user_id', auth()->id())
+            ->where('product_id', $validated['product_id'])
+            ->exists();
+
+        if ($exists) {
+            return back()->with('error', 'Anda sudah memberikan ulasan untuk produk ini pada pesanan ini.');
+        }
+
+        // Simpan review
+        \App\Models\ProductReview::create([
+            'product_id' => $validated['product_id'],
+            'user_id' => auth()->id(),
+            'order_id' => $order->id,
+            'user_name' => auth()->user()->name,
+            'rating' => $validated['rating'],
+            'comment' => $validated['comment'],
+            'review_date' => now(),
+        ]);
+
+        return back()->with('success', 'Terima kasih! Ulasan Anda berhasil dikirim.');
     }
 
     /**
@@ -301,8 +385,10 @@ class StorefrontController extends Controller
 
         $taxType = $settingsRaw['tax_type'] ?? 'percentage';
         $taxValue = (float)($settingsRaw['tax_value'] ?? 0.00);
+        $taxChargedTo = $settingsRaw['tax_charged_to'] ?? 'buyer';
         $adminFeeType = $settingsRaw['admin_fee_type'] ?? 'nominal';
         $adminFeeValue = (float)($settingsRaw['admin_fee_value'] ?? 0.00);
+        $adminFeeChargedTo = $settingsRaw['admin_fee_charged_to'] ?? 'buyer';
 
         return Inertia::render('Storefront/Checkout', [
             'provinces'       => $provinces,
@@ -314,8 +400,10 @@ class StorefrontController extends Controller
             'availableCoupons' => $coupons,
             'taxType'         => $taxType,
             'taxValue'        => $taxValue,
+            'taxChargedTo'    => $taxChargedTo,
             'adminFeeType'    => $adminFeeType,
             'adminFeeValue'   => $adminFeeValue,
+            'adminFeeChargedTo' => $adminFeeChargedTo,
         ]);
     }
 
@@ -468,8 +556,10 @@ class StorefrontController extends Controller
                 $settingsRaw = Setting::all()->pluck('value', 'key')->toArray();
                 $taxType = $settingsRaw['tax_type'] ?? 'percentage';
                 $taxValue = (float)($settingsRaw['tax_value'] ?? 0.00);
+                $taxChargedTo = $settingsRaw['tax_charged_to'] ?? 'buyer';
                 $adminFeeType = $settingsRaw['admin_fee_type'] ?? 'nominal';
                 $adminFeeValue = (float)($settingsRaw['admin_fee_value'] ?? 0.00);
+                $adminFeeChargedTo = $settingsRaw['admin_fee_charged_to'] ?? 'buyer';
 
                 // Calculate PPN
                 $baseAmount = $subtotal - $couponDiscount;
@@ -492,7 +582,12 @@ class StorefrontController extends Controller
                 $adminFee = max(0.00, $adminFee);
 
                 $shippingCost = $request->input('shipping_cost');
-                $totalAmount = max(0, $subtotal + $shippingCost - $couponDiscount + $taxAmount + $adminFee);
+                
+                // Add to buyer's total only if charged to buyer
+                $taxAddedToBuyer = ($taxChargedTo === 'buyer') ? $taxAmount : 0.00;
+                $adminFeeAddedToBuyer = ($adminFeeChargedTo === 'buyer') ? $adminFee : 0.00;
+
+                $totalAmount = max(0, $subtotal + $shippingCost - $couponDiscount + $taxAddedToBuyer + $adminFeeAddedToBuyer);
 
                 // Create Order record — status awal pending_payment, akan diupdate setelah Midtrans callback
                 $order = Order::create([
@@ -502,7 +597,9 @@ class StorefrontController extends Controller
                     'subtotal'       => $subtotal,
                     'shipping_cost'  => $shippingCost,
                     'tax_amount'     => $taxAmount,
+                    'tax_charged_to' => $taxChargedTo,
                     'admin_fee'      => $adminFee,
+                    'admin_fee_charged_to' => $adminFeeChargedTo,
                     'total_amount'   => $totalAmount,
                     'payment_method' => $request->input('payment_method'),
                     'payment_status' => 'unpaid',

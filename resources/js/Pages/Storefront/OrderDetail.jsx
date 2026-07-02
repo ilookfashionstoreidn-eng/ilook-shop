@@ -18,15 +18,26 @@ import {
     Upload,
     Building2,
     FileText,
+    Star,
+    X,
 } from 'lucide-react';
 import axios from 'axios';
 
-export default function OrderDetail({ order: initialOrder, midtransClientKey, midtransSnapUrl }) {
+export default function OrderDetail({ order: initialOrder, midtransClientKey, midtransSnapUrl, reviewedProductIds = [] }) {
     const [order, setOrder] = useState(initialOrder);
     const [retryLoading, setRetryLoading] = useState(false);
     const [copied, setCopied] = useState(false);
     const [syncing, setSyncing] = useState(false);
     const snapScriptLoaded = useRef(false);
+
+    // Rating & Complete Order states
+    const [completing, setCompleting] = useState(false);
+    const [submittingReview, setSubmittingReview] = useState(false);
+    const [reviewModalOpen, setReviewModalOpen] = useState(false);
+    const [reviewProduct, setReviewProduct] = useState(null);
+    const [reviewRating, setReviewRating] = useState(5);
+    const [reviewComment, setReviewComment] = useState('');
+    const [hoverRating, setHoverRating] = useState(0);
 
     useEffect(() => {
         setOrder(initialOrder);
@@ -171,6 +182,39 @@ export default function OrderDetail({ order: initialOrder, midtransClientKey, mi
         }
     };
 
+    const handleCompleteOrder = () => {
+        if (confirm('Apakah Anda yakin ingin menyelesaikan pesanan ini?')) {
+            setCompleting(true);
+            router.post(route('storefront.order.complete', order.id), {}, {
+                onFinish: () => setCompleting(false),
+            });
+        }
+    };
+
+    const handleOpenReviewModal = (product) => {
+        setReviewProduct(product);
+        setReviewRating(5);
+        setReviewComment('');
+        setHoverRating(0);
+        setReviewModalOpen(true);
+    };
+
+    const handleSubmitReview = (e) => {
+        e.preventDefault();
+        setSubmittingReview(true);
+        router.post(route('storefront.order.review', order.id), {
+            product_id: reviewProduct.id,
+            rating: reviewRating,
+            comment: reviewComment,
+        }, {
+            onSuccess: () => {
+                setReviewModalOpen(false);
+                setReviewProduct(null);
+            },
+            onFinish: () => setSubmittingReview(false),
+        });
+    };
+
     const statusMap = {
         pending_payment: { label: 'Menunggu Pembayaran', color: 'text-amber-600 bg-amber-50 border-amber-200', icon: Clock, step: 1 },
         paid:            { label: 'Lunas — Menunggu Proses', color: 'text-blue-600 bg-blue-50 border-blue-200', icon: CheckCircle2, step: 2 },
@@ -259,6 +303,16 @@ export default function OrderDetail({ order: initialOrder, midtransClientKey, mi
                                 )}
                             </>
                         )}
+                        {['shipped', 'delivered'].includes(order.status) && (
+                            <button
+                                onClick={handleCompleteOrder}
+                                disabled={completing}
+                                className="flex items-center gap-1.5 px-3 py-1.5 bg-green-700 hover:bg-green-800 text-white text-[10px] font-bold uppercase tracking-wider transition-all disabled:opacity-50"
+                            >
+                                {completing ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCircle2 className="w-3 h-3" />}
+                                Selesaikan Pesanan
+                            </button>
+                        )}
                     </div>
                 </div>
 
@@ -309,6 +363,22 @@ export default function OrderDetail({ order: initialOrder, midtransClientKey, mi
                                             <p className="text-[10px] text-[#747878]">
                                                 Harga satuan: {formatCurrency(item.unit_price)}
                                             </p>
+                                            {['completed', 'delivered'].includes(order.status) && item.variant?.product && (
+                                                <div className="mt-2.5">
+                                                    {reviewedProductIds.includes(item.variant.product.id) ? (
+                                                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 text-[9px] font-bold text-green-700 bg-green-50 border border-green-200 uppercase tracking-widest">
+                                                            <CheckCircle2 className="w-3.5 h-3.5" /> Sudah Diulas
+                                                        </span>
+                                                    ) : (
+                                                        <button
+                                                            onClick={() => handleOpenReviewModal(item.variant.product)}
+                                                            className="px-3.5 py-1 text-[9px] font-bold text-black border border-black hover:bg-black hover:text-white transition-all uppercase tracking-widest"
+                                                        >
+                                                            Beri Ulasan
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            )}
                                         </div>
                                         <div className="text-right flex-shrink-0">
                                             <p className="text-sm font-extrabold text-[#212121]">
@@ -572,14 +642,20 @@ export default function OrderDetail({ order: initialOrder, midtransClientKey, mi
                                 </div>
                                 {order.tax_amount > 0 && (
                                     <div className="flex justify-between">
-                                        <span className="text-[#747878]">PPN</span>
-                                        <span className="font-bold text-[#212121]">{formatCurrency(order.tax_amount)}</span>
+                                        <span>
+                                            PPN
+                                            {order.tax_charged_to === 'seller' && <span className="text-[9px] text-[#747878] font-normal uppercase tracking-wider block sm:inline sm:ml-1">(Ditanggung Seller)</span>}
+                                        </span>
+                                        <span className={`font-bold ${order.tax_charged_to === 'seller' ? 'text-[#747878] line-through' : 'text-[#212121]'}`}>{formatCurrency(order.tax_amount)}</span>
                                     </div>
                                 )}
                                 {order.admin_fee > 0 && (
                                     <div className="flex justify-between">
-                                        <span className="text-[#747878]">Biaya Admin</span>
-                                        <span className="font-bold text-[#212121]">{formatCurrency(order.admin_fee)}</span>
+                                        <span>
+                                            Biaya Admin
+                                            {order.admin_fee_charged_to === 'seller' && <span className="text-[9px] text-[#747878] font-normal uppercase tracking-wider block sm:inline sm:ml-1">(Ditanggung Seller)</span>}
+                                        </span>
+                                        <span className={`font-bold ${order.admin_fee_charged_to === 'seller' ? 'text-[#747878] line-through' : 'text-[#212121]'}`}>{formatCurrency(order.admin_fee)}</span>
                                     </div>
                                 )}
                                 <div className="border-t border-[#E0E0E0] pt-2.5 flex justify-between items-baseline">
@@ -629,6 +705,112 @@ export default function OrderDetail({ order: initialOrder, midtransClientKey, mi
                     </div>
                 </div>
             </div>
+
+            {/* REVIEW MODAL */}
+            {reviewModalOpen && reviewProduct && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                    {/* Backdrop */}
+                    <div 
+                        className="fixed inset-0 bg-black/60 backdrop-blur-xs transition-opacity"
+                        onClick={() => setReviewModalOpen(false)}
+                    />
+
+                    {/* Modal Box */}
+                    <div className="relative w-full max-w-md bg-white border border-[#E0E0E0] p-6 shadow-2xl z-10 flex flex-col rounded-none animate-slide-up">
+                        {/* Header */}
+                        <div className="flex items-center justify-between border-b border-[#E0E0E0] pb-3.5 mb-5">
+                            <div>
+                                <h3 className="text-xs font-extrabold uppercase tracking-widest text-[#212121]">Beri Ulasan Produk</h3>
+                                <p className="text-[10px] text-[#747878] uppercase mt-0.5 tracking-wider font-semibold truncate max-w-[280px]">
+                                    {reviewProduct.name}
+                                </p>
+                            </div>
+                            <button 
+                                onClick={() => setReviewModalOpen(false)} 
+                                className="p-1.5 text-[#747878] hover:text-[#212121] transition-colors border border-[#E0E0E0] hover:bg-gray-50"
+                            >
+                                <X className="w-4 h-4" />
+                            </button>
+                        </div>
+
+                        {/* Form */}
+                        <form onSubmit={handleSubmitReview} className="space-y-5">
+                            {/* Stars Rating Selector */}
+                            <div className="space-y-2">
+                                <label className="text-[9px] font-bold text-[#747878] uppercase tracking-wider block">Rating Bintang</label>
+                                <div className="flex items-center gap-2">
+                                    {[1, 2, 3, 4, 5].map((star) => (
+                                        <button
+                                            key={star}
+                                            type="button"
+                                            onClick={() => setReviewRating(star)}
+                                            onMouseEnter={() => setHoverRating(star)}
+                                            onMouseLeave={() => setHoverRating(0)}
+                                            className="p-1 transition-transform duration-150 active:scale-95"
+                                        >
+                                            <Star
+                                                className={`w-8 h-8 transition-colors duration-150 ${
+                                                    (hoverRating || reviewRating) >= star
+                                                        ? 'fill-amber-400 text-amber-400'
+                                                        : 'text-gray-300'
+                                                }`}
+                                            />
+                                        </button>
+                                    ))}
+                                    <span className="text-xs font-bold text-[#212121] ml-2">
+                                        {reviewRating === 5 && 'Sangat Puas ⭐⭐⭐⭐⭐'}
+                                        {reviewRating === 4 && 'Puas ⭐⭐⭐⭐'}
+                                        {reviewRating === 3 && 'Cukup ⭐⭐⭐'}
+                                        {reviewRating === 2 && 'Buruk ⭐⭐'}
+                                        {reviewRating === 1 && 'Sangat Buruk ⭐'}
+                                    </span>
+                                </div>
+                            </div>
+
+                            {/* Comment */}
+                            <div className="space-y-1.5">
+                                <label className="text-[9px] font-bold text-[#747878] uppercase tracking-wider block">Ulasan Anda (Opsional)</label>
+                                <textarea
+                                    rows="4"
+                                    value={reviewComment}
+                                    onChange={(e) => setReviewComment(e.target.value)}
+                                    placeholder="Ceritakan pengalaman Anda mengenai produk ini..."
+                                    maxLength="1000"
+                                    className="w-full bg-white border border-[#E0E0E0] focus:border-[#212121] focus:ring-0 p-3 text-xs text-[#212121] placeholder-[#747878] rounded-none outline-none resize-none font-sans"
+                                />
+                                <div className="text-right text-[9px] text-[#747878] font-mono">
+                                    {reviewComment.length}/1000 karakter
+                                </div>
+                            </div>
+
+                            {/* Action Buttons */}
+                            <div className="flex items-center justify-end gap-3 pt-4 border-t border-[#E0E0E0]">
+                                <button
+                                    type="button"
+                                    onClick={() => setReviewModalOpen(false)}
+                                    className="px-5 py-2.5 border border-[#E0E0E0] text-[#747878] hover:text-[#212121] hover:border-[#212121] text-[10px] font-bold uppercase tracking-wider transition-all"
+                                >
+                                    Batal
+                                </button>
+                                <button
+                                    type="submit"
+                                    disabled={submittingReview}
+                                    className="px-5 py-2.5 bg-[#212121] hover:opacity-90 text-white text-[10px] font-bold uppercase tracking-wider transition-all disabled:opacity-50 flex items-center gap-1.5"
+                                >
+                                    {submittingReview ? (
+                                        <>
+                                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                            <span>Mengirim...</span>
+                                        </>
+                                    ) : (
+                                        <span>Kirim Ulasan</span>
+                                    )}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
         </StorefrontLayout>
     );
 }

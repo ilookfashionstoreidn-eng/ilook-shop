@@ -25,7 +25,9 @@ class Order extends Model
         'bank_account_id',
         'payment_proof',
         'tax_amount',
+        'tax_charged_to',
         'admin_fee',
+        'admin_fee_charged_to',
     ];
 
     protected $casts = [
