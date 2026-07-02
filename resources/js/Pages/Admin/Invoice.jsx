@@ -130,10 +130,16 @@ export default function Invoice({ order }) {
                         )}
                         <div className="flex justify-between"><span className="text-slate-500">Ongkos Kirim Raja Ongkir:</span> <span className="font-medium text-slate-800">{formatCurrency(order.shipping_cost)}</span></div>
                         {order.tax_amount > 0 && (
-                            <div className="flex justify-between"><span className="text-slate-500">PPN:</span> <span className="font-medium text-slate-800">{formatCurrency(order.tax_amount)}</span></div>
+                            <div className="flex justify-between">
+                                <span className="text-slate-500">PPN {order.tax_charged_to === 'seller' ? '(Ditanggung Seller)' : ''}:</span> 
+                                <span className={`font-medium ${order.tax_charged_to === 'seller' ? 'text-slate-400 line-through' : 'text-slate-800'}`}>{formatCurrency(order.tax_amount)}</span>
+                            </div>
                         )}
                         {order.admin_fee > 0 && (
-                            <div className="flex justify-between"><span className="text-slate-500">Biaya Admin:</span> <span className="font-medium text-slate-800">{formatCurrency(order.admin_fee)}</span></div>
+                            <div className="flex justify-between">
+                                <span className="text-slate-500">Biaya Admin {order.admin_fee_charged_to === 'seller' ? '(Ditanggung Seller)' : ''}:</span> 
+                                <span className={`font-medium ${order.admin_fee_charged_to === 'seller' ? 'text-slate-400 line-through' : 'text-slate-800'}`}>{formatCurrency(order.admin_fee)}</span>
+                            </div>
                         )}
                         <div className="flex justify-between border-t border-slate-200 pt-2"><span className="text-slate-950 font-bold text-sm">Grand Total:</span> <span className="text-sm font-bold text-emerald-600">{formatCurrency(order.total_amount)}</span></div>
                     </div>

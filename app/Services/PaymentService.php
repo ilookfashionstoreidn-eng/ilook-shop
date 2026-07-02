@@ -63,7 +63,7 @@ class PaymentService
         }
 
         // Tambahkan PPN jika ada
-        if ($order->tax_amount > 0) {
+        if ($order->tax_amount > 0 && $order->tax_charged_to === 'buyer') {
             $itemDetails[] = [
                 'id'       => 'TAX',
                 'price'    => (int) $order->tax_amount,
@@ -73,7 +73,7 @@ class PaymentService
         }
 
         // Tambahkan biaya admin jika ada
-        if ($order->admin_fee > 0) {
+        if ($order->admin_fee > 0 && $order->admin_fee_charged_to === 'buyer') {
             $itemDetails[] = [
                 'id'       => 'ADMIN_FEE',
                 'price'    => (int) $order->admin_fee,

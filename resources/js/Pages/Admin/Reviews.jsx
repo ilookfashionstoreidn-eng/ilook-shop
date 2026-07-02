@@ -233,9 +233,16 @@ export default function Reviews({ reviews, products, filters }) {
                                             <td className="px-6 py-4 text-gray-700 font-medium text-sm">
                                                 <div className="flex items-center gap-2">
                                                     <div className="w-7 h-7 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold text-xs uppercase border border-emerald-100">
-                                                        {review.user_name[0]}
+                                                        {review.user_name ? review.user_name[0] : 'U'}
                                                     </div>
-                                                    <span>{review.user_name}</span>
+                                                    <div className="flex flex-col">
+                                                        <span className="font-semibold">{review.user_name}</span>
+                                                        {review.order_id && (
+                                                            <span className="inline-flex items-center text-[9px] font-extrabold text-blue-700 bg-blue-50 border border-blue-100 px-1.5 py-0.5 rounded-md uppercase tracking-widest mt-0.5 w-max">
+                                                                Verified Buyer
+                                                            </span>
+                                                        )}
+                                                    </div>
                                                 </div>
                                             </td>
                                             <td className="px-6 py-4">

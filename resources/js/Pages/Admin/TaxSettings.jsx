@@ -16,8 +16,10 @@ export default function TaxSettings({ settings }) {
     const { data, setData, post, processing, errors, recentlySuccessful } = useForm({
         tax_type: settings.tax_type || 'percentage',
         tax_value: settings.tax_value || 0,
+        tax_charged_to: settings.tax_charged_to || 'buyer',
         admin_fee_type: settings.admin_fee_type || 'nominal',
         admin_fee_value: settings.admin_fee_value || 0,
+        admin_fee_charged_to: settings.admin_fee_charged_to || 'buyer',
     });
 
     const [mockSubtotal, setMockSubtotal] = useState(100000);
@@ -51,8 +53,23 @@ export default function TaxSettings({ settings }) {
 
         setCalculatedTax(tax);
         setCalculatedAdminFee(fee);
-        setCalculatedTotal(mockSubtotal - mockDiscount + mockShipping + tax + fee);
-    }, [data.tax_type, data.tax_value, data.admin_fee_type, data.admin_fee_value, mockSubtotal, mockShipping, mockDiscount]);
+
+        // Add to total only if charged to buyer
+        const taxBuyerAmount = data.tax_charged_to === 'buyer' ? tax : 0;
+        const feeBuyerAmount = data.admin_fee_charged_to === 'buyer' ? fee : 0;
+
+        setCalculatedTotal(mockSubtotal - mockDiscount + mockShipping + taxBuyerAmount + feeBuyerAmount);
+    }, [
+        data.tax_type, 
+        data.tax_value, 
+        data.tax_charged_to, 
+        data.admin_fee_type, 
+        data.admin_fee_value, 
+        data.admin_fee_charged_to, 
+        mockSubtotal, 
+        mockShipping, 
+        mockDiscount
+    ]);
 
     const handleSaveSettings = (e) => {
         e.preventDefault();
@@ -71,12 +88,12 @@ export default function TaxSettings({ settings }) {
         <AdminLayout>
             <Head title="Pengaturan Pajak & Biaya Admin - iLook" />
 
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 max-w-6xl">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 max-w-6xl font-sans">
                 {/* Left Form Column */}
                 <div className="lg:col-span-8 space-y-6">
                     <div>
                         <h1 className="text-2xl font-bold tracking-tight text-gray-900 font-outfit">PPN & Biaya Admin</h1>
-                        <p className="text-gray-500 text-sm mt-0.5">Konfigurasi pengaturan perpajakan (PPN) dan biaya transaksi/admin secara global untuk seluruh transaksi di iLook.</p>
+                        <p className="text-gray-500 text-sm mt-0.5 font-medium">Konfigurasi pengaturan perpajakan (PPN) dan biaya transaksi/admin secara global untuk seluruh transaksi di iLook.</p>
                     </div>
 
                     {recentlySuccessful && (
@@ -95,7 +112,7 @@ export default function TaxSettings({ settings }) {
                                 </div>
                                 <div>
                                     <h3 className="text-base font-bold text-gray-800 font-outfit">Pengaturan PPN (Pajak)</h3>
-                                    <p className="text-[10px] text-gray-400 mt-0.5">Konfigurasi pajak pertambahan nilai yang dikenakan ke pembeli</p>
+                                    <p className="text-[10px] text-gray-400 mt-0.5">Konfigurasi pajak pertambahan nilai yang dikenakan ke pembeli atau ditanggung seller</p>
                                 </div>
                             </div>
 
@@ -160,13 +177,42 @@ export default function TaxSettings({ settings }) {
                                 </div>
                             </div>
 
+                            <div className="space-y-1.5">
+                                <label className="text-xs font-semibold text-gray-400 uppercase">Beban PPN Ditanggung Oleh</label>
+                                <div className="flex gap-2">
+                                    <button
+                                        type="button"
+                                        onClick={() => setData('tax_charged_to', 'buyer')}
+                                        className={`flex-1 py-2.5 text-xs font-semibold rounded-xl border text-center transition-all ${
+                                            data.tax_charged_to === 'buyer'
+                                                ? 'border-emerald-500 bg-emerald-50 text-emerald-700 font-bold'
+                                                : 'border-gray-200 bg-white text-gray-500 hover:bg-gray-50'
+                                        }`}
+                                    >
+                                        Pembeli (Menambah Tagihan Checkout)
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setData('tax_charged_to', 'seller')}
+                                        className={`flex-1 py-2.5 text-xs font-semibold rounded-xl border text-center transition-all ${
+                                            data.tax_charged_to === 'seller'
+                                                ? 'border-emerald-500 bg-emerald-50 text-emerald-700 font-bold'
+                                                : 'border-gray-200 bg-white text-gray-500 hover:bg-gray-50'
+                                        }`}
+                                    >
+                                        Seller / Toko (Mengurangi Pendapatan Pesanan)
+                                    </button>
+                                </div>
+                                {errors.tax_charged_to && <p className="text-xs text-red-500 mt-1">{errors.tax_charged_to}</p>}
+                            </div>
+
                             <p className="text-[10px] text-gray-400 flex items-start gap-1">
                                 <Info className="w-3.5 h-3.5 text-gray-450 flex-shrink-0 mt-0.5" />
                                 <span>
                                     PPN akan dihitung otomatis saat pembeli melakukan checkout pesanan. 
-                                    {data.tax_type === 'percentage' 
-                                        ? ' Jika diatur persentase, pajak dihitung dari subtotal produk setelah dikurangi kupon diskon.' 
-                                        : ' Pajak flat rupiah akan langsung ditambahkan secara flat per checkout transaksi.'
+                                    {data.tax_charged_to === 'buyer'
+                                        ? ' Saat ini ditanggung pembeli, sehingga biaya checkout akan bertambah.'
+                                        : ' Saat ini ditanggung seller, sehingga total checkout pembeli tetap bersih, namun nominal pendapatan toko dikurangi PPN.'
                                     }
                                 </span>
                             </p>
@@ -245,13 +291,42 @@ export default function TaxSettings({ settings }) {
                                 </div>
                             </div>
 
+                            <div className="space-y-1.5">
+                                <label className="text-xs font-semibold text-gray-400 uppercase">Beban Biaya Admin Ditanggung Oleh</label>
+                                <div className="flex gap-2">
+                                    <button
+                                        type="button"
+                                        onClick={() => setData('admin_fee_charged_to', 'buyer')}
+                                        className={`flex-1 py-2.5 text-xs font-semibold rounded-xl border text-center transition-all ${
+                                            data.admin_fee_charged_to === 'buyer'
+                                                ? 'border-emerald-500 bg-emerald-50 text-emerald-700 font-bold'
+                                                : 'border-gray-200 bg-white text-gray-500 hover:bg-gray-50'
+                                        }`}
+                                    >
+                                        Pembeli (Menambah Tagihan Checkout)
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setData('admin_fee_charged_to', 'seller')}
+                                        className={`flex-1 py-2.5 text-xs font-semibold rounded-xl border text-center transition-all ${
+                                            data.admin_fee_charged_to === 'seller'
+                                                ? 'border-emerald-500 bg-emerald-50 text-emerald-700 font-bold'
+                                                : 'border-gray-200 bg-white text-gray-500 hover:bg-gray-50'
+                                        }`}
+                                    >
+                                        Seller / Toko (Mengurangi Pendapatan Pesanan)
+                                    </button>
+                                </div>
+                                {errors.admin_fee_charged_to && <p className="text-xs text-red-500 mt-1">{errors.admin_fee_charged_to}</p>}
+                            </div>
+
                             <p className="text-[10px] text-gray-400 flex items-start gap-1">
                                 <Info className="w-3.5 h-3.5 text-gray-450 flex-shrink-0 mt-0.5" />
                                 <span>
-                                    Biaya admin adalah tambahan overhead operasional transaksi.
-                                    {data.admin_fee_type === 'percentage' 
-                                        ? ' Jika diatur persentase, biaya dihitung dari subtotal produk setelah dikurangi kupon diskon.' 
-                                        : ' Biaya flat nominal akan langsung diaplikasikan ke total pesanan.'
+                                    Biaya admin adalah overhead layanan per checkout.
+                                    {data.admin_fee_charged_to === 'buyer'
+                                        ? ' Saat ini ditanggung pembeli, menambah nominal tagihan checkout.'
+                                        : ' Saat ini ditanggung seller, memotong pendapatan bersih pesanan.'
                                     }
                                 </span>
                             </p>
@@ -371,7 +446,12 @@ export default function TaxSettings({ settings }) {
                                             {data.tax_type === 'percentage' ? `${data.tax_value}%` : 'Flat'}
                                         </span>
                                     </span>
-                                    <span className="font-semibold text-gray-900">{formatCurrency(calculatedTax)}</span>
+                                    <div className="text-right">
+                                        <span className="font-semibold text-gray-900 block">{formatCurrency(calculatedTax)}</span>
+                                        <span className="text-[9px] text-gray-400 font-medium block">
+                                            {data.tax_charged_to === 'buyer' ? 'Beban Pembeli' : 'Beban Seller (Net Potong)'}
+                                        </span>
+                                    </div>
                                 </div>
 
                                 {/* Admin Fee Preview */}
@@ -382,12 +462,17 @@ export default function TaxSettings({ settings }) {
                                             {data.admin_fee_type === 'percentage' ? `${data.admin_fee_value}%` : 'Flat'}
                                         </span>
                                     </span>
-                                    <span className="font-semibold text-gray-900">{formatCurrency(calculatedAdminFee)}</span>
+                                    <div className="text-right">
+                                        <span className="font-semibold text-gray-900 block">{formatCurrency(calculatedAdminFee)}</span>
+                                        <span className="text-[9px] text-gray-400 font-medium block">
+                                            {data.admin_fee_charged_to === 'buyer' ? 'Beban Pembeli' : 'Beban Seller (Net Potong)'}
+                                        </span>
+                                    </div>
                                 </div>
                             </div>
 
                             <div className="border-t border-gray-100 pt-3 flex justify-between items-baseline">
-                                <span className="text-gray-900 font-bold">Total Tagihan</span>
+                                <span className="text-gray-900 font-bold">Total Pembayaran</span>
                                 <span className="text-sm font-extrabold text-emerald-600 font-outfit">{formatCurrency(calculatedTotal)}</span>
                             </div>
                         </div>

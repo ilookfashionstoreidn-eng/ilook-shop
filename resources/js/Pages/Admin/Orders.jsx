@@ -534,12 +534,23 @@ export default function Orders({ orders, filters }) {
                                     )}
                                     <div className="flex justify-between md:justify-end gap-10"><span className="text-gray-400">Ongkos Kirim Raja Ongkir:</span> <span className="font-semibold text-gray-700">{formatCurrency(selectedOrder.shipping_cost)}</span></div>
                                     {selectedOrder.tax_amount > 0 && (
-                                        <div className="flex justify-between md:justify-end gap-10"><span className="text-gray-400">PPN:</span> <span className="font-semibold text-gray-700">{formatCurrency(selectedOrder.tax_amount)}</span></div>
+                                        <div className="flex justify-between md:justify-end gap-10">
+                                            <span className="text-gray-400">
+                                                PPN {selectedOrder.tax_charged_to === 'seller' ? '(Ditanggung Seller)' : ''}:
+                                            </span> 
+                                            <span className={`font-semibold ${selectedOrder.tax_charged_to === 'seller' ? 'text-gray-400 line-through' : 'text-gray-700'}`}>{formatCurrency(selectedOrder.tax_amount)}</span>
+                                        </div>
                                     )}
                                     {selectedOrder.admin_fee > 0 && (
-                                        <div className="flex justify-between md:justify-end gap-10"><span className="text-gray-400">Biaya Admin:</span> <span className="font-semibold text-gray-700">{formatCurrency(selectedOrder.admin_fee)}</span></div>
+                                        <div className="flex justify-between md:justify-end gap-10">
+                                            <span className="text-gray-400">
+                                                Biaya Admin {selectedOrder.admin_fee_charged_to === 'seller' ? '(Ditanggung Seller)' : ''}:
+                                            </span> 
+                                            <span className={`font-semibold ${selectedOrder.admin_fee_charged_to === 'seller' ? 'text-gray-400 line-through' : 'text-gray-700'}`}>{formatCurrency(selectedOrder.admin_fee)}</span>
+                                        </div>
                                     )}
                                     <div className="flex justify-between md:justify-end gap-10 border-t border-gray-200 pt-2"><span className="text-gray-500 font-bold">Total Transaksi:</span> <span className="text-sm font-bold text-emerald-600">{formatCurrency(selectedOrder.total_amount)}</span></div>
+                                    <div className="flex justify-between md:justify-end gap-10 border-t border-dashed border-gray-200 pt-2 text-gray-800"><span className="font-bold text-gray-600">Estimasi Pendapatan Bersih Seller:</span> <span className="text-sm font-bold text-indigo-650">{formatCurrency(selectedOrder.subtotal - selectedOrder.coupon_discount - (selectedOrder.tax_charged_to === 'seller' ? selectedOrder.tax_amount : 0) - (selectedOrder.admin_fee_charged_to === 'seller' ? selectedOrder.admin_fee : 0))}</span></div>
                                 </div>
                             </div>
                         </div>

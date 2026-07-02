@@ -257,8 +257,10 @@ class DatabaseSeeder extends Seeder
         Setting::create(['key' => 'couriers_active', 'value' => json_encode(['jne', 'jnt', 'sicepat', 'anteraja'])]);
         Setting::create(['key' => 'tax_type', 'value' => 'percentage']);
         Setting::create(['key' => 'tax_value', 'value' => '0']);
+        Setting::create(['key' => 'tax_charged_to', 'value' => 'buyer']);
         Setting::create(['key' => 'admin_fee_type', 'value' => 'nominal']);
         Setting::create(['key' => 'admin_fee_value', 'value' => '0']);
+        Setting::create(['key' => 'admin_fee_charged_to', 'value' => 'buyer']);
 
         // 4.3 Bank Accounts
         BankAccount::create([
