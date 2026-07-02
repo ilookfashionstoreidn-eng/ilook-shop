@@ -12,6 +12,8 @@ class Coupon extends Model
         'type',
         'value',
         'min_spend',
+        'usage_limit',
+        'used_count',
         'is_active',
         'expires_at',
     ];
@@ -19,6 +21,8 @@ class Coupon extends Model
     protected $casts = [
         'value' => 'float',
         'min_spend' => 'float',
+        'usage_limit' => 'integer',
+        'used_count' => 'integer',
         'is_active' => 'boolean',
         'expires_at' => 'datetime',
     ];
@@ -29,6 +33,10 @@ class Coupon extends Model
     public function isValidForSubtotal(float $subtotal): bool
     {
         if (!$this->is_active) {
+            return false;
+        }
+
+        if ($this->usage_limit !== null && $this->used_count >= $this->usage_limit) {
             return false;
         }
 

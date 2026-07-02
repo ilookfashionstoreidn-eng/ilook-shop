@@ -291,6 +291,17 @@ class StorefrontController extends Controller
             ? json_decode($settingsRaw['couriers_active'], true) 
             : ['jne', 'jnt', 'sicepat'];
 
+        $coupons = Coupon::where('is_active', true)
+            ->where(function($q) {
+                $q->whereNull('expires_at')
+                  ->orWhere('expires_at', '>', now());
+            })
+            ->where(function($q) {
+                $q->whereNull('usage_limit')
+                  ->orWhereRaw('used_count < usage_limit');
+            })
+            ->get();
+
         return Inertia::render('Storefront/Checkout', [
             'provinces'       => $provinces,
             'activeCouriers'  => $activeCouriers,
@@ -298,6 +309,7 @@ class StorefrontController extends Controller
             'midtransClientKey' => config('services.midtrans.client_key', ''),
             'midtransSnapUrl'   => config('services.midtrans.snap_url'),
             'bankAccounts'    => \App\Models\BankAccount::where('is_active', true)->get(),
+            'availableCoupons' => $coupons,
         ]);
     }
 
@@ -436,7 +448,11 @@ class StorefrontController extends Controller
                         if (!$coupon->isValidForSubtotal($subtotal)) {
                             throw new \Exception("Kupon tidak valid untuk transaksi ini.");
                         }
+                        if ($coupon->usage_limit !== null && $coupon->used_count >= $coupon->usage_limit) {
+                            throw new \Exception("Kupon ini telah mencapai batas maksimum pemakaian.");
+                        }
                         $couponDiscount = $coupon->calculateDiscount($subtotal);
+                        $coupon->increment('used_count');
                     } else {
                         throw new \Exception("Kupon tidak ditemukan.");
                     }
@@ -859,6 +875,13 @@ class StorefrontController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Kupon ini sudah tidak aktif.',
+            ], 400);
+        }
+
+        if ($coupon->usage_limit !== null && $coupon->used_count >= $coupon->usage_limit) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Kupon ini telah mencapai batas maksimum pemakaian.',
             ], 400);
         }
 

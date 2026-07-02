@@ -303,6 +303,31 @@ export default function ProductDetail({ product, related, origin, whatsappNumber
         setTimeout(() => setAddedToCart(false), 2500);
     };
 
+    // Handle Buy Now direct checkout
+    const handleBuyNow = () => {
+        if (!selectedVariant) return;
+
+        const item = {
+            product_id: product.id,
+            variant_id: selectedVariant.id,
+            product_name: product.name,
+            variant_name: selectedVariant.name,
+            sku: selectedVariant.sku,
+            price: currentPrice,
+            image: getVariantImage(selectedVariant),
+            quantity: quantity,
+            weight: product.weight
+        };
+
+        localStorage.setItem('ilook_cart', JSON.stringify([item]));
+        
+        // Dispatch custom event to update count on Navbar
+        window.dispatchEvent(new Event('cart-updated'));
+        
+        // Redirect directly to checkout
+        router.get(route('storefront.checkout'));
+    };
+
     // Live search destination cities
     useEffect(() => {
         if (destCityQuery.length < 3) {
@@ -802,7 +827,7 @@ export default function ProductDetail({ product, related, origin, whatsappNumber
                                         selectedVariant && selectedVariant.stock > 0
                                             ? addedToCart 
                                                 ? 'bg-[#111111] text-white opacity-80'
-                                                : 'bg-black hover:bg-black/90 text-white'
+                                                : 'border border-black text-black bg-white hover:bg-black hover:text-white'
                                             : 'bg-[#eeeeee] border border-[#eeeeee] text-[#888888] cursor-not-allowed'
                                     }`}
                                 >
@@ -815,6 +840,20 @@ export default function ProductDetail({ product, related, origin, whatsappNumber
                                     </span>
                                 </button>
                             </div>
+
+                            {/* Buy Now CTA Button */}
+                            <button
+                                onClick={handleBuyNow}
+                                disabled={!selectedVariant || selectedVariant.stock === 0}
+                                className={`w-full h-14 flex items-center justify-center gap-2 rounded-none text-xs font-bold uppercase tracking-widest transition-all duration-300 ${
+                                    selectedVariant && selectedVariant.stock > 0
+                                        ? 'bg-black hover:bg-black/90 text-white'
+                                        : 'bg-[#eeeeee] border border-[#eeeeee] text-[#888888] cursor-not-allowed'
+                                }`}
+                            >
+                                <Zap className="w-4 h-4 fill-white" />
+                                <span>Beli Sekarang</span>
+                            </button>
 
                             {/* WhatsApp Inquiry Button (Direct executive style touch) */}
                             <a

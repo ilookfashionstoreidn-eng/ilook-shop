@@ -79,6 +79,14 @@ class OrderController extends Controller
                     }
                 }
             }
+
+            // If order cancelled, return coupon usage
+            if ($newStatus === 'cancelled' && $oldStatus !== 'cancelled' && $order->coupon_code) {
+                $coupon = \App\Models\Coupon::where('code', $order->coupon_code)->first();
+                if ($coupon && $coupon->used_count > 0) {
+                    $coupon->decrement('used_count');
+                }
+            }
         });
 
         $order->refresh();

@@ -210,4 +210,48 @@ class CouponTest extends TestCase
                 'message' => 'Kupon diskon tidak dapat digunakan karena terdapat produk Flash Sale di keranjang belanja Anda.',
             ]);
     }
+
+    /**
+     * Test coupon usage limit logic.
+     */
+    public function test_coupon_usage_limit(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+
+        // 1. Admin can set usage limit
+        $response = $this->actingAs($admin)->post(route('admin.coupons.store'), [
+            'code' => 'LIMITED10',
+            'type' => 'fixed',
+            'value' => 10000,
+            'min_spend' => 20000,
+            'usage_limit' => 10,
+            'is_active' => true,
+        ]);
+        $response->assertRedirect(route('admin.coupons'));
+        $this->assertDatabaseHas('coupons', [
+            'code' => 'LIMITED10',
+            'usage_limit' => 10,
+            'used_count' => 0,
+        ]);
+
+        $coupon = Coupon::where('code', 'LIMITED10')->first();
+
+        // 2. Set used_count equal to usage_limit
+        $coupon->update(['used_count' => 10]);
+
+        // 3. Applying coupon should fail when limit is reached
+        $response = $this->postJson(route('storefront.coupon.apply'), [
+            'code' => 'LIMITED10',
+            'subtotal' => 30000,
+        ]);
+        $response->assertStatus(400)
+            ->assertJson([
+                'success' => false,
+                'message' => 'Kupon ini telah mencapai batas maksimum pemakaian.',
+            ]);
+
+        // 4. Test coupon model isValidForSubtotal directly
+        $this->assertFalse($coupon->isValidForSubtotal(30000));
+    }
 }
+
