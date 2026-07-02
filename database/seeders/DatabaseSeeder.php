@@ -255,6 +255,10 @@ class DatabaseSeeder extends Seeder
         Setting::create(['key' => 'min_stock_alert', 'value' => '5']);
         Setting::create(['key' => 'ginee_sync_enabled', 'value' => '1']);
         Setting::create(['key' => 'couriers_active', 'value' => json_encode(['jne', 'jnt', 'sicepat', 'anteraja'])]);
+        Setting::create(['key' => 'tax_type', 'value' => 'percentage']);
+        Setting::create(['key' => 'tax_value', 'value' => '0']);
+        Setting::create(['key' => 'admin_fee_type', 'value' => 'nominal']);
+        Setting::create(['key' => 'admin_fee_value', 'value' => '0']);
 
         // 4.3 Bank Accounts
         BankAccount::create([

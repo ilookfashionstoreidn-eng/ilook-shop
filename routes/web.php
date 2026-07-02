@@ -7,6 +7,7 @@ use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\StockController;
 use App\Http\Controllers\Admin\OrderController;
 use App\Http\Controllers\Admin\SettingController;
+use App\Http\Controllers\Admin\TaxSettingController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\ReviewController;
 use App\Http\Controllers\Admin\FlashSaleController;
@@ -101,6 +102,10 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     // Settings
     Route::get('/settings', [SettingController::class, 'index'])->name('settings');
     Route::post('/settings', [SettingController::class, 'update'])->name('settings.update');
+
+    // Tax & Admin Fee Settings
+    Route::get('/tax-settings', [TaxSettingController::class, 'index'])->name('tax-settings');
+    Route::post('/tax-settings', [TaxSettingController::class, 'update'])->name('tax-settings.update');
 
     // Users CRUD
     Route::get('/users', [UserController::class, 'index'])->name('users');

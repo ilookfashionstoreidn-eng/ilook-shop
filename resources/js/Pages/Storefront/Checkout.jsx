@@ -21,7 +21,7 @@ import {
 import axios from 'axios';
 import Swal from 'sweetalert2';
 
-export default function Checkout({ provinces, activeCouriers, originCityId, midtransClientKey, midtransSnapUrl, bankAccounts = [], availableCoupons = [] }) {
+export default function Checkout({ provinces, activeCouriers, originCityId, midtransClientKey, midtransSnapUrl, bankAccounts = [], availableCoupons = [], taxType = 'percentage', taxValue = 0, adminFeeType = 'nominal', adminFeeValue = 0 }) {
     const [cartItems, setCartItems] = useState([]);
     
     // Form States
@@ -240,7 +240,18 @@ export default function Checkout({ provinces, activeCouriers, originCityId, midt
 
     const totalWeight = cartItems.reduce((acc, item) => acc + (item.weight * item.quantity), 0);
     const subtotal = cartItems.reduce((acc, item) => acc + (item.price * item.quantity), 0);
-    const finalTotal = Math.max(0, subtotal + shippingCost - couponDiscount);
+    
+    // Tax Calculation
+    const taxAmount = Math.max(0, taxType === 'percentage' 
+        ? Math.round((subtotal - couponDiscount) * (Number(taxValue) / 100))
+        : Number(taxValue));
+
+    // Admin Fee Calculation
+    const adminFee = Math.max(0, adminFeeType === 'percentage'
+        ? Math.round((subtotal - couponDiscount) * (Number(adminFeeValue) / 100))
+        : Number(adminFeeValue));
+
+    const finalTotal = Math.max(0, subtotal + shippingCost - couponDiscount + taxAmount + adminFee);
 
     const handleProvinceChange = (e) => {
         const provId = e.target.value;
@@ -864,6 +875,18 @@ export default function Checkout({ provinces, activeCouriers, originCityId, midt
                                     <span>Ongkos Kirim</span>
                                     <span className="font-bold text-[#212121]">{shippingCost > 0 ? formatCurrency(shippingCost) : 'Pilih layanan...'}</span>
                                 </div>
+                                {taxAmount > 0 && (
+                                    <div className="flex justify-between items-center">
+                                        <span>PPN {taxType === 'percentage' ? `(${taxValue}%)` : ''}</span>
+                                        <span className="font-bold text-[#212121]">{formatCurrency(taxAmount)}</span>
+                                    </div>
+                                )}
+                                {adminFee > 0 && (
+                                    <div className="flex justify-between items-center">
+                                        <span>Biaya Admin {adminFeeType === 'percentage' ? `(${adminFeeValue}%)` : ''}</span>
+                                        <span className="font-bold text-[#212121]">{formatCurrency(adminFee)}</span>
+                                    </div>
+                                )}
                             </div>
 
                             <div className="border-t border-[#E0E0E0] pt-3 flex justify-between items-baseline">

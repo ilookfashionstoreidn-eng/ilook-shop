@@ -277,9 +277,6 @@ class StorefrontController extends Controller
         return Inertia::render('Storefront/Cart');
     }
 
-    /**
-     * Checkout Page
-     */
     public function checkoutPage(): Response
     {
         $provinces = $this->rajaOngkir->getProvinces();
@@ -302,6 +299,11 @@ class StorefrontController extends Controller
             })
             ->get();
 
+        $taxType = $settingsRaw['tax_type'] ?? 'percentage';
+        $taxValue = (float)($settingsRaw['tax_value'] ?? 0.00);
+        $adminFeeType = $settingsRaw['admin_fee_type'] ?? 'nominal';
+        $adminFeeValue = (float)($settingsRaw['admin_fee_value'] ?? 0.00);
+
         return Inertia::render('Storefront/Checkout', [
             'provinces'       => $provinces,
             'activeCouriers'  => $activeCouriers,
@@ -310,6 +312,10 @@ class StorefrontController extends Controller
             'midtransSnapUrl'   => config('services.midtrans.snap_url'),
             'bankAccounts'    => \App\Models\BankAccount::where('is_active', true)->get(),
             'availableCoupons' => $coupons,
+            'taxType'         => $taxType,
+            'taxValue'        => $taxValue,
+            'adminFeeType'    => $adminFeeType,
+            'adminFeeValue'   => $adminFeeValue,
         ]);
     }
 
@@ -458,8 +464,35 @@ class StorefrontController extends Controller
                     }
                 }
 
+                // Fetch settings
+                $settingsRaw = Setting::all()->pluck('value', 'key')->toArray();
+                $taxType = $settingsRaw['tax_type'] ?? 'percentage';
+                $taxValue = (float)($settingsRaw['tax_value'] ?? 0.00);
+                $adminFeeType = $settingsRaw['admin_fee_type'] ?? 'nominal';
+                $adminFeeValue = (float)($settingsRaw['admin_fee_value'] ?? 0.00);
+
+                // Calculate PPN
+                $baseAmount = $subtotal - $couponDiscount;
+                $taxAmount = 0.00;
+                if ($taxValue > 0) {
+                    $taxAmount = $taxType === 'percentage' 
+                        ? round($baseAmount * ($taxValue / 100)) 
+                        : $taxValue;
+                }
+
+                // Calculate Admin Fee
+                $adminFee = 0.00;
+                if ($adminFeeValue > 0) {
+                    $adminFee = $adminFeeType === 'percentage' 
+                        ? round($baseAmount * ($adminFeeValue / 100)) 
+                        : $adminFeeValue;
+                }
+
+                $taxAmount = max(0.00, $taxAmount);
+                $adminFee = max(0.00, $adminFee);
+
                 $shippingCost = $request->input('shipping_cost');
-                $totalAmount = max(0, $subtotal + $shippingCost - $couponDiscount);
+                $totalAmount = max(0, $subtotal + $shippingCost - $couponDiscount + $taxAmount + $adminFee);
 
                 // Create Order record — status awal pending_payment, akan diupdate setelah Midtrans callback
                 $order = Order::create([
@@ -468,6 +501,8 @@ class StorefrontController extends Controller
                     'status'         => 'pending_payment',
                     'subtotal'       => $subtotal,
                     'shipping_cost'  => $shippingCost,
+                    'tax_amount'     => $taxAmount,
+                    'admin_fee'      => $adminFee,
                     'total_amount'   => $totalAmount,
                     'payment_method' => $request->input('payment_method'),
                     'payment_status' => 'unpaid',
