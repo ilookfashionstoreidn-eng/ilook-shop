@@ -533,6 +533,12 @@ export default function Orders({ orders, filters }) {
                                         </div>
                                     )}
                                     <div className="flex justify-between md:justify-end gap-10"><span className="text-gray-400">Ongkos Kirim Raja Ongkir:</span> <span className="font-semibold text-gray-700">{formatCurrency(selectedOrder.shipping_cost)}</span></div>
+                                    {selectedOrder.tax_amount > 0 && (
+                                        <div className="flex justify-between md:justify-end gap-10"><span className="text-gray-400">PPN:</span> <span className="font-semibold text-gray-700">{formatCurrency(selectedOrder.tax_amount)}</span></div>
+                                    )}
+                                    {selectedOrder.admin_fee > 0 && (
+                                        <div className="flex justify-between md:justify-end gap-10"><span className="text-gray-400">Biaya Admin:</span> <span className="font-semibold text-gray-700">{formatCurrency(selectedOrder.admin_fee)}</span></div>
+                                    )}
                                     <div className="flex justify-between md:justify-end gap-10 border-t border-gray-200 pt-2"><span className="text-gray-500 font-bold">Total Transaksi:</span> <span className="text-sm font-bold text-emerald-600">{formatCurrency(selectedOrder.total_amount)}</span></div>
                                 </div>
                             </div>

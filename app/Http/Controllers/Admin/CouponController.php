@@ -27,6 +27,7 @@ class CouponController extends Controller
             'type' => 'required|in:percentage,fixed',
             'value' => 'required|numeric|min:0.01',
             'min_spend' => 'nullable|numeric|min:0',
+            'usage_limit' => 'nullable|integer|min:1',
             'is_active' => 'required|boolean',
             'expires_at' => 'nullable|date',
         ]);
@@ -56,6 +57,7 @@ class CouponController extends Controller
             'type' => 'required|in:percentage,fixed',
             'value' => 'required|numeric|min:0.01',
             'min_spend' => 'nullable|numeric|min:0',
+            'usage_limit' => 'nullable|integer|min:1',
             'is_active' => 'required|boolean',
             'expires_at' => 'nullable|date',
         ]);

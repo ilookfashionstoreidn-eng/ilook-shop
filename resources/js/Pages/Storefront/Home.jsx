@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import StorefrontLayout from '@/Layouts/StorefrontLayout';
 import { Head, Link, router, usePage } from '@inertiajs/react';
-import { Zap, Truck, RefreshCw, Store, ChevronRight, ChevronLeft } from 'lucide-react';
+import { Zap, Truck, RefreshCw, Store, ChevronRight, ChevronLeft, Play, ExternalLink } from 'lucide-react';
 
 function FlashSaleBanner({ flashSale }) {
     const [timeLeft, setTimeLeft] = useState({ h: '00', m: '00', s: '00' });
@@ -201,7 +201,225 @@ function FlashSaleBanner({ flashSale }) {
     );
 }
 
-export default function Home({ products, categories, filters }) {
+function ActiveLivestreamSection({ streams }) {
+    if (!streams || streams.length === 0) return null;
+
+    const [selectedIdx, setSelectedIdx] = useState(0);
+    const stream = streams[selectedIdx] || streams[0];
+
+    const isTikTokLive = stream.tiktok_url.toLowerCase().includes('tiktok.com') && stream.tiktok_url.toLowerCase().includes('/live');
+    const isYoutubeLive = stream.tiktok_url.toLowerCase().includes('youtube.com') || stream.tiktok_url.toLowerCase().includes('youtu.be');
+    const isTwitchLive = stream.tiktok_url.toLowerCase().includes('twitch.tv');
+    const isAnyLive = isTikTokLive || (isYoutubeLive && stream.tiktok_url.toLowerCase().includes('live')) || isTwitchLive;
+
+    // Parse username/handle from TikTok URL (e.g. https://www.tiktok.com/@username/live -> @username)
+    const getHandle = (url) => {
+        if (url.includes('tiktok.com')) {
+            const matches = url.match(/tiktok\.com\/@([a-zA-Z0-9_\.]+)/i);
+            return matches ? `@${matches[1]}` : '@ilookstore';
+        }
+        if (url.includes('youtube.com') || url.includes('youtu.be')) {
+            return 'YouTube Live';
+        }
+        if (url.includes('twitch.tv')) {
+            const matches = url.match(/twitch\.tv\/([a-zA-Z0-9_]+)/i);
+            return matches ? `Twitch: ${matches[1]}` : 'Twitch Live';
+        }
+        return 'iLOOK Channel';
+    };
+
+    return (
+        <section className="bg-gradient-to-br from-[#0b0c10] via-[#1f2833] to-[#0b0c10] text-white py-12 px-4 md:py-16 md:px-10 w-full relative overflow-hidden border-b border-[#1e293b] select-none">
+            <div className="absolute top-0 left-0 w-[500px] h-[500px] bg-red-600/10 rounded-full blur-3xl -ml-60 -mt-60 pointer-events-none" />
+            <div className="absolute bottom-0 right-0 w-[500px] h-[500px] bg-emerald-500/10 rounded-full blur-3xl -mr-60 -mb-60 pointer-events-none" />
+
+            <div className="max-w-[1200px] mx-auto grid grid-cols-1 md:grid-cols-2 items-center gap-10 md:gap-16">
+                
+                {/* Content details (Left) */}
+                <div className="flex flex-col gap-6 text-left order-2 md:order-1">
+                    <div className="flex items-center gap-3">
+                        {isAnyLive ? (
+                            <span className="bg-red-600 text-white text-[10px] font-black px-3 py-1 rounded-sm flex items-center gap-1.5 uppercase tracking-widest animate-pulse shadow-lg shadow-red-500/20">
+                                <span className="w-1.5 h-1.5 bg-white rounded-full animate-ping mr-1" />
+                                LIVE STREAMING
+                            </span>
+                        ) : (
+                            <span className="bg-emerald-600 text-white text-[10px] font-black px-3 py-1 rounded-sm flex items-center gap-1.5 uppercase tracking-widest shadow-lg shadow-emerald-500/20">
+                                <Play className="w-3.5 h-3.5 text-white" />
+                                VIDEO TERBARU
+                            </span>
+                        )}
+                        <span className="text-[10px] text-gray-400 font-bold uppercase tracking-[0.2em]">iLOOK TIKTOK CHANNEL</span>
+                    </div>
+
+                    <div className="space-y-3">
+                        <h2 className="text-2xl sm:text-3xl md:text-[40px] font-black uppercase tracking-tight leading-none text-white drop-shadow-sm font-outfit line-clamp-2">
+                            {stream.title}
+                        </h2>
+                        <div className="w-20 h-1 bg-gradient-to-r from-red-600 to-emerald-500" />
+                    </div>
+
+                    <p className="text-xs sm:text-sm text-gray-300 leading-relaxed max-w-lg">
+                        Tonton keseruan review koleksi fashion eksklusif kami secara langsung di TikTok! Dapatkan penawaran flash sale, diskon khusus, dan hadiah kejutan menarik selama acara berlangsung.
+                    </p>
+
+                    {/* Channel Selector Tabs (If more than 1 active live stream) */}
+                    {streams.length > 1 && (
+                        <div className="space-y-2 mt-2">
+                            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Pilih Saluran Aktif:</span>
+                            <div className="flex flex-wrap gap-2 max-w-lg">
+                                {streams.map((item, idx) => {
+                                    const activeIsTikTokLive = item.tiktok_url.toLowerCase().includes('tiktok.com') && item.tiktok_url.toLowerCase().includes('/live');
+                                    const activeIsYoutubeLive = item.tiktok_url.toLowerCase().includes('youtube.com') || item.tiktok_url.toLowerCase().includes('youtu.be');
+                                    const activeIsTwitchLive = item.tiktok_url.toLowerCase().includes('twitch.tv');
+                                    const activeIsAnyLive = activeIsTikTokLive || (activeIsYoutubeLive && item.tiktok_url.toLowerCase().includes('live')) || activeIsTwitchLive;
+                                    const isSelected = idx === selectedIdx;
+                                    return (
+                                        <button
+                                            key={item.id}
+                                            onClick={() => setSelectedIdx(idx)}
+                                            className={`px-4 py-2 rounded-xl text-xs font-semibold transition-all border flex items-center gap-2 cursor-pointer ${
+                                                isSelected
+                                                    ? 'bg-white text-black border-white shadow-lg'
+                                                    : 'bg-black/30 text-gray-300 border-white/10 hover:bg-black/50 hover:text-white'
+                                            }`}
+                                        >
+                                            <span className={`w-2 h-2 rounded-full ${activeIsAnyLive ? 'bg-red-500 animate-pulse' : 'bg-indigo-500'}`} />
+                                            <span className="truncate max-w-[120px]">{item.title}</span>
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    )}
+
+                    <div className="flex flex-wrap gap-4 pt-2">
+                        <a
+                            href={stream.tiktok_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="bg-white text-black hover:bg-black hover:text-white px-6 py-3 sm:px-8 sm:py-3.5 text-[10px] font-bold tracking-[0.15em] uppercase transition-all duration-300 shadow-xl border border-white hover:border-black flex items-center gap-2"
+                        >
+                            Tonton di TikTok
+                            <ExternalLink className="w-4 h-4" />
+                        </a>
+                        <a
+                            href="#catalog"
+                            className="border border-white/20 text-white hover:bg-white/5 px-6 py-3 sm:px-8 sm:py-3.5 text-[10px] font-bold tracking-[0.15em] uppercase transition-all duration-300 flex items-center"
+                        >
+                            Lihat Katalog Produk
+                        </a>
+                    </div>
+                </div>
+
+                {/* Smartphone Mockup with iframe (Right) */}
+                <div className="flex justify-center order-1 md:order-2">
+                    <div className="relative group/phone">
+                        <div className="absolute inset-0 bg-red-500/10 rounded-[44px] blur-2xl group-hover/phone:bg-red-500/20 transition-all duration-500 pointer-events-none" />
+
+                        <div className="relative w-[260px] h-[460px] sm:w-[300px] sm:h-[530px] bg-[#0c0f17] rounded-[44px] border-[10px] border-[#1f2833] shadow-2xl overflow-hidden flex flex-col ring-1 ring-white/10">
+                            
+                            {/* Camera Speaker Notch */}
+                            <div className="absolute top-2 left-1/2 -translate-x-1/2 w-28 h-5 bg-[#1f2833] rounded-b-2xl z-20 flex items-center justify-center">
+                                <div className="w-8 h-1 bg-gray-500 rounded-full" />
+                            </div>
+
+                            {/* Flash Live indicator */}
+                            {isAnyLive && (
+                                <div className="absolute top-10 left-6 z-20 bg-red-600 text-white text-[9px] font-black px-2 py-0.5 rounded-sm flex items-center gap-1 uppercase tracking-widest shadow">
+                                    <span className="w-1.5 h-1.5 bg-white rounded-full animate-ping" />
+                                    LIVE
+                                </div>
+                            )}
+
+                            {/* Dynamic player */}
+                            <div className="flex-1 w-full h-full relative">
+                                {isTikTokLive ? (
+                                    /* Custom High-Fidelity TikTok Live Mockup Screen */
+                                    <div className="absolute inset-0 bg-gradient-to-b from-[#161823] via-[#010101] to-[#161823] flex flex-col justify-between p-5 text-white font-sans select-none">
+                                        
+                                        {/* Top Header Row */}
+                                        <div className="flex items-center justify-between mt-6">
+                                            {/* Creator Info */}
+                                            <div className="flex items-center gap-2 bg-black/40 backdrop-blur-md px-2.5 py-1 rounded-full border border-white/10">
+                                                <div className="w-6 h-6 rounded-full bg-gradient-to-br from-[#fe2c55] to-[#25f4ee] flex items-center justify-center font-bold text-white text-[9px] uppercase">
+                                                    {stream.title ? stream.title[0] : 'i'}
+                                                </div>
+                                                <div className="flex flex-col">
+                                                    <span className="text-[10px] font-bold leading-tight">iLOOK Store</span>
+                                                    <span className="text-[8px] text-gray-300 leading-none">{getHandle(stream.tiktok_url)}</span>
+                                                </div>
+                                            </div>
+                                            
+                                            {/* Live indicator */}
+                                            <div className="flex items-center gap-1.5 bg-[#fe2c55] text-white text-[9px] font-bold px-2.5 py-0.5 rounded shadow">
+                                                <span className="w-1.5 h-1.5 bg-white rounded-full animate-ping" />
+                                                <span>LIVE</span>
+                                            </div>
+                                        </div>
+
+                                        {/* Center Visual: Large pulsing icon & wave */}
+                                        <div className="flex-1 flex flex-col items-center justify-center gap-4 py-8">
+                                            {/* Pulsing Avatar Frame */}
+                                            <div className="relative">
+                                                <div className="absolute inset-0 rounded-full bg-[#fe2c55]/20 animate-ping scale-125" />
+                                                <div className="absolute inset-0 rounded-full bg-[#25f4ee]/15 animate-ping scale-150" />
+                                                
+                                                <div className="w-20 h-20 rounded-full border-2 border-[#fe2c55] bg-[#121212] flex items-center justify-center overflow-hidden relative shadow-2xl">
+                                                    <span className="text-white text-3xl font-black italic tracking-tighter">iL</span>
+                                                </div>
+                                            </div>
+                                            
+                                            <div className="text-center space-y-1">
+                                                <p className="text-xs font-bold tracking-wide uppercase text-[#fe2c55] animate-pulse">Sedang Berlangsung</p>
+                                                <p className="text-[10px] text-gray-400 max-w-[180px] mx-auto leading-relaxed">Gabung sekarang untuk melihat koleksi terbaru kami</p>
+                                            </div>
+
+                                            {/* Audio / visual wave indicators */}
+                                            <div className="flex items-end gap-1.5 h-6 mt-1">
+                                                <span className="w-1 bg-[#fe2c55] rounded-full animate-bounce h-3" />
+                                                <span className="w-1 bg-white rounded-full animate-bounce h-5" style={{ animationDelay: '0.2s' }} />
+                                                <span className="w-1 bg-[#25f4ee] rounded-full animate-bounce h-4" style={{ animationDelay: '0.4s' }} />
+                                                <span className="w-1 bg-white rounded-full animate-bounce h-2" style={{ animationDelay: '0.1s' }} />
+                                            </div>
+                                        </div>
+
+                                        {/* Bottom Action Area */}
+                                        <div className="flex flex-col gap-2.5 pb-4">
+                                            {/* CTA Button */}
+                                            <a
+                                                href={stream.tiktok_url}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="w-full bg-[#fe2c55] hover:bg-[#e0244a] active:scale-[0.98] text-white py-3.5 text-xs font-bold rounded-xl text-center shadow-lg shadow-red-500/20 transition-all flex items-center justify-center gap-2 border border-red-400/10 uppercase tracking-widest"
+                                            >
+                                                <span>Tonton Live di TikTok</span>
+                                                <ExternalLink className="w-3.5 h-3.5" />
+                                            </a>
+                                            <span className="text-[8px] text-gray-400 text-center uppercase tracking-wider">Membuka Aplikasi TikTok Anda</span>
+                                        </div>
+
+                                    </div>
+                                ) : (
+                                    /* Standard Video Embed */
+                                    <iframe
+                                        src={stream.embed_url}
+                                        className="w-full h-full border-none bg-black"
+                                        allowFullScreen
+                                        scrolling="no"
+                                        allow="encrypted-media;"
+                                    />
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    );
+}
+
+export default function Home({ products, categories, filters, activeLivestreams = [] }) {
     const { flashSale } = usePage().props;
 
     const [countdown, setCountdown] = useState({ h: '02', m: '45', s: '30' });
@@ -284,6 +502,11 @@ export default function Home({ products, categories, filters }) {
                     </a>
                 </div>
             </section>
+
+            {/* Active TikTok Livestream / Video Section */}
+            {activeLivestreams && activeLivestreams.length > 0 && (
+                <ActiveLivestreamSection streams={activeLivestreams} />
+            )}
 
             {/* Split Category Banners */}
             <section className="grid grid-cols-1 md:grid-cols-2 gap-1 w-full mt-1">

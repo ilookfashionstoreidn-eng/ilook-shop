@@ -7,6 +7,7 @@ use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\StockController;
 use App\Http\Controllers\Admin\OrderController;
 use App\Http\Controllers\Admin\SettingController;
+use App\Http\Controllers\Admin\TaxSettingController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\ReviewController;
 use App\Http\Controllers\Admin\FlashSaleController;
@@ -75,6 +76,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     // Products CRUD
     Route::get('/products', [ProductController::class, 'index'])->name('products');
     Route::post('/products', [ProductController::class, 'store'])->name('products.store');
+    Route::post('/products/upload-video', [ProductController::class, 'uploadVideo'])->name('products.upload-video');
     Route::put('/products/{product}', [ProductController::class, 'update'])->name('products.update');
     Route::delete('/products/{product}', [ProductController::class, 'destroy'])->name('products.destroy');
     Route::post('/products/{product}/sync-ginee', [ProductController::class, 'syncGinee'])->name('products.sync-ginee');
@@ -100,6 +102,10 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     // Settings
     Route::get('/settings', [SettingController::class, 'index'])->name('settings');
     Route::post('/settings', [SettingController::class, 'update'])->name('settings.update');
+
+    // Tax & Admin Fee Settings
+    Route::get('/tax-settings', [TaxSettingController::class, 'index'])->name('tax-settings');
+    Route::post('/tax-settings', [TaxSettingController::class, 'update'])->name('tax-settings.update');
 
     // Users CRUD
     Route::get('/users', [UserController::class, 'index'])->name('users');
@@ -135,6 +141,12 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     // Admin Chats
     Route::get('/chats', [\App\Http\Controllers\Admin\ChatController::class, 'index'])->name('chats');
     Route::get('/api/chats/users', [\App\Http\Controllers\ChatMessageController::class, 'getChatUsers']);
+
+    // Livestream Management
+    Route::get('/livestream', [\App\Http\Controllers\Admin\LivestreamController::class, 'index'])->name('livestream');
+    Route::post('/livestream', [\App\Http\Controllers\Admin\LivestreamController::class, 'store'])->name('livestream.store');
+    Route::put('/livestream/{livestream}', [\App\Http\Controllers\Admin\LivestreamController::class, 'update'])->name('livestream.update');
+    Route::delete('/livestream/{livestream}', [\App\Http\Controllers\Admin\LivestreamController::class, 'destroy'])->name('livestream.destroy');
 });
 
 Route::get('/test-ongkir', function () {

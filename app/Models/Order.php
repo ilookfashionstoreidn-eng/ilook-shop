@@ -24,6 +24,8 @@ class Order extends Model
         'coupon_discount',
         'bank_account_id',
         'payment_proof',
+        'tax_amount',
+        'admin_fee',
     ];
 
     protected $casts = [
@@ -31,6 +33,8 @@ class Order extends Model
         'shipping_cost' => 'float',
         'total_amount' => 'float',
         'coupon_discount' => 'float',
+        'tax_amount' => 'float',
+        'admin_fee' => 'float',
     ];
 
     public function user(): BelongsTo

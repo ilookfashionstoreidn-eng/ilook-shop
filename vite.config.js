@@ -1,6 +1,21 @@
 import { defineConfig } from 'vite';
 import laravel from 'laravel-vite-plugin';
 import react from '@vitejs/plugin-react';
+import os from 'os';
+
+function getLocalIp() {
+    const interfaces = os.networkInterfaces();
+    for (const name of Object.keys(interfaces)) {
+        for (const net of interfaces[name]) {
+            if (net.family === 'IPv4' && !net.internal) {
+                return net.address;
+            }
+        }
+    }
+    return '127.0.0.1';
+}
+
+const localIp = getLocalIp();
 
 export default defineConfig({
     plugins: [
@@ -11,7 +26,10 @@ export default defineConfig({
         react(),
     ],
     server: {
-        host: '192.168.18.170',
+        host: '0.0.0.0',
+        hmr: {
+            host: localIp,
+        },
     },
 });
 

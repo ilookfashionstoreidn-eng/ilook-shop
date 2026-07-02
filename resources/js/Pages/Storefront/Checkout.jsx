@@ -21,7 +21,7 @@ import {
 import axios from 'axios';
 import Swal from 'sweetalert2';
 
-export default function Checkout({ provinces, activeCouriers, originCityId, midtransClientKey, midtransSnapUrl, bankAccounts = [] }) {
+export default function Checkout({ provinces, activeCouriers, originCityId, midtransClientKey, midtransSnapUrl, bankAccounts = [], availableCoupons = [], taxType = 'percentage', taxValue = 0, adminFeeType = 'nominal', adminFeeValue = 0 }) {
     const [cartItems, setCartItems] = useState([]);
     
     // Form States
@@ -78,15 +78,12 @@ export default function Checkout({ provinces, activeCouriers, originCityId, midt
         }).format(val);
     };
 
-    const handleApplyCoupon = async (e) => {
-        e.preventDefault();
-        if (!couponCode) return;
-
+    const applySelectedCoupon = async (code) => {
         setApplyingCoupon(true);
         setCouponError('');
         try {
             const res = await axios.post('/api/coupon/apply', {
-                code: couponCode,
+                code: code,
                 subtotal: subtotal,
                 items: cartItems.map(i => ({
                     variant_id: i.variant_id,
@@ -98,6 +95,7 @@ export default function Checkout({ provinces, activeCouriers, originCityId, midt
                 setAppliedCoupon(res.data);
                 setCouponDiscount(res.data.discount_amount);
                 setCouponError('');
+                setCouponCode(code);
             }
         } catch (err) {
             console.error(err);
@@ -123,6 +121,12 @@ export default function Checkout({ provinces, activeCouriers, originCityId, midt
         } finally {
             setApplyingCoupon(false);
         }
+    };
+
+    const handleApplyCoupon = async (e) => {
+        e.preventDefault();
+        if (!couponCode) return;
+        await applySelectedCoupon(couponCode);
     };
 
     const handleRemoveCoupon = () => {
@@ -236,7 +240,18 @@ export default function Checkout({ provinces, activeCouriers, originCityId, midt
 
     const totalWeight = cartItems.reduce((acc, item) => acc + (item.weight * item.quantity), 0);
     const subtotal = cartItems.reduce((acc, item) => acc + (item.price * item.quantity), 0);
-    const finalTotal = Math.max(0, subtotal + shippingCost - couponDiscount);
+    
+    // Tax Calculation
+    const taxAmount = Math.max(0, taxType === 'percentage' 
+        ? Math.round((subtotal - couponDiscount) * (Number(taxValue) / 100))
+        : Number(taxValue));
+
+    // Admin Fee Calculation
+    const adminFee = Math.max(0, adminFeeType === 'percentage'
+        ? Math.round((subtotal - couponDiscount) * (Number(adminFeeValue) / 100))
+        : Number(adminFeeValue));
+
+    const finalTotal = Math.max(0, subtotal + shippingCost - couponDiscount + taxAmount + adminFee);
 
     const handleProvinceChange = (e) => {
         const provId = e.target.value;
@@ -792,6 +807,57 @@ export default function Checkout({ provinces, activeCouriers, originCityId, midt
                                         <span>{couponError}</span>
                                     </p>
                                 )}
+
+                                {!appliedCoupon && availableCoupons && availableCoupons.length > 0 && (
+                                    <div className="mt-3 space-y-1.5 border-t border-dashed border-[#E0E0E0] pt-3">
+                                        <span className="text-[10px] text-[#747878] font-bold uppercase tracking-wider block">Kupon Tersedia:</span>
+                                        <div className="flex flex-wrap gap-1.5">
+                                            {availableCoupons.map((coupon) => {
+                                                const isUsable = subtotal >= coupon.min_spend;
+                                                return (
+                                                    <button
+                                                        key={coupon.id}
+                                                        type="button"
+                                                        onClick={() => {
+                                                            if (isUsable) {
+                                                                applySelectedCoupon(coupon.code);
+                                                            } else {
+                                                                Swal.fire({
+                                                                    title: 'Minimal Belanja Belum Terpenuhi',
+                                                                    text: `Minimal belanja untuk menggunakan kupon ${coupon.code} adalah Rp${new Intl.NumberFormat('id-ID').format(coupon.min_spend)}.`,
+                                                                    icon: 'info',
+                                                                    confirmButtonColor: '#212121',
+                                                                    customClass: {
+                                                                        popup: 'rounded-none border border-[#E0E0E0] font-sans',
+                                                                        confirmButton: 'rounded-none px-6 py-2.5 text-xs font-bold uppercase tracking-wider'
+                                                                    }
+                                                                });
+                                                            }
+                                                        }}
+                                                        className={`inline-flex items-center gap-1 px-2 py-1 text-[9px] font-extrabold uppercase tracking-wider border transition-all ${
+                                                            isUsable
+                                                                ? 'bg-amber-50 border-amber-300 text-amber-800 hover:bg-amber-100 cursor-pointer'
+                                                                : 'bg-gray-50 border-gray-200 text-gray-400 cursor-not-allowed'
+                                                        }`}
+                                                        title={
+                                                            isUsable
+                                                                ? `Diskon ${coupon.type === 'percentage' ? `${coupon.value}%` : `Rp${new Intl.NumberFormat('id-ID').format(coupon.value)}`}`
+                                                                : `Minimal belanja Rp${new Intl.NumberFormat('id-ID').format(coupon.min_spend)}`
+                                                        }
+                                                    >
+                                                        <Tag className="w-3 h-3 flex-shrink-0" />
+                                                        <span>{coupon.code}</span>
+                                                        {coupon.type === 'percentage' ? (
+                                                            <span className="font-normal text-[8px] opacity-75">(-{coupon.value}%)</span>
+                                                        ) : (
+                                                            <span className="font-normal text-[8px] opacity-75">(-potongan)</span>
+                                                        )}
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+                                )}
                             </div>
 
                             <div className="border-t border-[#E0E0E0] pt-3 space-y-2">
@@ -809,6 +875,18 @@ export default function Checkout({ provinces, activeCouriers, originCityId, midt
                                     <span>Ongkos Kirim</span>
                                     <span className="font-bold text-[#212121]">{shippingCost > 0 ? formatCurrency(shippingCost) : 'Pilih layanan...'}</span>
                                 </div>
+                                {taxAmount > 0 && (
+                                    <div className="flex justify-between items-center">
+                                        <span>PPN {taxType === 'percentage' ? `(${taxValue}%)` : ''}</span>
+                                        <span className="font-bold text-[#212121]">{formatCurrency(taxAmount)}</span>
+                                    </div>
+                                )}
+                                {adminFee > 0 && (
+                                    <div className="flex justify-between items-center">
+                                        <span>Biaya Admin {adminFeeType === 'percentage' ? `(${adminFeeValue}%)` : ''}</span>
+                                        <span className="font-bold text-[#212121]">{formatCurrency(adminFee)}</span>
+                                    </div>
+                                )}
                             </div>
 
                             <div className="border-t border-[#E0E0E0] pt-3 flex justify-between items-baseline">

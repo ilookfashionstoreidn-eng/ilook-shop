@@ -62,6 +62,26 @@ class PaymentService
             ];
         }
 
+        // Tambahkan PPN jika ada
+        if ($order->tax_amount > 0) {
+            $itemDetails[] = [
+                'id'       => 'TAX',
+                'price'    => (int) $order->tax_amount,
+                'quantity' => 1,
+                'name'     => 'PPN',
+            ];
+        }
+
+        // Tambahkan biaya admin jika ada
+        if ($order->admin_fee > 0) {
+            $itemDetails[] = [
+                'id'       => 'ADMIN_FEE',
+                'price'    => (int) $order->admin_fee,
+                'quantity' => 1,
+                'name'     => 'Biaya Admin',
+            ];
+        }
+
         // Customer details
         $customerDetails = [
             'first_name' => $order->shipping?->recipient_name ?? 'Pembeli',

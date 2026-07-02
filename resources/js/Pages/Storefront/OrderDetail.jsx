@@ -570,6 +570,18 @@ export default function OrderDetail({ order: initialOrder, midtransClientKey, mi
                                     <span className="text-[#747878]">Ongkos Kirim</span>
                                     <span className="font-bold text-[#212121]">{formatCurrency(order.shipping_cost)}</span>
                                 </div>
+                                {order.tax_amount > 0 && (
+                                    <div className="flex justify-between">
+                                        <span className="text-[#747878]">PPN</span>
+                                        <span className="font-bold text-[#212121]">{formatCurrency(order.tax_amount)}</span>
+                                    </div>
+                                )}
+                                {order.admin_fee > 0 && (
+                                    <div className="flex justify-between">
+                                        <span className="text-[#747878]">Biaya Admin</span>
+                                        <span className="font-bold text-[#212121]">{formatCurrency(order.admin_fee)}</span>
+                                    </div>
+                                )}
                                 <div className="border-t border-[#E0E0E0] pt-2.5 flex justify-between items-baseline">
                                     <span className="font-bold text-[#212121]">Total</span>
                                     <span className="text-base font-extrabold text-[#530A0C]">{formatCurrency(order.total_amount)}</span>

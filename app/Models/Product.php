@@ -27,6 +27,7 @@ class Product extends Model
         'status',
         'ginee_product_id',
         'images',
+        'video_url',
     ];
 
     protected $casts = [

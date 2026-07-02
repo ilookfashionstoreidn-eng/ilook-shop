@@ -24,6 +24,7 @@ export default function Coupons({ coupons }) {
         type: 'percentage',
         value: '',
         min_spend: 0,
+        usage_limit: '',
         is_active: true,
         expires_at: '',
     });
@@ -63,6 +64,7 @@ export default function Coupons({ coupons }) {
             type: coupon.type,
             value: coupon.value,
             min_spend: coupon.min_spend,
+            usage_limit: coupon.usage_limit !== null ? coupon.usage_limit : '',
             is_active: coupon.is_active,
             expires_at: formatDateInput(coupon.expires_at),
         });
@@ -134,6 +136,7 @@ export default function Coupons({ coupons }) {
                                     <th className="pb-3 px-4">Tipe Diskon</th>
                                     <th className="pb-3 px-4">Nilai Diskon</th>
                                     <th className="pb-3 px-4">Minimal Belanja</th>
+                                    <th className="pb-3 px-4">Pemakaian</th>
                                     <th className="pb-3 px-4">Kedaluwarsa</th>
                                     <th className="pb-3 px-4 text-center">Status</th>
                                     <th className="pb-3 px-4 text-right">Aksi</th>
@@ -142,7 +145,7 @@ export default function Coupons({ coupons }) {
                             <tbody className="divide-y divide-gray-50 text-gray-700">
                                 {coupons.length === 0 ? (
                                     <tr>
-                                        <td colSpan="7" className="text-center py-10 text-gray-400 font-medium">
+                                        <td colSpan="8" className="text-center py-10 text-gray-400 font-medium">
                                             Belum ada kupon diskon terdaftar. Klik "Tambah Kupon Baru" untuk membuat.
                                         </td>
                                     </tr>
@@ -164,6 +167,18 @@ export default function Coupons({ coupons }) {
                                             </td>
                                             <td className="py-4 px-4 text-gray-600 font-medium">
                                                 {formatCurrency(coupon.min_spend)}
+                                            </td>
+                                            <td className="py-4 px-4">
+                                                <div className="flex flex-col">
+                                                    <span className="text-gray-800 font-semibold text-xs">
+                                                        {coupon.used_count} <span className="text-gray-400 font-normal">/ {coupon.usage_limit ?? '∞'}</span>
+                                                    </span>
+                                                    {coupon.usage_limit ? (
+                                                        <span className="text-[10px] text-gray-400 mt-0.5">
+                                                            {coupon.used_count >= coupon.usage_limit ? 'Penuh' : `${coupon.usage_limit - coupon.used_count} tersisa`}
+                                                        </span>
+                                                    ) : null}
+                                                </div>
                                             </td>
                                             <td className="py-4 px-4 text-gray-500 flex items-center gap-1.5 mt-1.5 border-0">
                                                 <Calendar className="w-3.5 h-3.5 text-gray-400" />
@@ -308,6 +323,22 @@ export default function Coupons({ coupons }) {
                                     {errors.min_spend && <p className="text-red-500 mt-1 font-semibold">{errors.min_spend}</p>}
                                 </div>
 
+                                {/* Usage Limit */}
+                                <div className="space-y-1">
+                                    <label className="font-semibold text-gray-700 uppercase tracking-wider">Batas Pemakaian</label>
+                                    <input
+                                        type="number"
+                                        min="1"
+                                        placeholder="Tanpa batas"
+                                        value={data.usage_limit}
+                                        onChange={e => setData('usage_limit', e.target.value)}
+                                        className="w-full bg-white border border-gray-250 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 rounded-xl px-4 py-2.5 text-sm text-gray-800"
+                                    />
+                                    {errors.usage_limit && <p className="text-red-500 mt-1 font-semibold">{errors.usage_limit}</p>}
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4">
                                 {/* Expires At */}
                                 <div className="space-y-1">
                                     <label className="font-semibold text-gray-700 uppercase tracking-wider">Tanggal Kadaluarsa</label>

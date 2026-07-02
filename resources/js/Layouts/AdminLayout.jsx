@@ -19,6 +19,8 @@ import {
     Tag,
     MessageSquare,
     CreditCard,
+    Video,
+    Percent,
 } from 'lucide-react';
 
 export default function AdminLayout({ children }) {
@@ -39,6 +41,8 @@ export default function AdminLayout({ children }) {
         { name: 'Kupon Diskon', icon: Tag, route: 'admin.coupons', path: '/admin/coupons' },
         { name: 'Chat Pembeli', icon: MessageSquare, route: 'admin.chats', path: '/admin/chats' },
         { name: 'Manajemen Rekening', icon: CreditCard, route: 'admin.payments', path: '/admin/payments' },
+        { name: 'Livestream', icon: Video, route: 'admin.livestream', path: '/admin/livestream' },
+        { name: 'PPN & Biaya Admin', icon: Percent, route: 'admin.tax-settings', path: '/admin/tax-settings' },
         { name: 'Pengaturan Toko', icon: Settings, route: 'admin.settings', path: '/admin/settings' },
     ];
 
