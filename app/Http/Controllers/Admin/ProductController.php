@@ -337,148 +337,17 @@ class ProductController extends Controller
 
     public function syncAllGinee(GineeService $gineeService): RedirectResponse
     {
-        $response = $gineeService->getProducts(0, 100);
+        // A large Ginee catalog can take several minutes to fully paginate
+        // and sync — don't let PHP's default execution-time limit cut it off.
+        set_time_limit(0);
 
-        if (empty($response) || ! isset($response['content'])) {
+        $result = $gineeService->syncAllProducts();
+
+        if ($result['fetched'] === 0) {
             return redirect()->route('admin.products')->with('error', 'Gagal mengambil data produk dari Ginee Open API. Periksa kembali kredensial Anda.');
         }
 
-        $gineeProductsList = $response['content'];
-        $importedCount = 0;
-
-        // 1. Collect all variation IDs across all products
-        $allVariationIds = [];
-        foreach ($gineeProductsList as $gProduct) {
-            $gVariants = $gProduct['variationBriefs'] ?? [];
-            foreach ($gVariants as $gVar) {
-                if (! empty($gVar['id'])) {
-                    $allVariationIds[] = $gVar['id'];
-                }
-            }
-        }
-
-        // 2. Fetch prices AND images in chunks of 20
-        // The list-price API returns: variationId, masterPrice.amount, AND image field per variant
-        $priceLookup = [];  // variationId => ['price' => float, 'image' => string|null]
-        if (! empty($allVariationIds)) {
-            $chunks = array_chunk($allVariationIds, 20);
-            foreach ($chunks as $chunk) {
-                $pricesResp = $gineeService->getVariationPrices($chunk);
-                $pricesContent = $pricesResp['content'] ?? [];
-                foreach ($pricesContent as $pItem) {
-                    if (isset($pItem['variationId'])) {
-                        $priceLookup[$pItem['variationId']] = [
-                            'price' => isset($pItem['masterPrice']['amount']) ? (float) $pItem['masterPrice']['amount'] : null,
-                            'image' => $pItem['image'] ?? null,  // <-- variant photo from Ginee
-                        ];
-                    }
-                }
-            }
-        }
-
-        // 3. Process products and save to local DB
-        DB::transaction(function () use ($gineeProductsList, $priceLookup, $gineeService, &$importedCount) {
-            foreach ($gineeProductsList as $gProduct) {
-                $name = $gProduct['productName'] ?? ($gProduct['name'] ?? null);
-                $gProductId = $gProduct['productId'] ?? null;
-                if (! $name || ! $gProductId) {
-                    continue;
-                }
-
-                $sku = $gProduct['sellerSku'] ?? ('GN-'.$gProductId);
-                $description = $gProduct['description'] ?? '';
-                $weight = $gProduct['weight'] ?? 200;
-
-                $gVariants = $gProduct['variationBriefs'] ?? [];
-
-                // Determine base price from lookup
-                $prices = [];
-                foreach ($gVariants as $gVar) {
-                    if (isset($gVar['id']) && isset($priceLookup[$gVar['id']]['price'])) {
-                        $prices[] = $priceLookup[$gVar['id']]['price'];
-                    }
-                }
-                $basePrice = ! empty($prices) ? min($prices) : 0;
-
-                $images = [];
-                if (! empty($gProduct['images'])) {
-                    foreach ($gProduct['images'] as $img) {
-                        // Check if image is a string directly or an array/object with url
-                        if (is_string($img)) {
-                            $images[] = $img;
-                        } elseif (is_array($img) && isset($img['url'])) {
-                            $images[] = $img['url'];
-                        }
-                    }
-                }
-                if (empty($images)) {
-                    $images = ['https://images.unsplash.com/photo-1434389677669-e08b4cac3105?w=800&auto=format&fit=crop&q=60'];
-                }
-
-                // Preserve a category the admin already set manually; only
-                // auto-resolve it for products that don't have one yet.
-                $existing = Product::where('ginee_product_id', $gProductId)->first();
-                $categoryId = $existing?->category_id ?? $gineeService->resolveCategoryId($gProduct);
-
-                // Create or Update local product
-                $product = Product::updateOrCreate(
-                    ['ginee_product_id' => $gProductId],
-                    [
-                        'name' => $name,
-                        'slug' => Str::slug($name).'-'.substr($gProductId, -4),
-                        'description' => $description,
-                        'sku' => $sku,
-                        'weight' => $weight,
-                        'base_price' => $basePrice,
-                        'status' => 'active',
-                        'images' => $images,
-                        'category_id' => $categoryId,
-                    ]
-                );
-
-                $importedVariantIds = [];
-                foreach ($gVariants as $gVar) {
-                    $vSku = $gVar['sku'] ?? ($sku.'-'.($gVar['id'] ?? Str::random(4)));
-                    $vName = ! empty($gVar['optionValues']) ? implode(' / ', $gVar['optionValues']) : 'Default';
-                    $vPrice = $priceLookup[$gVar['id']]['price'] ?? null;
-                    $vStock = $gVar['stock']['availableStock'] ?? ($gVar['stock']['warehouseStock'] ?? 0);
-                    $gVariantId = $gVar['id'] ?? null;
-
-                    // Get variant image from price lookup (list-price API returns `image` field)
-                    $vImage = $priceLookup[$gVariantId]['image'] ?? null;
-
-                    $variant = ProductVariant::updateOrCreate(
-                        ['product_id' => $product->id, 'sku' => $vSku],
-                        [
-                            'name' => $vName,
-                            'price' => $vPrice,
-                            'stock' => $vStock,
-                            'ginee_variant_id' => $gVariantId,
-                            'image' => $vImage,
-                        ]
-                    );
-
-                    $importedVariantIds[] = $variant->id;
-
-                    // Log stock change
-                    StockLog::create([
-                        'product_variant_id' => $variant->id,
-                        'before' => 0,
-                        'after' => $vStock,
-                        'reason' => 'ginee_pull_all_sync',
-                    ]);
-                }
-
-                // Clean variants removed in Ginee
-                ProductVariant::where('product_id', $product->id)
-                    ->whereNotIn('id', $importedVariantIds)
-                    ->delete();
-
-                $importedCount++;
-            }
-        });
-
-        return redirect()->route('admin.products')->with('success', "Berhasil menarik & mensinkronisasi {$importedCount} produk dari Ginee.");
+        return redirect()->route('admin.products')->with('success', "Berhasil menarik & mensinkronisasi {$result['imported']} dari {$result['total']} produk di Ginee.");
     }
 
     public function uploadVideo(Request $request): JsonResponse

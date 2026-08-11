@@ -4,8 +4,13 @@ namespace App\Services;
 
 use App\Models\Category;
 use App\Models\Order;
+use App\Models\Product;
+use App\Models\ProductVariant;
+use App\Models\StockLog;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 
 class GineeService
 {
@@ -279,6 +284,180 @@ class GineeService
         }
 
         return Category::where('slug', $slug)->value('id');
+    }
+
+    /**
+     * Pull the FULL product catalog from Ginee — paginating through every
+     * page, not just the first — and upsert into the local Product /
+     * ProductVariant tables. This can process thousands of products, so it
+     * is meant to be run from the CLI (Artisan command) for large catalogs;
+     * the admin "Tarik Produk Ginee" button also calls this but may hit a
+     * web request timeout on very large accounts.
+     *
+     * @param  int  $pageSize  Products requested per Ginee API page.
+     * @param  callable|null  $onProgress  Optional callback(string $stage, int $done, int $total).
+     * @return array{imported:int, fetched:int, total:int}
+     */
+    public function syncAllProducts(int $pageSize = 100, ?callable $onProgress = null): array
+    {
+        // 1. Paginate through every page of the master product list.
+        $page = 0;
+        $gineeProductsList = [];
+        $total = null;
+
+        do {
+            $response = $this->getProducts($page, $pageSize);
+            if (empty($response) || ! isset($response['content'])) {
+                break;
+            }
+
+            $content = $response['content'];
+            if ($total === null) {
+                $total = $response['total'] ?? count($content);
+            }
+            if (empty($content)) {
+                break;
+            }
+
+            $gineeProductsList = array_merge($gineeProductsList, $content);
+            if ($onProgress) {
+                $onProgress('fetch', count($gineeProductsList), $total);
+            }
+            $page++;
+        } while (count($gineeProductsList) < $total);
+
+        if (empty($gineeProductsList)) {
+            return ['imported' => 0, 'fetched' => 0, 'total' => $total ?? 0];
+        }
+
+        // 2. Collect every variation ID across every product.
+        $allVariationIds = [];
+        foreach ($gineeProductsList as $gProduct) {
+            foreach ($gProduct['variationBriefs'] ?? [] as $gVar) {
+                if (! empty($gVar['id'])) {
+                    $allVariationIds[] = $gVar['id'];
+                }
+            }
+        }
+
+        // 3. Fetch prices + variant images in chunks of 20.
+        $priceLookup = [];
+        if (! empty($allVariationIds)) {
+            $chunks = array_chunk($allVariationIds, 20);
+            $chunkTotal = count($chunks);
+            foreach ($chunks as $i => $chunk) {
+                $pricesResp = $this->getVariationPrices($chunk);
+                foreach ($pricesResp['content'] ?? [] as $pItem) {
+                    if (isset($pItem['variationId'])) {
+                        $priceLookup[$pItem['variationId']] = [
+                            'price' => isset($pItem['masterPrice']['amount']) ? (float) $pItem['masterPrice']['amount'] : null,
+                            'image' => $pItem['image'] ?? null,
+                        ];
+                    }
+                }
+                if ($onProgress) {
+                    $onProgress('price', $i + 1, $chunkTotal);
+                }
+            }
+        }
+
+        // 4. Upsert products + variants.
+        $importedCount = 0;
+        foreach ($gineeProductsList as $gProduct) {
+            $name = $gProduct['productName'] ?? ($gProduct['name'] ?? null);
+            $gProductId = $gProduct['productId'] ?? null;
+            if (! $name || ! $gProductId) {
+                continue;
+            }
+
+            DB::transaction(function () use ($gProduct, $name, $gProductId, $priceLookup) {
+                $sku = $gProduct['sellerSku'] ?? ('GN-'.$gProductId);
+                $description = $gProduct['description'] ?? '';
+                $weight = $gProduct['weight'] ?? 200;
+                $gVariants = $gProduct['variationBriefs'] ?? [];
+
+                $prices = [];
+                foreach ($gVariants as $gVar) {
+                    if (isset($gVar['id']) && isset($priceLookup[$gVar['id']]['price'])) {
+                        $prices[] = $priceLookup[$gVar['id']]['price'];
+                    }
+                }
+                $basePrice = ! empty($prices) ? min($prices) : 0;
+
+                $images = [];
+                foreach ($gProduct['images'] ?? [] as $img) {
+                    if (is_string($img)) {
+                        $images[] = $img;
+                    } elseif (is_array($img) && isset($img['url'])) {
+                        $images[] = $img['url'];
+                    }
+                }
+                if (empty($images)) {
+                    $images = ['https://images.unsplash.com/photo-1434389677669-e08b4cac3105?w=800&auto=format&fit=crop&q=60'];
+                }
+
+                // Preserve a category the admin already set manually; only
+                // auto-resolve it for products that don't have one yet.
+                $existing = Product::where('ginee_product_id', $gProductId)->first();
+                $categoryId = $existing?->category_id ?? $this->resolveCategoryId($gProduct);
+
+                $product = Product::updateOrCreate(
+                    ['ginee_product_id' => $gProductId],
+                    [
+                        'name' => $name,
+                        'slug' => Str::slug($name).'-'.substr($gProductId, -4),
+                        'description' => $description,
+                        'sku' => $sku,
+                        'weight' => $weight,
+                        'base_price' => $basePrice,
+                        'status' => 'active',
+                        'images' => $images,
+                        'category_id' => $categoryId,
+                    ]
+                );
+
+                $importedVariantIds = [];
+                foreach ($gVariants as $gVar) {
+                    $vSku = $gVar['sku'] ?? ($sku.'-'.($gVar['id'] ?? Str::random(4)));
+                    $vName = ! empty($gVar['optionValues']) ? implode(' / ', $gVar['optionValues']) : 'Default';
+                    $vPrice = $priceLookup[$gVar['id']]['price'] ?? null;
+                    $vStock = $gVar['stock']['availableStock'] ?? ($gVar['stock']['warehouseStock'] ?? 0);
+                    $gVariantId = $gVar['id'] ?? null;
+                    $vImage = $priceLookup[$gVariantId]['image'] ?? null;
+
+                    $variant = ProductVariant::updateOrCreate(
+                        ['product_id' => $product->id, 'sku' => $vSku],
+                        [
+                            'name' => $vName,
+                            'price' => $vPrice,
+                            'stock' => $vStock,
+                            'ginee_variant_id' => $gVariantId,
+                            'image' => $vImage,
+                        ]
+                    );
+
+                    $importedVariantIds[] = $variant->id;
+
+                    StockLog::create([
+                        'product_variant_id' => $variant->id,
+                        'before' => 0,
+                        'after' => $vStock,
+                        'reason' => 'ginee_pull_all_sync',
+                    ]);
+                }
+
+                ProductVariant::where('product_id', $product->id)
+                    ->whereNotIn('id', $importedVariantIds)
+                    ->delete();
+            });
+
+            $importedCount++;
+            if ($onProgress) {
+                $onProgress('save', $importedCount, count($gineeProductsList));
+            }
+        }
+
+        return ['imported' => $importedCount, 'fetched' => count($gineeProductsList), 'total' => $total];
     }
 
     /**
