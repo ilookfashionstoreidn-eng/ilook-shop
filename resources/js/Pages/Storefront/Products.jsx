@@ -10,13 +10,6 @@ export default function Products({ products, categories, filters }) {
         }).format(val);
     };
 
-    const handleCategoryClick = (categorySlug) => {
-        const query = { ...filters };
-        if (categorySlug) query.category = categorySlug;
-        else delete query.category;
-        router.get(route('storefront.products'), query, { preserveState: true, preserveScroll: true });
-    };
-
     const activeCategoryName = filters.category
         ? categories.find(c => c.slug === filters.category)?.name || filters.category
         : null;
@@ -27,41 +20,14 @@ export default function Products({ products, categories, filters }) {
 
             <div className="max-w-[1280px] mx-auto px-4 md:px-10 py-10 md:py-16">
                 {/* Header */}
-                <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-10 gap-6 border-b border-gray-100 pb-8">
-                    <div>
-                        <span className="text-[10px] font-extrabold tracking-[0.2em] uppercase text-gray-400">
-                            {activeCategoryName || 'FULL CATALOG'}
-                        </span>
-                        <h1 className="text-3xl font-extrabold uppercase tracking-wider mt-1.5" style={{ fontFamily: "'Outfit', sans-serif" }}>
-                            {filters.search ? `"${filters.search}"` : 'SEMUA PRODUK'}
-                        </h1>
-                        <p className="text-xs text-gray-500 mt-2">{products.total} produk ditemukan</p>
-                    </div>
-                    <div className="flex items-center gap-2 overflow-x-auto no-scrollbar whitespace-nowrap pb-2 -mb-2 w-full md:w-auto md:overflow-x-visible md:pb-0 md:mb-0">
-                        <button
-                            onClick={() => handleCategoryClick(null)}
-                            className={`flex-shrink-0 px-4 py-2 text-[10px] font-extrabold tracking-[0.15em] uppercase rounded-full transition-all duration-300 cursor-pointer ${
-                                !filters.category
-                                    ? 'bg-black text-white shadow-md'
-                                    : 'bg-gray-100 text-gray-500 hover:bg-gray-200 hover:text-black'
-                             }`}
-                        >
-                            Semua
-                        </button>
-                        {categories.map(cat => (
-                            <button
-                                key={cat.id}
-                                onClick={() => handleCategoryClick(cat.slug)}
-                                className={`flex-shrink-0 px-4 py-2 text-[10px] font-extrabold tracking-[0.15em] uppercase rounded-full transition-all duration-300 cursor-pointer ${
-                                    filters.category === cat.slug
-                                        ? 'bg-black text-white shadow-md'
-                                        : 'bg-gray-100 text-gray-500 hover:bg-gray-200 hover:text-black'
-                                }`}
-                            >
-                                {cat.name}
-                            </button>
-                        ))}
-                    </div>
+                <div className="mb-10 border-b border-gray-100 pb-8">
+                    <span className="text-[10px] font-extrabold tracking-[0.2em] uppercase text-gray-400">
+                        {activeCategoryName || 'FULL CATALOG'}
+                    </span>
+                    <h1 className="text-3xl font-extrabold uppercase tracking-wider mt-1.5" style={{ fontFamily: "'Outfit', sans-serif" }}>
+                        {filters.search ? `"${filters.search}"` : 'SEMUA PRODUK'}
+                    </h1>
+                    <p className="text-xs text-gray-500 mt-2">{products.total} produk ditemukan</p>
                 </div>
 
                 {/* Products Grid */}
