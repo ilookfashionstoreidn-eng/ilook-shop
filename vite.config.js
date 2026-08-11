@@ -4,6 +4,12 @@ import react from '@vitejs/plugin-react';
 import os from 'os';
 
 function getLocalIp() {
+    // Allow overriding/disabling LAN auto-detection explicitly, e.g. for
+    // sandboxed/CI environments where the detected IP isn't reachable.
+    if (process.env.VITE_HMR_HOST) {
+        return process.env.VITE_HMR_HOST;
+    }
+
     const interfaces = os.networkInterfaces();
     for (const name of Object.keys(interfaces)) {
         for (const net of interfaces[name]) {
@@ -12,7 +18,7 @@ function getLocalIp() {
             }
         }
     }
-    return '127.0.0.1';
+    return 'localhost';
 }
 
 const localIp = getLocalIp();
