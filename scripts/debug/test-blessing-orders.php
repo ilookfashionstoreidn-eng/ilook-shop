@@ -1,14 +1,15 @@
 <?php
 
-require __DIR__ . '/vendor/autoload.php';
+require __DIR__.'/../../vendor/autoload.php';
 
-$app = require_once __DIR__ . '/bootstrap/app.php';
-$kernel = $app->make(Illuminate\Contracts\Console\Kernel::class);
+$app = require_once __DIR__.'/../../bootstrap/app.php';
+$kernel = $app->make(Kernel::class);
 $kernel->bootstrap();
 
 use App\Services\GineeService;
+use Illuminate\Contracts\Console\Kernel;
 
-$ginee = new GineeService();
+$ginee = new GineeService;
 
 echo "Testing Blessing Integration Key on other endpoints:\n";
 
@@ -18,10 +19,10 @@ $sigShop = base64_encode(hash_hmac('sha256', "POST\${$uriShop}\$", env('GINEE_SE
 $headersShop = [
     'Content-Type' => 'application/json',
     'X-Advai-Country' => env('GINEE_COUNTRY', 'ID'),
-    'Authorization' => env('GINEE_ACCESS_KEY') . ':' . $sigShop,
+    'Authorization' => env('GINEE_ACCESS_KEY').':'.$sigShop,
 ];
-$respShop = Http::withHeaders($headersShop)->post(env('GINEE_API_URL') . $uriShop, ['page' => 0, 'size' => 50]);
-echo "\n--- Shop List Response (Status: " . $respShop->status() . ") ---\n";
+$respShop = Http::withHeaders($headersShop)->post(env('GINEE_API_URL').$uriShop, ['page' => 0, 'size' => 50]);
+echo "\n--- Shop List Response (Status: ".$respShop->status().") ---\n";
 print_r($respShop->json());
 
 // 2. Warehouse search
@@ -30,10 +31,10 @@ $sigWH = base64_encode(hash_hmac('sha256', "POST\${$uriWH}\$", env('GINEE_SECRET
 $headersWH = [
     'Content-Type' => 'application/json',
     'X-Advai-Country' => env('GINEE_COUNTRY', 'ID'),
-    'Authorization' => env('GINEE_ACCESS_KEY') . ':' . $sigWH,
+    'Authorization' => env('GINEE_ACCESS_KEY').':'.$sigWH,
 ];
-$respWH = Http::withHeaders($headersWH)->post(env('GINEE_API_URL') . $uriWH, ['page' => 0, 'size' => 50]);
-echo "\n--- Warehouse Search Response (Status: " . $respWH->status() . ") ---\n";
+$respWH = Http::withHeaders($headersWH)->post(env('GINEE_API_URL').$uriWH, ['page' => 0, 'size' => 50]);
+echo "\n--- Warehouse Search Response (Status: ".$respWH->status().") ---\n";
 print_r($respWH->json());
 
 // 3. Order list
@@ -42,8 +43,8 @@ $sigOrder = base64_encode(hash_hmac('sha256', "POST\${$uriOrder}\$", env('GINEE_
 $headersOrder = [
     'Content-Type' => 'application/json',
     'X-Advai-Country' => env('GINEE_COUNTRY', 'ID'),
-    'Authorization' => env('GINEE_ACCESS_KEY') . ':' . $sigOrder,
+    'Authorization' => env('GINEE_ACCESS_KEY').':'.$sigOrder,
 ];
-$respOrder = Http::withHeaders($headersOrder)->post(env('GINEE_API_URL') . $uriOrder, ['page' => 0, 'size' => 50]);
-echo "\n--- Order List Response (Status: " . $respOrder->status() . ") ---\n";
+$respOrder = Http::withHeaders($headersOrder)->post(env('GINEE_API_URL').$uriOrder, ['page' => 0, 'size' => 50]);
+echo "\n--- Order List Response (Status: ".$respOrder->status().") ---\n";
 print_r($respOrder->json());
