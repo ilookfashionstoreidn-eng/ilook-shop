@@ -216,16 +216,24 @@ export default function ProductDetail({ product, related, origin, whatsappNumber
 
     const handleColorSelect = (colorName) => {
         setSelectedColor(colorName);
-        
+
         const colorVariants = parsedVariants.filter(
             v => v.parsedColor && v.parsedColor.toLowerCase() === colorName.toLowerCase()
         );
-        
+
         const hasSizesForColor = colorVariants.some(v => v.parsedSize);
-        
+
         if (hasSizesForColor) {
             setSelectedSize(null);
             setSelectedVariant(null);
+            // Variant isn't resolved until size is picked, so switch the
+            // preview image to this color's photo right away instead of
+            // waiting on the selectedVariant effect (which needs a variant).
+            const colorObj = uniqueColors.find(c => c.name.toLowerCase() === colorName.toLowerCase());
+            if (colorObj?.image) {
+                setActiveImage(colorObj.image);
+                setActiveMediaType('image');
+            }
         } else {
             if (colorVariants.length > 0) {
                 setSelectedVariant(colorVariants[0]);
