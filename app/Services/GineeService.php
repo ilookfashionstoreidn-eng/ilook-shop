@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\Category;
 use App\Models\Order;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -221,6 +222,57 @@ class GineeService
 
             return [];
         }
+    }
+
+    /**
+     * Resolve a local Category id for a raw Ginee product node.
+     *
+     * Prefers Ginee's own `fullCategoryName` path (e.g. "Women Clothes > Sets
+     * > Individual Sets") when present, falling back to keyword matching on
+     * the product name for the ~18% of products Ginee doesn't tag.
+     */
+    public function resolveCategoryId(array $gProduct): ?int
+    {
+        $path = $gProduct['fullCategoryName'] ?? [];
+        $pathStr = is_array($path) ? strtolower(implode(' > ', $path)) : '';
+        $name = $gProduct['productName'] ?? ($gProduct['name'] ?? '');
+
+        $slug = null;
+
+        if ($pathStr !== '') {
+            if (str_contains($pathStr, 'lingerie') || str_contains($pathStr, 'underwear')) {
+                $slug = 'piyama-lingerie';
+            } elseif (str_contains($pathStr, 'kids') || str_contains($pathStr, 'baby') || str_contains($pathStr, 'girl clothes') || str_contains($pathStr, 'boy clothes')) {
+                $slug = 'setelan-anak';
+            } elseif (str_contains($pathStr, 'dress')) {
+                $slug = 'dress';
+            } elseif (str_contains($pathStr, 'set')) {
+                $slug = 'setelan';
+            } elseif (str_contains($pathStr, 'top') || str_contains($pathStr, 'blouse') || str_contains($pathStr, 'shirt')) {
+                $slug = 'blouse';
+            }
+        }
+
+        if (! $slug) {
+            // Ginee didn't tag this product — fall back to guessing from the name.
+            if (preg_match('/\banak\b/i', $name)) {
+                $slug = 'setelan-anak';
+            } elseif (preg_match('/\bpiyama\b/i', $name)) {
+                $slug = 'piyama-lingerie';
+            } elseif (preg_match('/\b(dress|daster|jumpsuit|gamis)\b/i', $name)) {
+                $slug = 'dress';
+            } elseif (preg_match('/\b(one set|setelan|set rok)\b/i', $name) || preg_match('/\bset\b/i', $name)) {
+                $slug = 'setelan';
+            } elseif (preg_match('/\batasan\b/i', $name)) {
+                $slug = 'blouse';
+            }
+        }
+
+        if (! $slug) {
+            return null;
+        }
+
+        return Category::where('slug', $slug)->value('id');
     }
 
     /**

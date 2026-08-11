@@ -266,11 +266,12 @@ class ProductController extends Controller
                             }
                         }
 
-                        DB::transaction(function () use ($product, $gProduct, $gVariants, $priceLookup) {
+                        DB::transaction(function () use ($product, $gProduct, $gVariants, $priceLookup, $gineeService) {
                             $product->update([
                                 'name' => $gProduct['productName'] ?? ($gProduct['name'] ?? $product->name),
                                 'description' => $gProduct['description'] ?? $product->description,
                                 'weight' => $gProduct['weight'] ?? $product->weight,
+                                'category_id' => $product->category_id ?? $gineeService->resolveCategoryId($gProduct),
                             ]);
 
                             foreach ($gVariants as $gVar) {
@@ -376,7 +377,7 @@ class ProductController extends Controller
         }
 
         // 3. Process products and save to local DB
-        DB::transaction(function () use ($gineeProductsList, $priceLookup, &$importedCount) {
+        DB::transaction(function () use ($gineeProductsList, $priceLookup, $gineeService, &$importedCount) {
             foreach ($gineeProductsList as $gProduct) {
                 $name = $gProduct['productName'] ?? ($gProduct['name'] ?? null);
                 $gProductId = $gProduct['productId'] ?? null;
@@ -414,6 +415,11 @@ class ProductController extends Controller
                     $images = ['https://images.unsplash.com/photo-1434389677669-e08b4cac3105?w=800&auto=format&fit=crop&q=60'];
                 }
 
+                // Preserve a category the admin already set manually; only
+                // auto-resolve it for products that don't have one yet.
+                $existing = Product::where('ginee_product_id', $gProductId)->first();
+                $categoryId = $existing?->category_id ?? $gineeService->resolveCategoryId($gProduct);
+
                 // Create or Update local product
                 $product = Product::updateOrCreate(
                     ['ginee_product_id' => $gProductId],
@@ -426,6 +432,7 @@ class ProductController extends Controller
                         'base_price' => $basePrice,
                         'status' => 'active',
                         'images' => $images,
+                        'category_id' => $categoryId,
                     ]
                 );
 
