@@ -731,10 +731,10 @@ export default function Home({ products, categories, filters, activeLivestreams 
                                             <img
                                                 src={mainImage}
                                                 alt={product.name}
-                                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                                                className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500"
                                             />
                                         </Link>
-                                        
+
                                         {discount && (
                                             <span className="absolute top-3 left-3 bg-[#c22e2e] text-white text-[9px] font-black px-2 py-0.75 uppercase tracking-wider rounded-md shadow-md">
                                                 {isFlashSale ? '⚡ ' : ''}{discount}% OFF
