@@ -4,16 +4,17 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Livestream;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
-use Illuminate\Http\RedirectResponse;
 
 class LivestreamController extends Controller
 {
     public function index(): Response
     {
         $livestreams = Livestream::orderBy('created_at', 'desc')->get();
+
         return Inertia::render('Admin/Livestream', [
             'livestreams' => $livestreams,
         ]);
@@ -48,6 +49,7 @@ class LivestreamController extends Controller
     public function destroy(Livestream $livestream): RedirectResponse
     {
         $livestream->delete();
+
         return redirect()->route('admin.livestream')->with('success', 'Livestream berhasil dihapus.');
     }
 }

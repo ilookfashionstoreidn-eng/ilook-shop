@@ -3,10 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\Order;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class GineeWebhookController extends Controller
 {
@@ -18,7 +18,7 @@ class GineeWebhookController extends Controller
         Log::info('Ginee Webhook Received', $request->all());
 
         $data = $request->json()->all();
-        
+
         $payload = $data['payload'] ?? [];
         if (empty($payload)) {
             return response()->json(['success' => false, 'message' => 'Empty payload.'], 400);
@@ -33,15 +33,16 @@ class GineeWebhookController extends Controller
         if ($gineeOrderId) {
             $order = Order::where('ginee_order_id', $gineeOrderId)->first();
         }
-        if (!$order && $channelOrderId) {
+        if (! $order && $channelOrderId) {
             $order = Order::where('order_number', $channelOrderId)->first();
         }
 
-        if (!$order) {
+        if (! $order) {
             Log::warning('Ginee Webhook: Order not found locally', [
                 'gineeOrderId' => $gineeOrderId,
-                'channelOrderId' => $channelOrderId
+                'channelOrderId' => $channelOrderId,
             ]);
+
             return response()->json(['success' => false, 'message' => 'Order not found.'], 404);
         }
 
@@ -52,9 +53,9 @@ class GineeWebhookController extends Controller
 
         DB::transaction(function () use ($order, $trackingNumber, $courier, $gineeStatus, $gineeOrderId) {
             $shipping = $order->shipping;
-            
+
             $updated = false;
-            
+
             // Save Ginee Order ID if not already saved
             if ($gineeOrderId && $order->ginee_order_id !== $gineeOrderId) {
                 $order->update(['ginee_order_id' => $gineeOrderId]);
@@ -79,7 +80,7 @@ class GineeWebhookController extends Controller
                     'CANCELLED' => 'cancelled',
                     'CANCEL' => 'cancelled',
                 ];
-                
+
                 $newStatus = $statusMap[strtoupper($gineeStatus)] ?? null;
                 if ($newStatus && $order->status !== $newStatus) {
                     $order->update([
@@ -88,7 +89,7 @@ class GineeWebhookController extends Controller
                     ]);
                     $updated = true;
                 }
-            } elseif ($trackingNumber && !in_array($order->status, ['shipped', 'delivered', 'completed'])) {
+            } elseif ($trackingNumber && ! in_array($order->status, ['shipped', 'delivered', 'completed'])) {
                 // If tracking number was added, default status to shipped
                 $order->update([
                     'status' => 'shipped',
@@ -108,7 +109,7 @@ class GineeWebhookController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Webhook processed.'
+            'message' => 'Webhook processed.',
         ]);
     }
 }

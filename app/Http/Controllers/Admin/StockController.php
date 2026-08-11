@@ -5,11 +5,11 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\ProductVariant;
 use App\Models\StockLog;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
-use Illuminate\Http\RedirectResponse;
-use Illuminate\Support\Facades\DB;
 
 class StockController extends Controller
 {
@@ -22,10 +22,10 @@ class StockController extends Controller
         if ($search) {
             $query->where(function ($q) use ($search) {
                 $q->where('sku', 'like', "%{$search}%")
-                  ->orWhere('name', 'like', "%{$search}%")
-                  ->orWhereHas('product', function ($pq) use ($search) {
-                      $pq->where('name', 'like', "%{$search}%");
-                  });
+                    ->orWhere('name', 'like', "%{$search}%")
+                    ->orWhereHas('product', function ($pq) use ($search) {
+                        $pq->where('name', 'like', "%{$search}%");
+                    });
             });
         }
 
@@ -65,7 +65,7 @@ class StockController extends Controller
         ]);
 
         $oldStock = $variant->stock;
-        $newStock = (int)$validated['stock'];
+        $newStock = (int) $validated['stock'];
 
         if ($oldStock !== $newStock) {
             DB::transaction(function () use ($variant, $oldStock, $newStock, $validated) {

@@ -11,7 +11,7 @@ class EnsurePhoneIsSet
     /**
      * Handle an incoming request.
      *
-     * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
+     * @param  Closure(Request): (Response)  $next
      */
     public function handle(Request $request, Closure $next): Response
     {
@@ -20,16 +20,16 @@ class EnsurePhoneIsSet
         // Check if user is logged in, has role 'buyer' and phone is null or empty
         if ($user && $user->role === 'buyer' && empty($user->phone)) {
             // Avoid infinite redirect loop for phone-entry route, logout route, and API/webhook requests
-            if (!$request->is('enter-phone') && 
-                !$request->is('logout') && 
-                !$request->routeIs('logout') && 
-                !$request->is('api/*')) {
-                
+            if (! $request->is('enter-phone') &&
+                ! $request->is('logout') &&
+                ! $request->routeIs('logout') &&
+                ! $request->is('api/*')) {
+
                 // Store the intended URL for redirection after phone entry is completed
-                if ($request->isMethod('get') && !$request->ajax()) {
+                if ($request->isMethod('get') && ! $request->ajax()) {
                     session()->put('url.intended', $request->fullUrl());
                 }
-                
+
                 return redirect()->route('phone.entry');
             }
         }

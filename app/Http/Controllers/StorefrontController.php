@@ -2,30 +2,37 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Product;
-use App\Models\ProductVariant;
+use App\Models\BankAccount;
 use App\Models\Category;
+use App\Models\Coupon;
+use App\Models\Livestream;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\OrderShipping;
-use App\Models\StockLog;
+use App\Models\Product;
+use App\Models\ProductReview;
+use App\Models\ProductVariant;
 use App\Models\Setting;
-use App\Models\Coupon;
-use App\Services\RajaOngkirService;
+use App\Models\StockLog;
+use App\Models\User;
 use App\Services\GineeService;
 use App\Services\PaymentService;
+use App\Services\RajaOngkirService;
+use Carbon\Carbon;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
-use Illuminate\Http\JsonResponse;
 
 class StorefrontController extends Controller
 {
     protected RajaOngkirService $rajaOngkir;
+
     protected GineeService $gineeService;
+
     protected PaymentService $paymentService;
 
     public function __construct(
@@ -33,8 +40,8 @@ class StorefrontController extends Controller
         GineeService $gineeService,
         PaymentService $paymentService
     ) {
-        $this->rajaOngkir     = $rajaOngkir;
-        $this->gineeService   = $gineeService;
+        $this->rajaOngkir = $rajaOngkir;
+        $this->gineeService = $gineeService;
         $this->paymentService = $paymentService;
     }
 
@@ -75,16 +82,16 @@ class StorefrontController extends Controller
 
         $order->load(['items.variant.product', 'shipping', 'bankAccount']);
 
-        $reviewedProductIds = \App\Models\ProductReview::where('user_id', auth()->id())
+        $reviewedProductIds = ProductReview::where('user_id', auth()->id())
             ->where('order_id', $order->id)
             ->pluck('product_id')
             ->toArray();
 
         return Inertia::render('Storefront/OrderDetail', [
-            'order'             => $order,
+            'order' => $order,
             'midtransClientKey' => config('services.midtrans.client_key', ''),
-            'midtransSnapUrl'   => config('services.midtrans.snap_url'),
-            'reviewedProductIds'=> $reviewedProductIds,
+            'midtransSnapUrl' => config('services.midtrans.snap_url'),
+            'reviewedProductIds' => $reviewedProductIds,
         ]);
     }
 
@@ -92,7 +99,7 @@ class StorefrontController extends Controller
      * Selesaikan Pesanan (Mark order as completed)
      * POST /my-orders/{order}/complete
      */
-    public function completeOrder(Order $order): \Illuminate\Http\RedirectResponse
+    public function completeOrder(Order $order): RedirectResponse
     {
         // Pastikan hanya pemilik order yang bisa menyelesaikan
         if ($order->user_id !== auth()->id()) {
@@ -100,7 +107,7 @@ class StorefrontController extends Controller
         }
 
         // Hanya order dengan status shipped atau delivered yang bisa diselesaikan
-        if (!in_array($order->status, ['shipped', 'delivered'])) {
+        if (! in_array($order->status, ['shipped', 'delivered'])) {
             return back()->with('error', 'Status pesanan tidak valid untuk diselesaikan.');
         }
 
@@ -115,14 +122,14 @@ class StorefrontController extends Controller
      * Kirim ulasan dan rating produk dari order yang selesai
      * POST /my-orders/{order}/review
      */
-    public function storeReview(Request $request, Order $order): \Illuminate\Http\RedirectResponse
+    public function storeReview(Request $request, Order $order): RedirectResponse
     {
         if ($order->user_id !== auth()->id()) {
             abort(403, 'Akses ditolak.');
         }
 
         // Pastikan pesanan sudah selesai atau terkirim
-        if (!in_array($order->status, ['completed', 'delivered'])) {
+        if (! in_array($order->status, ['completed', 'delivered'])) {
             return back()->with('error', 'Anda hanya dapat memberikan ulasan untuk pesanan yang sudah selesai atau terkirim.');
         }
 
@@ -138,12 +145,12 @@ class StorefrontController extends Controller
             return $item->variant && $item->variant->product_id == $validated['product_id'];
         });
 
-        if (!$hasProduct) {
+        if (! $hasProduct) {
             return back()->with('error', 'Produk tidak ditemukan dalam pesanan ini.');
         }
 
         // Cek jika sudah pernah diulas untuk order ini
-        $exists = \App\Models\ProductReview::where('order_id', $order->id)
+        $exists = ProductReview::where('order_id', $order->id)
             ->where('user_id', auth()->id())
             ->where('product_id', $validated['product_id'])
             ->exists();
@@ -153,7 +160,7 @@ class StorefrontController extends Controller
         }
 
         // Simpan review
-        \App\Models\ProductReview::create([
+        ProductReview::create([
             'product_id' => $validated['product_id'],
             'user_id' => auth()->id(),
             'order_id' => $order->id,
@@ -176,17 +183,17 @@ class StorefrontController extends Controller
         if ($order->user_id !== auth()->id()) {
             return response()->json([
                 'success' => false,
-                'message' => 'Akses ditolak.'
+                'message' => 'Akses ditolak.',
             ], 403);
         }
 
         $order->load('shipping');
         $shipping = $order->shipping;
 
-        if (!$shipping || !$shipping->tracking_number) {
+        if (! $shipping || ! $shipping->tracking_number) {
             return response()->json([
                 'success' => false,
-                'message' => 'Nomor resi belum tersedia untuk pesanan ini.'
+                'message' => 'Nomor resi belum tersedia untuk pesanan ini.',
             ], 400);
         }
 
@@ -197,18 +204,18 @@ class StorefrontController extends Controller
         $trackingData = $this->rajaOngkir->trackWaybill($waybill, $courier);
 
         // Komerce/Rajaongkir response check
-        $hasRealHistory = !empty($trackingData['history']) || !empty($trackingData['manifest']) || !empty($trackingData['details']);
+        $hasRealHistory = ! empty($trackingData['history']) || ! empty($trackingData['manifest']) || ! empty($trackingData['details']);
 
-        if (!$hasRealHistory) {
+        if (! $hasRealHistory) {
             // Generate mock timeline dates based on order timestamps for local testing / fallback
             $orderCreated = $order->created_at;
-            $shippedTime = $shipping->updated_at ? \Carbon\Carbon::parse($shipping->updated_at) : $orderCreated->addHours(12);
-            
+            $shippedTime = $shipping->updated_at ? Carbon::parse($shipping->updated_at) : $orderCreated->addHours(12);
+
             $mockHistory = [
                 [
                     'date' => $shippedTime->translatedFormat('d M Y'),
                     'time' => $shippedTime->format('H:i'),
-                    'description' => 'Paket telah diserahkan ke kurir (' . strtoupper($courier) . ') dan sedang dalam perjalanan.',
+                    'description' => 'Paket telah diserahkan ke kurir ('.strtoupper($courier).') dan sedang dalam perjalanan.',
                     'location' => $shipping->city ?? 'Jakarta',
                 ],
                 [
@@ -222,16 +229,16 @@ class StorefrontController extends Controller
                     'time' => $orderCreated->format('H:i'),
                     'description' => 'Pesanan berhasil dibuat dan dikonfirmasi',
                     'location' => 'Sistem iLOOK',
-                ]
+                ],
             ];
 
             // If order status is delivered or completed, add a delivered step
             if (in_array($order->status, ['delivered', 'completed'])) {
-                $deliveredTime = $shipping->updated_at ? \Carbon\Carbon::parse($shipping->updated_at)->addDays(1) : $orderCreated->addDays(2);
+                $deliveredTime = $shipping->updated_at ? Carbon::parse($shipping->updated_at)->addDays(1) : $orderCreated->addDays(2);
                 array_unshift($mockHistory, [
                     'date' => $deliveredTime->translatedFormat('d M Y'),
                     'time' => $deliveredTime->format('H:i'),
-                    'description' => 'Pesanan telah diterima oleh penerima (' . $shipping->recipient_name . '). Terima kasih telah berbelanja di iLOOK.',
+                    'description' => 'Pesanan telah diterima oleh penerima ('.$shipping->recipient_name.'). Terima kasih telah berbelanja di iLOOK.',
                     'location' => $shipping->city,
                 ]);
             }
@@ -249,20 +256,20 @@ class StorefrontController extends Controller
         } else {
             // Normalise the history key if it comes as "manifest" or "details"
             $history = $trackingData['history'] ?? $trackingData['manifest'] ?? [];
-            
+
             // Format to standard format for frontend: array of { date, time, description, location }
             $formattedHistory = [];
             foreach ($history as $h) {
                 // Parse date
                 $dateStr = $h['manifest_date'] ?? $h['date'] ?? $h['dateTime'] ?? $h['time'] ?? '';
                 if ($dateStr && preg_match('/^\d{4}-\d{2}-\d{2}$/', $dateStr)) {
-                    $dateStr = \Carbon\Carbon::parse($dateStr)->translatedFormat('d M Y');
+                    $dateStr = Carbon::parse($dateStr)->translatedFormat('d M Y');
                 }
 
                 // Parse time
                 $timeStr = $h['manifest_time'] ?? $h['time'] ?? '';
                 if ($timeStr && preg_match('/^\d{2}:\d{2}:\d{2}$/', $timeStr)) {
-                    $timeStr = \Carbon\Carbon::parse($timeStr)->format('H:i');
+                    $timeStr = Carbon::parse($timeStr)->format('H:i');
                 }
 
                 $formattedHistory[] = [
@@ -289,20 +296,20 @@ class StorefrontController extends Controller
     public function home(Request $request): Response
     {
         $query = Product::with(['category', 'variants'])->where('status', 'active');
-        
+
         if ($request->input('category')) {
-            $query->whereHas('category', function($q) use ($request) {
+            $query->whereHas('category', function ($q) use ($request) {
                 $q->where('slug', $request->input('category'));
             });
         }
 
         if ($request->input('search')) {
-            $query->where('name', 'like', '%' . $request->input('search') . '%');
+            $query->where('name', 'like', '%'.$request->input('search').'%');
         }
 
         $products = $query->orderBy('created_at', 'desc')->get();
         $categories = Category::withCount('products')->get();
-        $activeLivestreams = \App\Models\Livestream::where('is_active', true)->orderBy('created_at', 'desc')->get();
+        $activeLivestreams = Livestream::where('is_active', true)->orderBy('created_at', 'desc')->get();
 
         return Inertia::render('Storefront/Home', [
             'products' => $products,
@@ -317,7 +324,7 @@ class StorefrontController extends Controller
      */
     public function productDetail(string $slug): Response
     {
-        $product = Product::with(['category', 'variants', 'reviews' => function($q) {
+        $product = Product::with(['category', 'variants', 'reviews' => function ($q) {
             $q->orderBy('review_date', 'desc')->orderBy('created_at', 'desc');
         }])
             ->where('slug', $slug)
@@ -331,7 +338,7 @@ class StorefrontController extends Controller
         $whatsappNumber = Setting::where('key', 'whatsapp_number')->first()->value ?? '081234567890';
         $whatsappNumber = preg_replace('/[^0-9]/', '', $whatsappNumber);
         if (str_starts_with($whatsappNumber, '0')) {
-            $whatsappNumber = '62' . substr($whatsappNumber, 1);
+            $whatsappNumber = '62'.substr($whatsappNumber, 1);
         }
 
         // Load 4 related products in same category
@@ -364,45 +371,45 @@ class StorefrontController extends Controller
     public function checkoutPage(): Response
     {
         $provinces = $this->rajaOngkir->getProvinces();
-        
+
         // Load active settings
         $settingsRaw = Setting::all()->pluck('value', 'key')->toArray();
-        
-        $activeCouriers = isset($settingsRaw['couriers_active']) 
-            ? json_decode($settingsRaw['couriers_active'], true) 
+
+        $activeCouriers = isset($settingsRaw['couriers_active'])
+            ? json_decode($settingsRaw['couriers_active'], true)
             : ['jne', 'jnt', 'sicepat'];
 
         $coupons = Coupon::where('is_active', true)
-            ->where(function($q) {
+            ->where(function ($q) {
                 $q->whereNull('expires_at')
-                  ->orWhere('expires_at', '>', now());
+                    ->orWhere('expires_at', '>', now());
             })
-            ->where(function($q) {
+            ->where(function ($q) {
                 $q->whereNull('usage_limit')
-                  ->orWhereRaw('used_count < usage_limit');
+                    ->orWhereRaw('used_count < usage_limit');
             })
             ->get();
 
         $taxType = $settingsRaw['tax_type'] ?? 'percentage';
-        $taxValue = (float)($settingsRaw['tax_value'] ?? 0.00);
+        $taxValue = (float) ($settingsRaw['tax_value'] ?? 0.00);
         $taxChargedTo = $settingsRaw['tax_charged_to'] ?? 'buyer';
         $adminFeeType = $settingsRaw['admin_fee_type'] ?? 'nominal';
-        $adminFeeValue = (float)($settingsRaw['admin_fee_value'] ?? 0.00);
+        $adminFeeValue = (float) ($settingsRaw['admin_fee_value'] ?? 0.00);
         $adminFeeChargedTo = $settingsRaw['admin_fee_charged_to'] ?? 'buyer';
 
         return Inertia::render('Storefront/Checkout', [
-            'provinces'       => $provinces,
-            'activeCouriers'  => $activeCouriers,
-            'originCityId'    => $settingsRaw['origin_city_id'] ?? '152',
+            'provinces' => $provinces,
+            'activeCouriers' => $activeCouriers,
+            'originCityId' => $settingsRaw['origin_city_id'] ?? '152',
             'midtransClientKey' => config('services.midtrans.client_key', ''),
-            'midtransSnapUrl'   => config('services.midtrans.snap_url'),
-            'bankAccounts'    => \App\Models\BankAccount::where('is_active', true)->get(),
+            'midtransSnapUrl' => config('services.midtrans.snap_url'),
+            'bankAccounts' => BankAccount::where('is_active', true)->get(),
             'availableCoupons' => $coupons,
-            'taxType'         => $taxType,
-            'taxValue'        => $taxValue,
-            'taxChargedTo'    => $taxChargedTo,
-            'adminFeeType'    => $adminFeeType,
-            'adminFeeValue'   => $adminFeeValue,
+            'taxType' => $taxType,
+            'taxValue' => $taxValue,
+            'taxChargedTo' => $taxChargedTo,
+            'adminFeeType' => $adminFeeType,
+            'adminFeeValue' => $adminFeeValue,
             'adminFeeChargedTo' => $adminFeeChargedTo,
         ]);
     }
@@ -418,7 +425,7 @@ class StorefrontController extends Controller
             'courier' => 'required|string',
         ]);
 
-        $originCityId = (int)(Setting::where('key', 'origin_city_id')->first()->value ?? 152);
+        $originCityId = (int) (Setting::where('key', 'origin_city_id')->first()->value ?? 152);
 
         $costs = $this->rajaOngkir->calculateCost(
             $originCityId,
@@ -439,6 +446,7 @@ class StorefrontController extends Controller
     public function getCities(int $provinceId): JsonResponse
     {
         $cities = $this->rajaOngkir->getCitiesByProvince($provinceId);
+
         return response()->json([
             'success' => true,
             'cities' => $cities,
@@ -474,15 +482,15 @@ class StorefrontController extends Controller
         try {
             $order = DB::transaction(function () use ($request) {
                 // Generate unique order number
-                $orderNumber = 'ILK-' . date('YmdHis') . '-' . rand(1000, 9999);
-                
+                $orderNumber = 'ILK-'.date('YmdHis').'-'.rand(1000, 9999);
+
                 // Calculate item totals
                 $subtotal = 0;
                 $itemsToCreate = [];
-                
+
                 foreach ($request->input('items') as $cartItem) {
                     $variant = ProductVariant::with('product')->lockForUpdate()->find($cartItem['variant_id']);
-                    
+
                     if ($variant->stock < $cartItem['quantity']) {
                         throw new \Exception("Stok tidak mencukupi untuk varian: {$variant->product->name} ({$variant->name})");
                     }
@@ -502,7 +510,7 @@ class StorefrontController extends Controller
                     // Deduct local stock
                     $oldStock = $variant->stock;
                     $variant->update([
-                        'stock' => $oldStock - $cartItem['quantity']
+                        'stock' => $oldStock - $cartItem['quantity'],
                     ]);
 
                     // Log stock change
@@ -515,12 +523,12 @@ class StorefrontController extends Controller
 
                     $itemsToCreate[] = [
                         'product_variant_id' => $variant->id,           // FK ke product_variants
-                        'product_name'       => $variant->product->name,
-                        'variant_label'      => $variant->name,         // kolom variant_label
-                        'quantity'           => $cartItem['quantity'],
-                        'unit_price'         => $unitPrice,
-                        'subtotal'           => $totalPrice,            // kolom subtotal
-                        '_ginee_variant_id'  => $variant->ginee_variant_id, // prefix _ agar tidak diinsert
+                        'product_name' => $variant->product->name,
+                        'variant_label' => $variant->name,         // kolom variant_label
+                        'quantity' => $cartItem['quantity'],
+                        'unit_price' => $unitPrice,
+                        'subtotal' => $totalPrice,            // kolom subtotal
+                        '_ginee_variant_id' => $variant->ginee_variant_id, // prefix _ agar tidak diinsert
                     ];
                 }
 
@@ -533,48 +541,48 @@ class StorefrontController extends Controller
                     foreach ($request->input('items') as $cartItem) {
                         $v = ProductVariant::with('product')->find($cartItem['variant_id']);
                         if ($v && $v->product && $v->product->is_flash_sale_active) {
-                            throw new \Exception("Kupon diskon tidak dapat digunakan karena terdapat produk Flash Sale di keranjang belanja Anda.");
+                            throw new \Exception('Kupon diskon tidak dapat digunakan karena terdapat produk Flash Sale di keranjang belanja Anda.');
                         }
                     }
 
                     $coupon = Coupon::where('code', $couponCode)->first();
                     if ($coupon) {
-                        if (!$coupon->isValidForSubtotal($subtotal)) {
-                            throw new \Exception("Kupon tidak valid untuk transaksi ini.");
+                        if (! $coupon->isValidForSubtotal($subtotal)) {
+                            throw new \Exception('Kupon tidak valid untuk transaksi ini.');
                         }
                         if ($coupon->usage_limit !== null && $coupon->used_count >= $coupon->usage_limit) {
-                            throw new \Exception("Kupon ini telah mencapai batas maksimum pemakaian.");
+                            throw new \Exception('Kupon ini telah mencapai batas maksimum pemakaian.');
                         }
                         $couponDiscount = $coupon->calculateDiscount($subtotal);
                         $coupon->increment('used_count');
                     } else {
-                        throw new \Exception("Kupon tidak ditemukan.");
+                        throw new \Exception('Kupon tidak ditemukan.');
                     }
                 }
 
                 // Fetch settings
                 $settingsRaw = Setting::all()->pluck('value', 'key')->toArray();
                 $taxType = $settingsRaw['tax_type'] ?? 'percentage';
-                $taxValue = (float)($settingsRaw['tax_value'] ?? 0.00);
+                $taxValue = (float) ($settingsRaw['tax_value'] ?? 0.00);
                 $taxChargedTo = $settingsRaw['tax_charged_to'] ?? 'buyer';
                 $adminFeeType = $settingsRaw['admin_fee_type'] ?? 'nominal';
-                $adminFeeValue = (float)($settingsRaw['admin_fee_value'] ?? 0.00);
+                $adminFeeValue = (float) ($settingsRaw['admin_fee_value'] ?? 0.00);
                 $adminFeeChargedTo = $settingsRaw['admin_fee_charged_to'] ?? 'buyer';
 
                 // Calculate PPN
                 $baseAmount = $subtotal - $couponDiscount;
                 $taxAmount = 0.00;
                 if ($taxValue > 0) {
-                    $taxAmount = $taxType === 'percentage' 
-                        ? round($baseAmount * ($taxValue / 100)) 
+                    $taxAmount = $taxType === 'percentage'
+                        ? round($baseAmount * ($taxValue / 100))
                         : $taxValue;
                 }
 
                 // Calculate Admin Fee
                 $adminFee = 0.00;
                 if ($adminFeeValue > 0) {
-                    $adminFee = $adminFeeType === 'percentage' 
-                        ? round($baseAmount * ($adminFeeValue / 100)) 
+                    $adminFee = $adminFeeType === 'percentage'
+                        ? round($baseAmount * ($adminFeeValue / 100))
                         : $adminFeeValue;
                 }
 
@@ -582,7 +590,7 @@ class StorefrontController extends Controller
                 $adminFee = max(0.00, $adminFee);
 
                 $shippingCost = $request->input('shipping_cost');
-                
+
                 // Add to buyer's total only if charged to buyer
                 $taxAddedToBuyer = ($taxChargedTo === 'buyer') ? $taxAmount : 0.00;
                 $adminFeeAddedToBuyer = ($adminFeeChargedTo === 'buyer') ? $adminFee : 0.00;
@@ -591,19 +599,19 @@ class StorefrontController extends Controller
 
                 // Create Order record — status awal pending_payment, akan diupdate setelah Midtrans callback
                 $order = Order::create([
-                    'order_number'   => $orderNumber,
-                    'user_id'        => auth()->id() ?? (\App\Models\User::first()->id ?? 1),
-                    'status'         => 'pending_payment',
-                    'subtotal'       => $subtotal,
-                    'shipping_cost'  => $shippingCost,
-                    'tax_amount'     => $taxAmount,
+                    'order_number' => $orderNumber,
+                    'user_id' => auth()->id() ?? (User::first()->id ?? 1),
+                    'status' => 'pending_payment',
+                    'subtotal' => $subtotal,
+                    'shipping_cost' => $shippingCost,
+                    'tax_amount' => $taxAmount,
                     'tax_charged_to' => $taxChargedTo,
-                    'admin_fee'      => $adminFee,
+                    'admin_fee' => $adminFee,
                     'admin_fee_charged_to' => $adminFeeChargedTo,
-                    'total_amount'   => $totalAmount,
+                    'total_amount' => $totalAmount,
                     'payment_method' => $request->input('payment_method'),
                     'payment_status' => 'unpaid',
-                    'coupon_code'    => $couponCode,
+                    'coupon_code' => $couponCode,
                     'coupon_discount' => $couponDiscount,
                     'bank_account_id' => $request->input('bank_account_id'),
                 ]);
@@ -640,24 +648,25 @@ class StorefrontController extends Controller
             // Ginee push akan dilakukan setelah webhook Midtrans diterima (status = paid)
 
             return response()->json([
-                'success'      => true,
-                'order_id'     => $order->id,
+                'success' => true,
+                'order_id' => $order->id,
                 'order_number' => $order->order_number,
                 'total_amount' => $order->total_amount,
             ]);
 
         } catch (\Exception $e) {
-            Log::error('Checkout placement error: ' . $e->getMessage());
+            Log::error('Checkout placement error: '.$e->getMessage());
+
             return response()->json([
                 'success' => false,
-                'message' => $e->getMessage()
+                'message' => $e->getMessage(),
             ], 400);
         }
     }
 
     /**
      * Initiate Midtrans Payment — Buat Snap Token untuk order yang sudah dibuat
-     * 
+     *
      * POST /orders/{order}/payment/initiate
      */
     public function initiatePayment(Order $order): JsonResponse
@@ -674,23 +683,22 @@ class StorefrontController extends Controller
             $snapToken = $this->paymentService->createSnapToken($order);
 
             return response()->json([
-                'success'    => true,
+                'success' => true,
                 'snap_token' => $snapToken,
-                'order_id'   => $order->id,
+                'order_id' => $order->id,
             ]);
 
         } catch (\Exception $e) {
-            Log::error('Midtrans createSnapToken error: ' . $e->getMessage(), [
+            Log::error('Midtrans createSnapToken error: '.$e->getMessage(), [
                 'order_number' => $order->order_number,
             ]);
 
             return response()->json([
                 'success' => false,
-                'message' => 'Gagal menginisiasi pembayaran: ' . $e->getMessage(),
+                'message' => 'Gagal menginisiasi pembayaran: '.$e->getMessage(),
             ], 500);
         }
     }
-
 
     /**
      * Order Success Screen
@@ -707,14 +715,14 @@ class StorefrontController extends Controller
         }
 
         return Inertia::render('Storefront/OrderSuccess', [
-            'order' => $order
+            'order' => $order,
         ]);
     }
 
     /**
      * Order Pending Payment Screen
      */
-    public function orderPending(Order $order): Response|\Illuminate\Http\RedirectResponse
+    public function orderPending(Order $order): Response|RedirectResponse
     {
         $order->load(['items', 'shipping', 'bankAccount']);
 
@@ -730,10 +738,11 @@ class StorefrontController extends Controller
         }
 
         $order->load(['items', 'shipping', 'bankAccount']);
+
         return Inertia::render('Storefront/OrderPending', [
-            'order'             => $order,
+            'order' => $order,
             'midtransClientKey' => config('services.midtrans.client_key', ''),
-            'midtransSnapUrl'   => config('services.midtrans.snap_url'),
+            'midtransSnapUrl' => config('services.midtrans.snap_url'),
         ]);
     }
 
@@ -752,16 +761,16 @@ class StorefrontController extends Controller
 
         return response()->json([
             'payment_status' => $order->payment_status,
-            'status'         => $order->status,
+            'status' => $order->status,
             'payment_method' => $order->payment_method,
-            'is_paid'        => $order->payment_status === 'paid',
+            'is_paid' => $order->payment_status === 'paid',
         ]);
     }
 
     /**
      * Upload proof of payment for manual transfer orders
      */
-    public function uploadPaymentProof(Request $request, Order $order): \Illuminate\Http\RedirectResponse
+    public function uploadPaymentProof(Request $request, Order $order): RedirectResponse
     {
         // Ensure owner
         if ($order->user_id !== auth()->id()) {
@@ -783,16 +792,16 @@ class StorefrontController extends Controller
         try {
             if ($request->hasFile('payment_proof')) {
                 $file = $request->file('payment_proof');
-                $filename = 'proof-' . $order->order_number . '-' . time() . '.' . $file->getClientOriginalExtension();
-                
+                $filename = 'proof-'.$order->order_number.'-'.time().'.'.$file->getClientOriginalExtension();
+
                 // Ensure target directory exists in public/uploads/payment_proofs
                 $targetDir = public_path('uploads/payment_proofs');
-                if (!file_exists($targetDir)) {
+                if (! file_exists($targetDir)) {
                     mkdir($targetDir, 0755, true);
                 }
-                
+
                 $file->move($targetDir, $filename);
-                $filePath = '/uploads/payment_proofs/' . $filename;
+                $filePath = '/uploads/payment_proofs/'.$filename;
 
                 // Delete old proof if exists
                 if ($order->payment_proof && file_exists(public_path($order->payment_proof))) {
@@ -806,8 +815,9 @@ class StorefrontController extends Controller
                 return back()->with('success', 'Bukti transfer berhasil diunggah. Menunggu konfirmasi admin.');
             }
         } catch (\Exception $e) {
-            Log::error('Upload payment proof error: ' . $e->getMessage());
-            return back()->with('error', 'Gagal mengunggah bukti transfer: ' . $e->getMessage());
+            Log::error('Upload payment proof error: '.$e->getMessage());
+
+            return back()->with('error', 'Gagal mengunggah bukti transfer: '.$e->getMessage());
         }
 
         return back()->with('error', 'File tidak ditemukan.');
@@ -822,24 +832,26 @@ class StorefrontController extends Controller
         try {
             $statusData = $this->paymentService->checkTransactionStatus($order->order_number);
 
-            if (!$statusData) return;
+            if (! $statusData) {
+                return;
+            }
 
             $transactionStatus = $statusData['transaction_status'] ?? '';
-            $fraudStatus       = $statusData['fraud_status'] ?? '';
-            $paymentType       = $statusData['payment_type'] ?? '';
+            $fraudStatus = $statusData['fraud_status'] ?? '';
+            $paymentType = $statusData['payment_type'] ?? '';
 
             if ($transactionStatus === 'settlement' ||
                 ($transactionStatus === 'capture' && $fraudStatus === 'accept')) {
 
                 if ($order->payment_status !== 'paid') {
                     $order->update([
-                        'status'         => 'paid',
+                        'status' => 'paid',
                         'payment_status' => 'paid',
                         'payment_method' => $this->resolvePaymentLabel($paymentType, $statusData),
                     ]);
 
                     Log::info('Order status synced from Midtrans API', [
-                        'order_number'       => $order->order_number,
+                        'order_number' => $order->order_number,
                         'transaction_status' => $transactionStatus,
                     ]);
 
@@ -851,13 +863,13 @@ class StorefrontController extends Controller
 
             } elseif (in_array($transactionStatus, ['deny', 'cancel', 'expire', 'failure'])) {
                 $order->update([
-                    'status'         => 'cancelled',
+                    'status' => 'cancelled',
                     'payment_status' => 'failed',
                 ]);
             }
 
         } catch (\Exception $e) {
-            Log::warning('syncMidtransStatus error: ' . $e->getMessage(), [
+            Log::warning('syncMidtransStatus error: '.$e->getMessage(), [
                 'order_number' => $order->order_number,
             ]);
         }
@@ -869,14 +881,15 @@ class StorefrontController extends Controller
     private function resolvePaymentLabel(string $type, array $data): string
     {
         $bank = $data['va_numbers'][0]['bank'] ?? ($data['bank'] ?? '');
+
         return match ($type) {
-            'bank_transfer' => 'Virtual Account ' . strtoupper($bank),
-            'gopay'         => 'GoPay',
-            'qris'          => 'QRIS',
-            'shopeepay'     => 'ShopeePay',
-            'credit_card'   => 'Kartu Kredit/Debit',
-            'cstore'        => 'Gerai Ritel (' . strtoupper($data['store'] ?? '') . ')',
-            default         => ucfirst(str_replace('_', ' ', $type)),
+            'bank_transfer' => 'Virtual Account '.strtoupper($bank),
+            'gopay' => 'GoPay',
+            'qris' => 'QRIS',
+            'shopeepay' => 'ShopeePay',
+            'credit_card' => 'Kartu Kredit/Debit',
+            'cstore' => 'Gerai Ritel ('.strtoupper($data['store'] ?? '').')',
+            default => ucfirst(str_replace('_', ' ', $type)),
         };
     }
 
@@ -888,42 +901,42 @@ class StorefrontController extends Controller
         try {
             $order->load(['items', 'shipping']);
 
-            $shops      = $this->gineeService->getShops();
+            $shops = $this->gineeService->getShops();
             $warehouses = $this->gineeService->getWarehouses();
 
-            $shopId      = $shops['content'][0]['shopId'] ?? ($shops[0]['shopId'] ?? 'sp-mock-1001');
+            $shopId = $shops['content'][0]['shopId'] ?? ($shops[0]['shopId'] ?? 'sp-mock-1001');
             $warehouseId = $warehouses['content'][0]['id'] ?? ($warehouses[0]['id'] ?? 'wh-mock-1001');
 
-            $gineeOrderItems = $order->items->map(fn($item) => [
-                'sku'         => $item->variant?->sku ?? $item->product_name,
-                'quantity'    => $item->quantity,
+            $gineeOrderItems = $order->items->map(fn ($item) => [
+                'sku' => $item->variant?->sku ?? $item->product_name,
+                'quantity' => $item->quantity,
                 'actualPrice' => $item->unit_price,
                 'warehouseId' => $warehouseId,
             ])->toArray();
 
             $gineePayload = [
                 'externalOrderSn' => $order->order_number,
-                'shopId'          => $shopId,
-                'customerName'    => $order->shipping?->recipient_name ?? '',
-                'customerEmail'   => $order->user?->email ?? '',
-                'customerMobile'  => $order->shipping?->phone ?? '',
-                'paymentMethod'   => 'PREPAY',
-                'payAmount'       => $order->total_amount,
-                'payAtDatetime'   => gmdate('Y-m-d\TH:i:s\Z'),
-                'orderItems'      => $gineeOrderItems,
+                'shopId' => $shopId,
+                'customerName' => $order->shipping?->recipient_name ?? '',
+                'customerEmail' => $order->user?->email ?? '',
+                'customerMobile' => $order->shipping?->phone ?? '',
+                'paymentMethod' => 'PREPAY',
+                'payAmount' => $order->total_amount,
+                'payAtDatetime' => gmdate('Y-m-d\TH:i:s\Z'),
+                'orderItems' => $gineeOrderItems,
                 'shippingAddress' => [
-                    'name'          => $order->shipping?->recipient_name ?? '',
-                    'phoneNumber'   => $order->shipping?->phone ?? '',
-                    'country'       => 'ID',
-                    'province'      => $order->shipping?->province ?? '',
-                    'city'          => $order->shipping?->city ?? '',
-                    'district'      => $order->shipping?->city ?? '',
+                    'name' => $order->shipping?->recipient_name ?? '',
+                    'phoneNumber' => $order->shipping?->phone ?? '',
+                    'country' => 'ID',
+                    'province' => $order->shipping?->province ?? '',
+                    'city' => $order->shipping?->city ?? '',
+                    'district' => $order->shipping?->city ?? '',
                     'detailAddress' => $order->shipping?->address ?? '',
                 ],
-                'logisticsInfos'  => [[
-                    'courierCode'    => strtoupper($order->shipping?->courier ?? ''),
+                'logisticsInfos' => [[
+                    'courierCode' => strtoupper($order->shipping?->courier ?? ''),
                     'shippingMethod' => $order->shipping?->service ?? '',
-                    'shippingFee'    => $order->shipping_cost,
+                    'shippingFee' => $order->shipping_cost,
                 ]],
             ];
 
@@ -933,11 +946,11 @@ class StorefrontController extends Controller
                 $order->update(['ginee_order_id' => $gineeResponse['gineeOrderId']]);
                 Log::info('Order pushed to Ginee after status sync', [
                     'order_number' => $order->order_number,
-                    'ginee_id'     => $gineeResponse['gineeOrderId'],
+                    'ginee_id' => $gineeResponse['gineeOrderId'],
                 ]);
             }
         } catch (\Exception $e) {
-            Log::error('pushPaidOrderToGinee error: ' . $e->getMessage());
+            Log::error('pushPaidOrderToGinee error: '.$e->getMessage());
         }
     }
 
@@ -951,7 +964,7 @@ class StorefrontController extends Controller
         if (strlen($query) < 3) {
             return response()->json([
                 'success' => true,
-                'destinations' => []
+                'destinations' => [],
             ]);
         }
 
@@ -959,7 +972,7 @@ class StorefrontController extends Controller
 
         return response()->json([
             'success' => true,
-            'destinations' => $destinations
+            'destinations' => $destinations,
         ]);
     }
 
@@ -996,14 +1009,14 @@ class StorefrontController extends Controller
 
         $coupon = Coupon::where('code', $code)->first();
 
-        if (!$coupon) {
+        if (! $coupon) {
             return response()->json([
                 'success' => false,
                 'message' => 'Kode kupon tidak ditemukan.',
             ], 404);
         }
 
-        if (!$coupon->is_active) {
+        if (! $coupon->is_active) {
             return response()->json([
                 'success' => false,
                 'message' => 'Kupon ini sudah tidak aktif.',
@@ -1017,7 +1030,7 @@ class StorefrontController extends Controller
             ], 400);
         }
 
-        if ($coupon->expires_at && \Carbon\Carbon::now()->greaterThan($coupon->expires_at)) {
+        if ($coupon->expires_at && Carbon::now()->greaterThan($coupon->expires_at)) {
             return response()->json([
                 'success' => false,
                 'message' => 'Kupon ini sudah kedaluwarsa.',
@@ -1027,7 +1040,7 @@ class StorefrontController extends Controller
         if ($subtotal < $coupon->min_spend) {
             return response()->json([
                 'success' => false,
-                'message' => 'Minimal pembelanjaan untuk kupon ini adalah Rp' . number_format($coupon->min_spend, 0, ',', '.') . '.',
+                'message' => 'Minimal pembelanjaan untuk kupon ini adalah Rp'.number_format($coupon->min_spend, 0, ',', '.').'.',
             ], 400);
         }
 
@@ -1043,4 +1056,3 @@ class StorefrontController extends Controller
         ]);
     }
 }
-

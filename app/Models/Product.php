@@ -2,9 +2,11 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Product extends Model
 {
@@ -51,26 +53,26 @@ class Product extends Model
         return $this->hasMany(ProductReview::class);
     }
 
-    public function flashSale(): \Illuminate\Database\Eloquent\Relations\HasOne
+    public function flashSale(): HasOne
     {
         return $this->hasOne(FlashSaleProduct::class);
     }
 
     public function getIsFlashSaleActiveAttribute(): bool
     {
-        $isActive = \App\Models\Setting::where('key', 'flash_sale_is_active')->first()->value ?? '0';
+        $isActive = Setting::where('key', 'flash_sale_is_active')->first()->value ?? '0';
         if ($isActive !== '1') {
             return false;
         }
 
-        $startTime = \App\Models\Setting::where('key', 'flash_sale_start_time')->first()->value ?? null;
-        $endTime = \App\Models\Setting::where('key', 'flash_sale_end_time')->first()->value ?? null;
+        $startTime = Setting::where('key', 'flash_sale_start_time')->first()->value ?? null;
+        $endTime = Setting::where('key', 'flash_sale_end_time')->first()->value ?? null;
         $now = now();
 
-        if ($startTime && $now->lt(\Carbon\Carbon::parse($startTime, 'Asia/Jakarta'))) {
+        if ($startTime && $now->lt(Carbon::parse($startTime, 'Asia/Jakarta'))) {
             return false;
         }
-        if ($endTime && $now->gt(\Carbon\Carbon::parse($endTime, 'Asia/Jakarta'))) {
+        if ($endTime && $now->gt(Carbon::parse($endTime, 'Asia/Jakarta'))) {
             return false;
         }
 
@@ -79,29 +81,30 @@ class Product extends Model
 
     public function getFlashSalePriceAttribute(): ?float
     {
-        if (!$this->is_flash_sale_active) {
+        if (! $this->is_flash_sale_active) {
             return null;
         }
 
         $flashSale = $this->flashSale;
-        if (!$flashSale) {
+        if (! $flashSale) {
             return null;
         }
 
         if ($flashSale->discount_type === 'percentage') {
             return max(0, $this->base_price * (1 - ($flashSale->discount_value / 100)));
         }
+
         return max(0, $this->base_price - $flashSale->discount_value);
     }
 
     public function getVariantFlashSalePrice($variant): ?float
     {
-        if (!$this->is_flash_sale_active) {
+        if (! $this->is_flash_sale_active) {
             return null;
         }
 
         $flashSale = $this->flashSale;
-        if (!$flashSale) {
+        if (! $flashSale) {
             return null;
         }
 
@@ -109,6 +112,7 @@ class Product extends Model
         if ($flashSale->discount_type === 'percentage') {
             return max(0, $originalPrice * (1 - ($flashSale->discount_value / 100)));
         }
+
         return max(0, $originalPrice - $flashSale->discount_value);
     }
 }

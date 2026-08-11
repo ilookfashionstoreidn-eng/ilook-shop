@@ -4,11 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\ChatMessage;
 use App\Models\User;
-use App\Models\Product;
-use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
+use Illuminate\Http\Request;
 
 class ChatMessageController extends Controller
 {
@@ -21,14 +18,14 @@ class ChatMessageController extends Controller
         $user = auth()->user();
         $adminUser = User::where('role', 'admin')->first();
 
-        if (!$adminUser) {
+        if (! $adminUser) {
             return response()->json(['success' => false, 'message' => 'Admin user not found.'], 404);
         }
 
         if ($user->role === 'admin') {
             if ($request->has('user_id')) {
                 $request->validate([
-                    'user_id' => 'required|exists:users,id'
+                    'user_id' => 'required|exists:users,id',
                 ]);
                 $partnerId = $request->input('user_id');
             } else {
@@ -41,18 +38,18 @@ class ChatMessageController extends Controller
         $messages = ChatMessage::with(['product'])
             ->where(function ($query) use ($user, $partnerId) {
                 $query->where('sender_id', $user->id)
-                      ->where('receiver_id', $partnerId);
+                    ->where('receiver_id', $partnerId);
             })
             ->orWhere(function ($query) use ($user, $partnerId) {
                 $query->where('sender_id', $partnerId)
-                      ->where('receiver_id', $user->id);
+                    ->where('receiver_id', $user->id);
             })
             ->orderBy('created_at', 'asc')
             ->get();
 
         return response()->json([
             'success' => true,
-            'messages' => $messages
+            'messages' => $messages,
         ]);
     }
 
@@ -65,7 +62,7 @@ class ChatMessageController extends Controller
         $user = auth()->user();
         $adminUser = User::where('role', 'admin')->first();
 
-        if (!$adminUser) {
+        if (! $adminUser) {
             return response()->json(['success' => false, 'message' => 'Admin user not found.'], 404);
         }
 
@@ -81,7 +78,7 @@ class ChatMessageController extends Controller
         $validated = $request->validate($rules);
 
         $senderId = $user->id;
-        $receiverId = ($user->role === 'admin' && !empty($validated['receiver_id'])) ? $validated['receiver_id'] : $adminUser->id;
+        $receiverId = ($user->role === 'admin' && ! empty($validated['receiver_id'])) ? $validated['receiver_id'] : $adminUser->id;
 
         $chatMessage = ChatMessage::create([
             'sender_id' => $senderId,
@@ -93,7 +90,7 @@ class ChatMessageController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => $chatMessage->load('product')
+            'message' => $chatMessage->load('product'),
         ]);
     }
 
@@ -108,7 +105,7 @@ class ChatMessageController extends Controller
         // Subquery to get all users who exchanged messages with the admin
         $senderIds = ChatMessage::where('receiver_id', $adminId)->select('sender_id as user_id');
         $receiverIds = ChatMessage::where('sender_id', $adminId)->select('receiver_id as user_id');
-        
+
         $userIds = $senderIds->union($receiverIds)->pluck('user_id');
 
         $users = User::whereIn('id', $userIds)
@@ -142,7 +139,7 @@ class ChatMessageController extends Controller
 
         return response()->json([
             'success' => true,
-            'users' => $users
+            'users' => $users,
         ]);
     }
 
@@ -157,7 +154,7 @@ class ChatMessageController extends Controller
 
         if ($user->role === 'admin') {
             $request->validate([
-                'sender_id' => 'required|exists:users,id'
+                'sender_id' => 'required|exists:users,id',
             ]);
             $senderId = $request->input('sender_id');
         } else {
@@ -172,7 +169,7 @@ class ChatMessageController extends Controller
         }
 
         return response()->json([
-            'success' => true
+            'success' => true,
         ]);
     }
 }

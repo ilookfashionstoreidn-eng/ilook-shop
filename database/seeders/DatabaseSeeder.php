@@ -2,20 +2,20 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
+use App\Models\BankAccount;
 use App\Models\Category;
-use App\Models\Product;
-use App\Models\ProductVariant;
-use App\Models\StockLog;
+use App\Models\Coupon;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\OrderShipping;
+use App\Models\Product;
+use App\Models\ProductVariant;
 use App\Models\Setting;
-use App\Models\Coupon;
-use App\Models\BankAccount;
+use App\Models\StockLog;
+use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Str;
-use Carbon\Carbon;
 
 class DatabaseSeeder extends Seeder
 {
@@ -101,8 +101,8 @@ class DatabaseSeeder extends Seeder
             'ginee_product_id' => 'gn-prod-110293',
             'images' => [
                 'https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=800&auto=format&fit=crop&q=60',
-                'https://images.unsplash.com/photo-1572804013309-59a88b7e92f1?w=800&auto=format&fit=crop&q=60'
-            ]
+                'https://images.unsplash.com/photo-1572804013309-59a88b7e92f1?w=800&auto=format&fit=crop&q=60',
+            ],
         ]);
 
         $v1_1 = ProductVariant::create([
@@ -111,7 +111,7 @@ class DatabaseSeeder extends Seeder
             'name' => 'S / Hitam',
             'price' => 299000.00,
             'stock' => 12,
-            'ginee_variant_id' => 'gn-var-110293-1'
+            'ginee_variant_id' => 'gn-var-110293-1',
         ]);
         StockLog::create(['product_variant_id' => $v1_1->id, 'before' => 0, 'after' => 12, 'reason' => 'initial_seed']);
 
@@ -121,7 +121,7 @@ class DatabaseSeeder extends Seeder
             'name' => 'M / Hitam',
             'price' => 299000.00,
             'stock' => 8,
-            'ginee_variant_id' => 'gn-var-110293-2'
+            'ginee_variant_id' => 'gn-var-110293-2',
         ]);
         StockLog::create(['product_variant_id' => $v1_2->id, 'before' => 0, 'after' => 8, 'reason' => 'initial_seed']);
 
@@ -131,7 +131,7 @@ class DatabaseSeeder extends Seeder
             'name' => 'S / Sage Green',
             'price' => 310000.00, // Override price
             'stock' => 0, // Out of Stock
-            'ginee_variant_id' => 'gn-var-110293-3'
+            'ginee_variant_id' => 'gn-var-110293-3',
         ]);
         StockLog::create(['product_variant_id' => $v1_3->id, 'before' => 0, 'after' => 0, 'reason' => 'initial_seed']);
 
@@ -141,10 +141,9 @@ class DatabaseSeeder extends Seeder
             'name' => 'M / Sage Green',
             'price' => 310000.00, // Override price
             'stock' => 15,
-            'ginee_variant_id' => 'gn-var-110293-4'
+            'ginee_variant_id' => 'gn-var-110293-4',
         ]);
         StockLog::create(['product_variant_id' => $v1_4->id, 'before' => 0, 'after' => 15, 'reason' => 'initial_seed']);
-
 
         // Product 2
         $p2 = Product::create([
@@ -163,8 +162,8 @@ class DatabaseSeeder extends Seeder
             'ginee_product_id' => 'gn-prod-228304',
             'images' => [
                 'https://images.unsplash.com/photo-1596755094514-f87e34085b2c?w=800&auto=format&fit=crop&q=60',
-                'https://images.unsplash.com/photo-1621072156002-e2fcc103e86e?w=800&auto=format&fit=crop&q=60'
-            ]
+                'https://images.unsplash.com/photo-1621072156002-e2fcc103e86e?w=800&auto=format&fit=crop&q=60',
+            ],
         ]);
 
         $v2_1 = ProductVariant::create([
@@ -173,7 +172,7 @@ class DatabaseSeeder extends Seeder
             'name' => 'M / Broken White',
             'price' => 189000.00,
             'stock' => 25,
-            'ginee_variant_id' => 'gn-var-228304-1'
+            'ginee_variant_id' => 'gn-var-228304-1',
         ]);
         StockLog::create(['product_variant_id' => $v2_1->id, 'before' => 0, 'after' => 25, 'reason' => 'initial_seed']);
 
@@ -183,7 +182,7 @@ class DatabaseSeeder extends Seeder
             'name' => 'L / Broken White',
             'price' => 189000.00,
             'stock' => 3, // Low stock alert!
-            'ginee_variant_id' => 'gn-var-228304-2'
+            'ginee_variant_id' => 'gn-var-228304-2',
         ]);
         StockLog::create(['product_variant_id' => $v2_2->id, 'before' => 0, 'after' => 3, 'reason' => 'initial_seed']);
 
@@ -193,7 +192,7 @@ class DatabaseSeeder extends Seeder
             'name' => 'M / Navy Blue',
             'price' => 189000.00,
             'stock' => 18,
-            'ginee_variant_id' => 'gn-var-228304-3'
+            'ginee_variant_id' => 'gn-var-228304-3',
         ]);
         StockLog::create(['product_variant_id' => $v2_3->id, 'before' => 0, 'after' => 18, 'reason' => 'initial_seed']);
 
@@ -203,7 +202,7 @@ class DatabaseSeeder extends Seeder
             'name' => 'L / Navy Blue',
             'price' => 189000.00,
             'stock' => 20,
-            'ginee_variant_id' => 'gn-var-228304-4'
+            'ginee_variant_id' => 'gn-var-228304-4',
         ]);
         StockLog::create(['product_variant_id' => $v2_4->id, 'before' => 0, 'after' => 20, 'reason' => 'initial_seed']);
 
@@ -222,8 +221,8 @@ class DatabaseSeeder extends Seeder
             'status' => 'active',
             'ginee_product_id' => 'gn-prod-990021',
             'images' => [
-                'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=800&auto=format&fit=crop&q=60'
-            ]
+                'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=800&auto=format&fit=crop&q=60',
+            ],
         ]);
 
         $v3_1 = ProductVariant::create([
@@ -232,7 +231,7 @@ class DatabaseSeeder extends Seeder
             'name' => 'M / Hitam',
             'price' => 99000.00,
             'stock' => 50,
-            'ginee_variant_id' => 'gn-var-990021-1'
+            'ginee_variant_id' => 'gn-var-990021-1',
         ]);
         StockLog::create(['product_variant_id' => $v3_1->id, 'before' => 0, 'after' => 50, 'reason' => 'initial_seed']);
 
@@ -242,10 +241,9 @@ class DatabaseSeeder extends Seeder
             'name' => 'L / Hitam',
             'price' => 99000.00,
             'stock' => 45,
-            'ginee_variant_id' => 'gn-var-990021-2'
+            'ginee_variant_id' => 'gn-var-990021-2',
         ]);
         StockLog::create(['product_variant_id' => $v3_2->id, 'before' => 0, 'after' => 45, 'reason' => 'initial_seed']);
-
 
         // 4. Settings
         Setting::create(['key' => 'shop_name', 'value' => 'iLook Fashion']);
@@ -304,11 +302,10 @@ class DatabaseSeeder extends Seeder
             'expires_at' => Carbon::now()->subDays(1),
         ]);
 
-
         // 5. Orders (seed 10 orders across the last 7 days)
         $statuses = ['pending_payment', 'paid', 'processing', 'shipped', 'delivered', 'cancelled', 'returned'];
         $methods = ['Virtual Account BCA', 'GoPay', 'Virtual Account Mandiri', 'QRIS', 'Credit Card'];
-        
+
         $customerNames = ['Siti Aminah', 'Rian Hidayat', 'Dewi Lestari', 'Andi Pratama', 'Eko Saputra', 'Jessica Wijaya', 'Farhan Maulana', 'Mega Utami'];
         $cities = [
             ['id' => 152, 'name' => 'Jakarta Barat', 'prov' => 'DKI Jakarta', 'postal' => '11610'],
@@ -323,7 +320,7 @@ class DatabaseSeeder extends Seeder
         for ($i = 1; $i <= 12; $i++) {
             $date = Carbon::now()->subDays(rand(0, 7))->subHours(rand(1, 23));
             $status = $statuses[rand(0, count($statuses) - 1)];
-            
+
             // Adjust payment status based on order status
             $payStatus = 'unpaid';
             if (in_array($status, ['paid', 'processing', 'shipped', 'delivered'])) {
@@ -336,28 +333,28 @@ class DatabaseSeeder extends Seeder
             $numItems = rand(1, 2);
             $orderItemsData = [];
             $subtotal = 0;
-            
+
             for ($j = 0; $j < $numItems; $j++) {
                 $variant = $variantsPool[rand(0, count($variantsPool) - 1)];
                 $qty = rand(1, 2);
                 $price = $variant->price ?? $variant->product->base_price;
                 $itemSub = $price * $qty;
-                
+
                 $orderItemsData[] = [
                     'variant' => $variant,
                     'qty' => $qty,
                     'price' => $price,
-                    'subtotal' => $itemSub
+                    'subtotal' => $itemSub,
                 ];
-                
+
                 $subtotal += $itemSub;
             }
 
             $shippingCost = rand(9, 25) * 1000;
             $totalAmount = $subtotal + $shippingCost;
-            
+
             $order = Order::create([
-                'order_number' => 'ILK-' . $date->format('Ymd') . '-' . str_pad($i, 4, '0', STR_PAD_LEFT),
+                'order_number' => 'ILK-'.$date->format('Ymd').'-'.str_pad($i, 4, '0', STR_PAD_LEFT),
                 'user_id' => $buyer->id,
                 'status' => $status,
                 'subtotal' => $subtotal,
@@ -365,8 +362,8 @@ class DatabaseSeeder extends Seeder
                 'total_amount' => $totalAmount,
                 'payment_method' => $methods[rand(0, count($methods) - 1)],
                 'payment_status' => $payStatus,
-                'snap_token' => 'snap-tok-' . Str::random(16),
-                'ginee_order_id' => $payStatus == 'paid' ? 'gn-ord-' . rand(100000, 999999) : null,
+                'snap_token' => 'snap-tok-'.Str::random(16),
+                'ginee_order_id' => $payStatus == 'paid' ? 'gn-ord-'.rand(100000, 999999) : null,
                 'created_at' => $date,
                 'updated_at' => $date,
             ]);
@@ -387,17 +384,17 @@ class DatabaseSeeder extends Seeder
 
             $city = $cities[rand(0, count($cities) - 1)];
             $custName = $customerNames[rand(0, count($customerNames) - 1)];
-            
+
             OrderShipping::create([
                 'order_id' => $order->id,
                 'courier' => ['jne', 'jnt', 'sicepat'][rand(0, 2)],
                 'service' => ['REG', 'OKE', 'YES'][rand(0, 2)],
                 'courier_name' => 'Kurir Express',
-                'tracking_number' => in_array($status, ['shipped', 'delivered']) ? 'JP' . rand(1000000000, 9999999999) : null,
+                'tracking_number' => in_array($status, ['shipped', 'delivered']) ? 'JP'.rand(1000000000, 9999999999) : null,
                 'rajaongkir_city_id' => $city['id'],
                 'recipient_name' => $custName,
-                'phone' => '08' . rand(100000000, 999999999),
-                'address' => 'Jl. Kebahagiaan No. ' . rand(1, 100) . ', RT ' . rand(1, 9) . '/RW ' . rand(1, 9),
+                'phone' => '08'.rand(100000000, 999999999),
+                'address' => 'Jl. Kebahagiaan No. '.rand(1, 100).', RT '.rand(1, 9).'/RW '.rand(1, 9),
                 'city' => $city['name'],
                 'province' => $city['prov'],
                 'postal_code' => $city['postal'],

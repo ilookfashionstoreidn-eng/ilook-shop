@@ -5,11 +5,11 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Product;
 use App\Models\ProductReview;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Inertia\Inertia;
 use Inertia\Response;
-use Illuminate\Http\RedirectResponse;
 
 class ReviewController extends Controller
 {
@@ -23,12 +23,12 @@ class ReviewController extends Controller
         // Apply filters
         if ($request->filled('search')) {
             $search = $request->input('search');
-            $query->where(function($q) use ($search) {
-                $q->where('user_name', 'like', '%' . $search . '%')
-                  ->orWhere('comment', 'like', '%' . $search . '%')
-                  ->orWhereHas('product', function($pq) use ($search) {
-                      $pq->where('name', 'like', '%' . $search . '%');
-                  });
+            $query->where(function ($q) use ($search) {
+                $q->where('user_name', 'like', '%'.$search.'%')
+                    ->orWhere('comment', 'like', '%'.$search.'%')
+                    ->orWhereHas('product', function ($pq) use ($search) {
+                        $pq->where('name', 'like', '%'.$search.'%');
+                    });
             });
         }
 
@@ -68,8 +68,8 @@ class ReviewController extends Controller
             'review_date' => 'nullable|date',
         ]);
 
-        $validated['review_date'] = $request->filled('review_date') 
-            ? Carbon::parse($validated['review_date']) 
+        $validated['review_date'] = $request->filled('review_date')
+            ? Carbon::parse($validated['review_date'])
             : Carbon::now();
 
         ProductReview::create($validated);
@@ -90,8 +90,8 @@ class ReviewController extends Controller
             'review_date' => 'nullable|date',
         ]);
 
-        $validated['review_date'] = $request->filled('review_date') 
-            ? Carbon::parse($validated['review_date']) 
+        $validated['review_date'] = $request->filled('review_date')
+            ? Carbon::parse($validated['review_date'])
             : Carbon::now();
 
         $review->update($validated);

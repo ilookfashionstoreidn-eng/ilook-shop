@@ -2,13 +2,16 @@
 
 namespace Tests\Feature;
 
-use App\Models\User;
+use App\Models\Category;
 use App\Models\Coupon;
+use App\Models\FlashSaleProduct;
 use App\Models\Product;
 use App\Models\ProductVariant;
+use App\Models\Setting;
+use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
-use Carbon\Carbon;
 
 class CouponTest extends TestCase
 {
@@ -156,9 +159,9 @@ class CouponTest extends TestCase
     public function test_coupon_apply_fails_when_flash_sale_product_present(): void
     {
         // 1. Setup Flash Sale settings
-        \App\Models\Setting::create(['key' => 'flash_sale_is_active', 'value' => '1']);
-        \App\Models\Setting::create(['key' => 'flash_sale_start_time', 'value' => now()->subDay()->toDateTimeString()]);
-        \App\Models\Setting::create(['key' => 'flash_sale_end_time', 'value' => now()->addDay()->toDateTimeString()]);
+        Setting::create(['key' => 'flash_sale_is_active', 'value' => '1']);
+        Setting::create(['key' => 'flash_sale_start_time', 'value' => now()->subDay()->toDateTimeString()]);
+        Setting::create(['key' => 'flash_sale_end_time', 'value' => now()->addDay()->toDateTimeString()]);
 
         // 2. Create coupon
         $coupon = Coupon::create([
@@ -170,7 +173,7 @@ class CouponTest extends TestCase
         ]);
 
         // 3. Create flash sale product and variant
-        $category = \App\Models\Category::create(['name' => 'Dress', 'slug' => 'dress', 'sort_order' => 1]);
+        $category = Category::create(['name' => 'Dress', 'slug' => 'dress', 'sort_order' => 1]);
         $product = Product::create([
             'category_id' => $category->id,
             'name' => 'Flash Sale Dress',
@@ -180,7 +183,7 @@ class CouponTest extends TestCase
             'base_price' => 100000,
             'status' => 'active',
         ]);
-        
+
         $variant = ProductVariant::create([
             'product_id' => $product->id,
             'sku' => 'FS-DRS-S',
@@ -189,7 +192,7 @@ class CouponTest extends TestCase
             'stock' => 10,
         ]);
 
-        \App\Models\FlashSaleProduct::create([
+        FlashSaleProduct::create([
             'product_id' => $product->id,
             'discount_type' => 'percentage',
             'discount_value' => 10,
@@ -200,8 +203,8 @@ class CouponTest extends TestCase
             'code' => 'DISCOUNT20',
             'subtotal' => 90000,
             'items' => [
-                ['variant_id' => $variant->id, 'quantity' => 1]
-            ]
+                ['variant_id' => $variant->id, 'quantity' => 1],
+            ],
         ]);
 
         $response->assertStatus(400)
@@ -254,4 +257,3 @@ class CouponTest extends TestCase
         $this->assertFalse($coupon->isValidForSubtotal(30000));
     }
 }
-

@@ -2,13 +2,12 @@
 
 namespace Tests\Feature;
 
-use App\Models\User;
 use App\Models\Category;
-use App\Models\Product;
-use App\Models\ProductVariant;
 use App\Models\Order;
 use App\Models\OrderItem;
-use App\Models\ProductReview;
+use App\Models\Product;
+use App\Models\ProductVariant;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -65,7 +64,7 @@ class RatingTest extends TestCase
     public function test_buyer_can_review_purchased_product(): void
     {
         $user = User::factory()->create([
-            'name' => 'Sarah Wijaya'
+            'name' => 'Sarah Wijaya',
         ]);
 
         $category = Category::create([

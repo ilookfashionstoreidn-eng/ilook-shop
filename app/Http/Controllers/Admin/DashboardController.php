@@ -18,14 +18,14 @@ class DashboardController extends Controller
     {
         // 1. Get total stats
         $validStatuses = ['paid', 'processing', 'shipped', 'delivered'];
-        
+
         $totalSales = Order::whereIn('status', $validStatuses)->sum('total_amount');
         $totalOrders = Order::count();
         $totalProducts = Product::count();
 
         // Get min stock alert setting
         $minStockSetting = Setting::where('key', 'min_stock_alert')->first();
-        $minStock = $minStockSetting ? (int)$minStockSetting->value : 5;
+        $minStock = $minStockSetting ? (int) $minStockSetting->value : 5;
 
         $criticalStockCount = ProductVariant::where('stock', '<=', $minStock)->count();
 
@@ -44,8 +44,8 @@ class DashboardController extends Controller
 
             $chartData[] = [
                 'date' => $dateLabel,
-                'revenue' => (float)$revenue,
-                'orders' => $ordersCount
+                'revenue' => (float) $revenue,
+                'orders' => $ordersCount,
             ];
         }
 
@@ -59,7 +59,7 @@ class DashboardController extends Controller
                     'id' => $order->id,
                     'order_number' => $order->order_number,
                     'buyer_name' => $order->shipping ? $order->shipping->recipient_name : ($order->user ? $order->user->name : 'N/A'),
-                    'total_amount' => (float)$order->total_amount,
+                    'total_amount' => (float) $order->total_amount,
                     'status' => $order->status,
                     'payment_status' => $order->payment_status,
                     'items_count' => $order->items->sum('quantity'),
@@ -92,7 +92,7 @@ class DashboardController extends Controller
 
         return Inertia::render('Admin/Dashboard', [
             'stats' => [
-                'total_sales' => (float)$totalSales,
+                'total_sales' => (float) $totalSales,
                 'total_orders' => $totalOrders,
                 'total_products' => $totalProducts,
                 'critical_stock' => $criticalStockCount,

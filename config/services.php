@@ -36,10 +36,10 @@ return [
     ],
 
     'midtrans' => [
-        'server_key'    => env('MIDTRANS_SERVER_KEY', ''),
-        'client_key'    => env('MIDTRANS_CLIENT_KEY', ''),
+        'server_key' => env('MIDTRANS_SERVER_KEY', ''),
+        'client_key' => env('MIDTRANS_CLIENT_KEY', ''),
         'is_production' => env('MIDTRANS_IS_PRODUCTION', false),
-        'snap_url'      => env('MIDTRANS_IS_PRODUCTION', false)
+        'snap_url' => env('MIDTRANS_IS_PRODUCTION', false)
             ? 'https://app.midtrans.com/snap/snap.js'
             : 'https://app.sandbox.midtrans.com/snap/snap.js',
     ],
@@ -52,8 +52,8 @@ return [
     'ginee' => [
         'access_key' => env('GINEE_ACCESS_KEY'),
         'secret_key' => env('GINEE_SECRET_KEY'),
-        'api_url'    => env('GINEE_API_URL', 'https://api.ginee.com'),
-        'country'    => env('GINEE_COUNTRY', 'ID'),
+        'api_url' => env('GINEE_API_URL', 'https://api.ginee.com'),
+        'country' => env('GINEE_COUNTRY', 'ID'),
     ],
 
     'google' => [

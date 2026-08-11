@@ -1,24 +1,27 @@
 <?php
 
-use App\Http\Controllers\ProfileController;
-use App\Http\Controllers\Admin\DashboardController;
-use App\Http\Controllers\Admin\ProductController;
+use App\Http\Controllers\Admin\BankAccountController;
 use App\Http\Controllers\Admin\CategoryController;
-use App\Http\Controllers\Admin\StockController;
+use App\Http\Controllers\Admin\ChatController;
+use App\Http\Controllers\Admin\CouponController;
+use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\FlashSaleController;
+use App\Http\Controllers\Admin\LivestreamController;
 use App\Http\Controllers\Admin\OrderController;
+use App\Http\Controllers\Admin\ProductController;
+use App\Http\Controllers\Admin\ReviewController;
 use App\Http\Controllers\Admin\SettingController;
+use App\Http\Controllers\Admin\StockController;
 use App\Http\Controllers\Admin\TaxSettingController;
 use App\Http\Controllers\Admin\UserController;
-use App\Http\Controllers\Admin\ReviewController;
-use App\Http\Controllers\Admin\FlashSaleController;
-use App\Http\Controllers\Admin\CouponController;
-use App\Http\Controllers\Admin\BankAccountController;
-use App\Http\Controllers\StorefrontController;
-use App\Http\Controllers\MidtransWebhookController;
+use App\Http\Controllers\Auth\PhoneEntryController;
+use App\Http\Controllers\ChatMessageController;
 use App\Http\Controllers\GineeWebhookController;
-use Illuminate\Foundation\Application;
+use App\Http\Controllers\MidtransWebhookController;
+use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\StorefrontController;
+use App\Services\RajaOngkirService;
 use Illuminate\Support\Facades\Route;
-use Inertia\Inertia;
 
 // Public Storefront Routes
 Route::get('/', [StorefrontController::class, 'home'])->name('storefront.home');
@@ -47,21 +50,22 @@ Route::middleware('auth')->group(function () {
     Route::post('/my-orders/{order}/payment-proof', [StorefrontController::class, 'uploadPaymentProof'])->name('storefront.order.payment-proof');
     Route::post('/my-orders/{order}/complete', [StorefrontController::class, 'completeOrder'])->name('storefront.order.complete');
     Route::post('/my-orders/{order}/review', [StorefrontController::class, 'storeReview'])->name('storefront.order.review');
-    
+
     // Alur Force Input Nomor HP
-    Route::get('/enter-phone', [\App\Http\Controllers\Auth\PhoneEntryController::class, 'show'])->name('phone.entry');
-    Route::post('/enter-phone', [\App\Http\Controllers\Auth\PhoneEntryController::class, 'store'])->name('phone.store');
+    Route::get('/enter-phone', [PhoneEntryController::class, 'show'])->name('phone.entry');
+    Route::post('/enter-phone', [PhoneEntryController::class, 'store'])->name('phone.store');
 
     // System Chat APIs
-    Route::get('/api/chats/messages', [\App\Http\Controllers\ChatMessageController::class, 'getMessages']);
-    Route::post('/api/chats/messages', [\App\Http\Controllers\ChatMessageController::class, 'sendMessage']);
-    Route::post('/api/chats/read', [\App\Http\Controllers\ChatMessageController::class, 'markAsRead']);
+    Route::get('/api/chats/messages', [ChatMessageController::class, 'getMessages']);
+    Route::post('/api/chats/messages', [ChatMessageController::class, 'sendMessage']);
+    Route::post('/api/chats/read', [ChatMessageController::class, 'markAsRead']);
 });
 
 Route::get('/dashboard', function () {
     if (auth()->user() && auth()->user()->role === 'admin') {
         return redirect()->route('admin.dashboard');
     }
+
     return redirect()->route('storefront.home');
 })->middleware(['auth', 'verified'])->name('dashboard');
 
@@ -74,7 +78,7 @@ Route::middleware('auth')->group(function () {
 // Admin Panel routes protected by Auth and Admin middleware
 Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
-    
+
     // Products CRUD
     Route::get('/products', [ProductController::class, 'index'])->name('products');
     Route::post('/products', [ProductController::class, 'store'])->name('products.store');
@@ -141,25 +145,25 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::delete('/payments/{bankAccount}', [BankAccountController::class, 'destroy'])->name('payments.destroy');
 
     // Admin Chats
-    Route::get('/chats', [\App\Http\Controllers\Admin\ChatController::class, 'index'])->name('chats');
-    Route::get('/api/chats/users', [\App\Http\Controllers\ChatMessageController::class, 'getChatUsers']);
+    Route::get('/chats', [ChatController::class, 'index'])->name('chats');
+    Route::get('/api/chats/users', [ChatMessageController::class, 'getChatUsers']);
 
     // Livestream Management
-    Route::get('/livestream', [\App\Http\Controllers\Admin\LivestreamController::class, 'index'])->name('livestream');
-    Route::post('/livestream', [\App\Http\Controllers\Admin\LivestreamController::class, 'store'])->name('livestream.store');
-    Route::put('/livestream/{livestream}', [\App\Http\Controllers\Admin\LivestreamController::class, 'update'])->name('livestream.update');
-    Route::delete('/livestream/{livestream}', [\App\Http\Controllers\Admin\LivestreamController::class, 'destroy'])->name('livestream.destroy');
+    Route::get('/livestream', [LivestreamController::class, 'index'])->name('livestream');
+    Route::post('/livestream', [LivestreamController::class, 'store'])->name('livestream.store');
+    Route::put('/livestream/{livestream}', [LivestreamController::class, 'update'])->name('livestream.update');
+    Route::delete('/livestream/{livestream}', [LivestreamController::class, 'destroy'])->name('livestream.destroy');
 });
 
 Route::get('/test-ongkir', function () {
-    $service = new \App\Services\RajaOngkirService();
+    $service = new RajaOngkirService;
     $provinces = $service->getProvinces();
+
     return response()->json([
         'api_url' => env('RAJAONGKIR_API_URL'),
         'total_provinces' => count($provinces),
-        'sample' => array_slice($provinces, 0, 5)
+        'sample' => array_slice($provinces, 0, 5),
     ]);
 });
 
 require __DIR__.'/auth.php';
-

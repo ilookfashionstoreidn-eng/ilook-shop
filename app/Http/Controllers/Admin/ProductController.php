@@ -3,18 +3,18 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Category;
 use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Models\StockLog;
-use App\Models\Category;
+use App\Services\GineeService;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
-use Illuminate\Http\RedirectResponse;
-
-use App\Services\GineeService;
 
 class ProductController extends Controller
 {
@@ -29,7 +29,7 @@ class ProductController extends Controller
         if ($search) {
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('sku', 'like', "%{$search}%");
+                    ->orWhere('sku', 'like', "%{$search}%");
             });
         }
 
@@ -79,11 +79,11 @@ class ProductController extends Controller
             // Create Product
             $productData = collect($validated)->except('variants')->toArray();
             $productData['slug'] = Str::slug($validated['name']);
-            
+
             // Check if slug exists and make unique
-            $slugCount = Product::where('slug', 'like', $productData['slug'] . '%')->count();
+            $slugCount = Product::where('slug', 'like', $productData['slug'].'%')->count();
             if ($slugCount > 0) {
-                $productData['slug'] .= '-' . ($slugCount + 1);
+                $productData['slug'] .= '-'.($slugCount + 1);
             }
 
             // Default image mock-up if empty
@@ -102,7 +102,7 @@ class ProductController extends Controller
                     'price' => $vData['price'] ?? null,
                     'stock' => $vData['stock'],
                     'image' => $vData['image'] ?? null,
-                    'ginee_variant_id' => 'gn-var-' . Str::random(8),
+                    'ginee_variant_id' => 'gn-var-'.Str::random(8),
                 ]);
 
                 // Create Stock Log
@@ -124,7 +124,7 @@ class ProductController extends Controller
             'category_id' => 'nullable|exists:categories,id',
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
-            'sku' => 'nullable|string|unique:products,sku,' . $product->id,
+            'sku' => 'nullable|string|unique:products,sku,'.$product->id,
             'weight' => 'required|integer|min:0',
             'length' => 'nullable|integer|min:0',
             'width' => 'nullable|integer|min:0',
@@ -146,13 +146,13 @@ class ProductController extends Controller
         DB::transaction(function () use ($product, $validated) {
             // Update Product
             $productData = collect($validated)->except('variants')->toArray();
-            
+
             // Re-generate slug if name changed
             if ($product->name !== $validated['name']) {
                 $productData['slug'] = Str::slug($validated['name']);
-                $slugCount = Product::where('slug', 'like', $productData['slug'] . '%')->where('id', '!=', $product->id)->count();
+                $slugCount = Product::where('slug', 'like', $productData['slug'].'%')->where('id', '!=', $product->id)->count();
                 if ($slugCount > 0) {
-                    $productData['slug'] .= '-' . ($slugCount + 1);
+                    $productData['slug'] .= '-'.($slugCount + 1);
                 }
             }
 
@@ -164,11 +164,11 @@ class ProductController extends Controller
 
             // Update/Create Variants
             foreach ($validated['variants'] as $vData) {
-                if (!empty($vData['id'])) {
+                if (! empty($vData['id'])) {
                     // Update
                     $variant = ProductVariant::find($vData['id']);
                     $oldStock = $variant->stock;
-                    
+
                     $variant->update([
                         'sku' => $vData['sku'],
                         'name' => $vData['name'],
@@ -180,7 +180,7 @@ class ProductController extends Controller
                     $newVariantIds[] = $variant->id;
 
                     // Log stock change if any
-                    if ($oldStock !== (int)$vData['stock']) {
+                    if ($oldStock !== (int) $vData['stock']) {
                         StockLog::create([
                             'product_variant_id' => $variant->id,
                             'before' => $oldStock,
@@ -197,7 +197,7 @@ class ProductController extends Controller
                         'price' => $vData['price'] ?? null,
                         'stock' => $vData['stock'],
                         'image' => $vData['image'] ?? null,
-                        'ginee_variant_id' => 'gn-var-' . Str::random(8),
+                        'ginee_variant_id' => 'gn-var-'.Str::random(8),
                     ]);
 
                     $newVariantIds[] = $variant->id;
@@ -213,7 +213,7 @@ class ProductController extends Controller
 
             // Delete variants that were removed
             $deletedIds = array_diff($currentVariantIds, $newVariantIds);
-            if (!empty($deletedIds)) {
+            if (! empty($deletedIds)) {
                 ProductVariant::whereIn('id', $deletedIds)->delete();
             }
         });
@@ -224,74 +224,75 @@ class ProductController extends Controller
     public function destroy(Product $product): RedirectResponse
     {
         $product->delete();
+
         return redirect()->route('admin.products')->with('success', 'Produk berhasil dihapus.');
     }
 
     public function syncGinee(Request $request, Product $product, GineeService $gineeService): RedirectResponse
     {
         $action = $request->input('action', 'push'); // push or pull
-        
+
         if ($action === 'pull' && $product->ginee_product_id) {
             // Fetch products from Ginee to see if we can find this one
             $response = $gineeService->getProducts(0, 100);
             $found = false;
-            
+
             if (isset($response['content'])) {
                 foreach ($response['content'] as $gProduct) {
                     if ($gProduct['productId'] == $product->ginee_product_id) {
                         $found = true;
-                        
+
                         $gVariants = $gProduct['variationBriefs'] ?? [];
-                        
+
                         // Fetch prices for these variation IDs
                         $variationIds = [];
                         foreach ($gVariants as $gVar) {
-                            if (!empty($gVar['id'])) {
+                            if (! empty($gVar['id'])) {
                                 $variationIds[] = $gVar['id'];
                             }
                         }
-                        
+
                         $priceLookup = [];  // variationId => ['price' => float, 'image' => string|null]
-                        if (!empty($variationIds)) {
+                        if (! empty($variationIds)) {
                             $pricesResp = $gineeService->getVariationPrices($variationIds);
                             $pricesContent = $pricesResp['content'] ?? [];
                             foreach ($pricesContent as $pItem) {
                                 if (isset($pItem['variationId'])) {
                                     $priceLookup[$pItem['variationId']] = [
-                                        'price' => isset($pItem['masterPrice']['amount']) ? (float)$pItem['masterPrice']['amount'] : null,
+                                        'price' => isset($pItem['masterPrice']['amount']) ? (float) $pItem['masterPrice']['amount'] : null,
                                         'image' => $pItem['image'] ?? null,
                                     ];
                                 }
                             }
                         }
-                        
+
                         DB::transaction(function () use ($product, $gProduct, $gVariants, $priceLookup) {
                             $product->update([
                                 'name' => $gProduct['productName'] ?? ($gProduct['name'] ?? $product->name),
                                 'description' => $gProduct['description'] ?? $product->description,
                                 'weight' => $gProduct['weight'] ?? $product->weight,
                             ]);
-                            
+
                             foreach ($gVariants as $gVar) {
                                 if (isset($gVar['sku'])) {
                                     $variant = ProductVariant::where('product_id', $product->id)
                                         ->where('sku', $gVar['sku'])
                                         ->first();
-                                        
+
                                     if ($variant) {
                                         $oldStock = $variant->stock;
                                         $newStock = $gVar['stock']['availableStock'] ?? ($gVar['stock']['warehouseStock'] ?? $variant->stock);
                                         $newPrice = $priceLookup[$gVar['id']]['price'] ?? $variant->price;
                                         $newImage = $priceLookup[$gVar['id']]['image'] ?? $variant->image;
-                                        
+
                                         $variant->update([
                                             'stock' => $newStock,
                                             'price' => $newPrice,
                                             'image' => $newImage,
                                             'ginee_variant_id' => $gVar['id'] ?? $variant->ginee_variant_id,
                                         ]);
-                                        
-                                        if ($oldStock !== (int)$newStock) {
+
+                                        if ($oldStock !== (int) $newStock) {
                                             StockLog::create([
                                                 'product_variant_id' => $variant->id,
                                                 'before' => $oldStock,
@@ -307,27 +308,27 @@ class ProductController extends Controller
                     }
                 }
             }
-            
-            if (!$found) {
+
+            if (! $found) {
                 return redirect()->route('admin.products')->with('error', "Produk dengan Ginee ID {$product->ginee_product_id} tidak ditemukan di Ginee.");
             }
-            
+
             return redirect()->route('admin.products')->with('success', "Data produk {$product->name} berhasil disinkronisasi dari Ginee.");
         }
 
         // Mock push/fallback sync if not found/pushing
         $product->update([
-            'ginee_product_id' => $product->ginee_product_id ?: 'gn-prod-' . rand(100000, 999999),
+            'ginee_product_id' => $product->ginee_product_id ?: 'gn-prod-'.rand(100000, 999999),
         ]);
 
         foreach ($product->variants as $variant) {
             $variant->update([
-                'ginee_variant_id' => $variant->ginee_variant_id ?: 'gn-var-' . rand(100000, 999999),
+                'ginee_variant_id' => $variant->ginee_variant_id ?: 'gn-var-'.rand(100000, 999999),
             ]);
         }
 
-        $message = $action === 'push' 
-            ? "Produk {$product->name} berhasil di-push ke Ginee (Simulasi)." 
+        $message = $action === 'push'
+            ? "Produk {$product->name} berhasil di-push ke Ginee (Simulasi)."
             : "Data produk {$product->name} berhasil disinkronisasi dari Ginee (Simulasi).";
 
         return redirect()->route('admin.products')->with('success', $message);
@@ -336,8 +337,8 @@ class ProductController extends Controller
     public function syncAllGinee(GineeService $gineeService): RedirectResponse
     {
         $response = $gineeService->getProducts(0, 100);
-        
-        if (empty($response) || !isset($response['content'])) {
+
+        if (empty($response) || ! isset($response['content'])) {
             return redirect()->route('admin.products')->with('error', 'Gagal mengambil data produk dari Ginee Open API. Periksa kembali kredensial Anda.');
         }
 
@@ -349,7 +350,7 @@ class ProductController extends Controller
         foreach ($gineeProductsList as $gProduct) {
             $gVariants = $gProduct['variationBriefs'] ?? [];
             foreach ($gVariants as $gVar) {
-                if (!empty($gVar['id'])) {
+                if (! empty($gVar['id'])) {
                     $allVariationIds[] = $gVar['id'];
                 }
             }
@@ -358,7 +359,7 @@ class ProductController extends Controller
         // 2. Fetch prices AND images in chunks of 20
         // The list-price API returns: variationId, masterPrice.amount, AND image field per variant
         $priceLookup = [];  // variationId => ['price' => float, 'image' => string|null]
-        if (!empty($allVariationIds)) {
+        if (! empty($allVariationIds)) {
             $chunks = array_chunk($allVariationIds, 20);
             foreach ($chunks as $chunk) {
                 $pricesResp = $gineeService->getVariationPrices($chunk);
@@ -366,7 +367,7 @@ class ProductController extends Controller
                 foreach ($pricesContent as $pItem) {
                     if (isset($pItem['variationId'])) {
                         $priceLookup[$pItem['variationId']] = [
-                            'price' => isset($pItem['masterPrice']['amount']) ? (float)$pItem['masterPrice']['amount'] : null,
+                            'price' => isset($pItem['masterPrice']['amount']) ? (float) $pItem['masterPrice']['amount'] : null,
                             'image' => $pItem['image'] ?? null,  // <-- variant photo from Ginee
                         ];
                     }
@@ -379,16 +380,16 @@ class ProductController extends Controller
             foreach ($gineeProductsList as $gProduct) {
                 $name = $gProduct['productName'] ?? ($gProduct['name'] ?? null);
                 $gProductId = $gProduct['productId'] ?? null;
-                if (!$name || !$gProductId) {
+                if (! $name || ! $gProductId) {
                     continue;
                 }
 
-                $sku = $gProduct['sellerSku'] ?? ('GN-' . $gProductId);
+                $sku = $gProduct['sellerSku'] ?? ('GN-'.$gProductId);
                 $description = $gProduct['description'] ?? '';
                 $weight = $gProduct['weight'] ?? 200;
-                
+
                 $gVariants = $gProduct['variationBriefs'] ?? [];
-                
+
                 // Determine base price from lookup
                 $prices = [];
                 foreach ($gVariants as $gVar) {
@@ -396,10 +397,10 @@ class ProductController extends Controller
                         $prices[] = $priceLookup[$gVar['id']]['price'];
                     }
                 }
-                $basePrice = !empty($prices) ? min($prices) : 0;
+                $basePrice = ! empty($prices) ? min($prices) : 0;
 
                 $images = [];
-                if (!empty($gProduct['images'])) {
+                if (! empty($gProduct['images'])) {
                     foreach ($gProduct['images'] as $img) {
                         // Check if image is a string directly or an array/object with url
                         if (is_string($img)) {
@@ -418,7 +419,7 @@ class ProductController extends Controller
                     ['ginee_product_id' => $gProductId],
                     [
                         'name' => $name,
-                        'slug' => Str::slug($name) . '-' . substr($gProductId, -4),
+                        'slug' => Str::slug($name).'-'.substr($gProductId, -4),
                         'description' => $description,
                         'sku' => $sku,
                         'weight' => $weight,
@@ -430,8 +431,8 @@ class ProductController extends Controller
 
                 $importedVariantIds = [];
                 foreach ($gVariants as $gVar) {
-                    $vSku = $gVar['sku'] ?? ($sku . '-' . ($gVar['id'] ?? Str::random(4)));
-                    $vName = !empty($gVar['optionValues']) ? implode(' / ', $gVar['optionValues']) : 'Default';
+                    $vSku = $gVar['sku'] ?? ($sku.'-'.($gVar['id'] ?? Str::random(4)));
+                    $vName = ! empty($gVar['optionValues']) ? implode(' / ', $gVar['optionValues']) : 'Default';
                     $vPrice = $priceLookup[$gVar['id']]['price'] ?? null;
                     $vStock = $gVar['stock']['availableStock'] ?? ($gVar['stock']['warehouseStock'] ?? 0);
                     $gVariantId = $gVar['id'] ?? null;
@@ -473,7 +474,7 @@ class ProductController extends Controller
         return redirect()->route('admin.products')->with('success', "Berhasil menarik & mensinkronisasi {$importedCount} produk dari Ginee.");
     }
 
-    public function uploadVideo(Request $request): \Illuminate\Http\JsonResponse
+    public function uploadVideo(Request $request): JsonResponse
     {
         $request->validate([
             'video' => 'required|file|mimes:mp4,mov,avi,mkv,webm|max:20480', // Max 20MB
@@ -481,25 +482,25 @@ class ProductController extends Controller
 
         if ($request->hasFile('video')) {
             $file = $request->file('video');
-            $filename = 'prod-video-' . time() . '-' . Str::random(5) . '.' . $file->getClientOriginalExtension();
-            
+            $filename = 'prod-video-'.time().'-'.Str::random(5).'.'.$file->getClientOriginalExtension();
+
             $targetDir = public_path('uploads/products/videos');
-            if (!file_exists($targetDir)) {
+            if (! file_exists($targetDir)) {
                 mkdir($targetDir, 0755, true);
             }
-            
+
             $file->move($targetDir, $filename);
-            $filePath = '/uploads/products/videos/' . $filename;
+            $filePath = '/uploads/products/videos/'.$filename;
 
             return response()->json([
                 'success' => true,
-                'url' => $filePath
+                'url' => $filePath,
             ]);
         }
 
         return response()->json([
             'success' => false,
-            'message' => 'Gagal mengunggah video.'
+            'message' => 'Gagal mengunggah video.',
         ], 400);
     }
 }

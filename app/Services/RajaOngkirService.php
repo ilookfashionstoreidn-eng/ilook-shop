@@ -2,12 +2,13 @@
 
 namespace App\Services;
 
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Http;
 
 class RajaOngkirService
 {
     protected string $baseUrl;
+
     protected string $apiKey;
 
     public function __construct()
@@ -26,24 +27,27 @@ class RajaOngkirService
                 $response = Http::withHeaders([
                     'key' => $this->apiKey,
                     'x-api-key' => $this->apiKey,
-                ])->timeout(10)->get($this->baseUrl . '/destination/province');
+                ])->timeout(10)->get($this->baseUrl.'/destination/province');
 
                 if ($response->successful()) {
                     $data = $response->json('data') ?? [];
                     $mapped = [];
                     foreach ($data as $item) {
                         $mapped[] = [
-                            'province_id' => (string)($item['id'] ?? ''),
+                            'province_id' => (string) ($item['id'] ?? ''),
                             'province' => $item['name'] ?? '',
                         ];
                     }
+
                     return $mapped;
                 }
-                
-                \Log::error('Komerce Provinces Error: ' . $response->body());
+
+                \Log::error('Komerce Provinces Error: '.$response->body());
+
                 return [];
             } catch (\Exception $e) {
-                \Log::error('Komerce Provinces Exception: ' . $e->getMessage());
+                \Log::error('Komerce Provinces Exception: '.$e->getMessage());
+
                 return [];
             }
         });
@@ -55,33 +59,37 @@ class RajaOngkirService
     public function getCitiesByProvince(int $provinceId): array
     {
         $cacheKey = "rajaongkir_cities_prov_{$provinceId}";
+
         return Cache::remember($cacheKey, 86400, function () use ($provinceId) {
             try {
                 $response = Http::withHeaders([
                     'key' => $this->apiKey,
                     'x-api-key' => $this->apiKey,
-                ])->timeout(10)->get($this->baseUrl . "/destination/city/{$provinceId}");
+                ])->timeout(10)->get($this->baseUrl."/destination/city/{$provinceId}");
 
                 if ($response->successful()) {
                     $data = $response->json('data') ?? [];
                     $mapped = [];
                     foreach ($data as $item) {
                         $mapped[] = [
-                            'city_id' => (string)($item['id'] ?? ''),
-                            'province_id' => (string)$provinceId,
+                            'city_id' => (string) ($item['id'] ?? ''),
+                            'province_id' => (string) $provinceId,
                             'province' => '',
                             'type' => '',
                             'city_name' => $item['name'] ?? '',
                             'postal_code' => '',
                         ];
                     }
+
                     return $mapped;
                 }
-                
-                \Log::error("Komerce Cities (Prov ID: $provinceId) Error: " . $response->body());
+
+                \Log::error("Komerce Cities (Prov ID: $provinceId) Error: ".$response->body());
+
                 return [];
             } catch (\Exception $e) {
-                \Log::error('Komerce Cities Exception: ' . $e->getMessage());
+                \Log::error('Komerce Cities Exception: '.$e->getMessage());
+
                 return [];
             }
         });
@@ -96,18 +104,20 @@ class RajaOngkirService
             $response = Http::withHeaders([
                 'key' => $this->apiKey,
                 'x-api-key' => $this->apiKey,
-            ])->timeout(10)->get($this->baseUrl . "/destination/domestic-destination", [
-                'search' => $query
+            ])->timeout(10)->get($this->baseUrl.'/destination/domestic-destination', [
+                'search' => $query,
             ]);
 
             if ($response->successful()) {
                 return $response->json('data') ?? [];
             }
-            
-            \Log::error("Komerce Search Destination Error: " . $response->body());
+
+            \Log::error('Komerce Search Destination Error: '.$response->body());
+
             return [];
         } catch (\Exception $e) {
-            \Log::error('Komerce Search Destination Exception: ' . $e->getMessage());
+            \Log::error('Komerce Search Destination Exception: '.$e->getMessage());
+
             return [];
         }
     }
@@ -124,7 +134,7 @@ class RajaOngkirService
                 $response = Http::asForm()->withHeaders([
                     'key' => $this->apiKey,
                     'x-api-key' => $this->apiKey,
-                ])->timeout(10)->post($this->baseUrl . '/calculate/domestic-cost', [
+                ])->timeout(10)->post($this->baseUrl.'/calculate/domestic-cost', [
                     'origin' => $origin,
                     'destination' => $destination,
                     'weight' => $weight,
@@ -140,20 +150,23 @@ class RajaOngkirService
                             'description' => $item['description'] ?? '',
                             'cost' => [
                                 [
-                                    'value' => (int)($item['cost'] ?? 0),
+                                    'value' => (int) ($item['cost'] ?? 0),
                                     'etd' => $item['etd'] ?? '',
                                     'note' => '',
-                                ]
-                            ]
+                                ],
+                            ],
                         ];
                     }
+
                     return $mapped;
                 }
-                
-                \Log::error('Komerce Cost Error: ' . $response->body());
+
+                \Log::error('Komerce Cost Error: '.$response->body());
+
                 return [];
             } catch (\Exception $e) {
-                \Log::error('Komerce Cost Exception: ' . $e->getMessage());
+                \Log::error('Komerce Cost Exception: '.$e->getMessage());
+
                 return [];
             }
         });
@@ -169,7 +182,7 @@ class RajaOngkirService
             $response = Http::asForm()->withHeaders([
                 'key' => $this->apiKey,
                 'x-api-key' => $this->apiKey,
-            ])->timeout(10)->post($this->baseUrl . '/track/waybill', [
+            ])->timeout(10)->post($this->baseUrl.'/track/waybill', [
                 'awb' => $waybill,
                 'courier' => $courier,
             ]);
@@ -177,12 +190,13 @@ class RajaOngkirService
             if ($response->successful()) {
                 return $response->json('data') ?? [];
             }
-            
-            \Log::error('Komerce Waybill Error: ' . $response->body());
+
+            \Log::error('Komerce Waybill Error: '.$response->body());
 
             return [];
         } catch (\Exception $e) {
-            \Log::error('Komerce Waybill Exception: ' . $e->getMessage());
+            \Log::error('Komerce Waybill Exception: '.$e->getMessage());
+
             return [];
         }
     }

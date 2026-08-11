@@ -3,13 +3,13 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Product;
 use App\Models\FlashSaleProduct;
+use App\Models\Product;
 use App\Models\Setting;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
-use Illuminate\Http\RedirectResponse;
 
 class FlashSaleController extends Controller
 {
@@ -19,7 +19,7 @@ class FlashSaleController extends Controller
         $settingsRaw = Setting::whereIn('key', [
             'flash_sale_is_active',
             'flash_sale_start_time',
-            'flash_sale_end_time'
+            'flash_sale_end_time',
         ])->pluck('value', 'key')->toArray();
 
         $settings = [

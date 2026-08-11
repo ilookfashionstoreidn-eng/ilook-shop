@@ -22,8 +22,8 @@ class PaymentLog extends Model
 
     protected $casts = [
         'raw_response' => 'array',
-        'amount'       => 'float',
-        'paid_at'      => 'datetime',
+        'amount' => 'float',
+        'paid_at' => 'datetime',
     ];
 
     public function order(): BelongsTo

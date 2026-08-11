@@ -4,10 +4,10 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Setting;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
-use Illuminate\Http\RedirectResponse;
 
 class TaxSettingController extends Controller
 {
@@ -17,10 +17,10 @@ class TaxSettingController extends Controller
 
         $settings = [
             'tax_type' => $settingsRaw['tax_type'] ?? 'percentage',
-            'tax_value' => (float)($settingsRaw['tax_value'] ?? 0.00),
+            'tax_value' => (float) ($settingsRaw['tax_value'] ?? 0.00),
             'tax_charged_to' => $settingsRaw['tax_charged_to'] ?? 'buyer',
             'admin_fee_type' => $settingsRaw['admin_fee_type'] ?? 'nominal',
-            'admin_fee_value' => (float)($settingsRaw['admin_fee_value'] ?? 0.00),
+            'admin_fee_value' => (float) ($settingsRaw['admin_fee_value'] ?? 0.00),
             'admin_fee_charged_to' => $settingsRaw['admin_fee_charged_to'] ?? 'buyer',
         ];
 

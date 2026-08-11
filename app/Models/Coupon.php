@@ -2,8 +2,8 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Model;
 
 class Coupon extends Model
 {
@@ -32,7 +32,7 @@ class Coupon extends Model
      */
     public function isValidForSubtotal(float $subtotal): bool
     {
-        if (!$this->is_active) {
+        if (! $this->is_active) {
             return false;
         }
 
@@ -56,7 +56,7 @@ class Coupon extends Model
      */
     public function calculateDiscount(float $subtotal): float
     {
-        if (!$this->isValidForSubtotal($subtotal)) {
+        if (! $this->isValidForSubtotal($subtotal)) {
             return 0.00;
         }
 

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Services\GineeService;
 use App\Services\PaymentService;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -11,12 +12,13 @@ use Illuminate\Support\Facades\Log;
 class MidtransWebhookController extends Controller
 {
     protected PaymentService $paymentService;
+
     protected GineeService $gineeService;
 
     public function __construct(PaymentService $paymentService, GineeService $gineeService)
     {
         $this->paymentService = $paymentService;
-        $this->gineeService   = $gineeService;
+        $this->gineeService = $gineeService;
     }
 
     /**
@@ -30,13 +32,13 @@ class MidtransWebhookController extends Controller
         $payload = $request->all();
 
         Log::info('Midtrans webhook received', [
-            'order_id'           => $payload['order_id'] ?? null,
+            'order_id' => $payload['order_id'] ?? null,
             'transaction_status' => $payload['transaction_status'] ?? null,
-            'payment_type'       => $payload['payment_type'] ?? null,
+            'payment_type' => $payload['payment_type'] ?? null,
         ]);
 
         // Validasi signature Midtrans
-        if (!$this->paymentService->validateWebhookSignature($payload)) {
+        if (! $this->paymentService->validateWebhookSignature($payload)) {
             Log::warning('Midtrans webhook: invalid signature', [
                 'order_id' => $payload['order_id'] ?? null,
             ]);
@@ -46,7 +48,7 @@ class MidtransWebhookController extends Controller
 
         try {
             $result = $this->paymentService->handleWebhookNotification($payload);
-            $order  = $result['order'];
+            $order = $result['order'];
             $action = $result['action'];
 
             // Jika order berhasil dibayar, push ke Ginee OMS
@@ -55,12 +57,12 @@ class MidtransWebhookController extends Controller
             }
 
             return response()->json([
-                'status'  => 'ok',
-                'action'  => $action,
-                'order'   => $order->order_number,
+                'status' => 'ok',
+                'action' => $action,
+                'order' => $order->order_number,
             ]);
 
-        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+        } catch (ModelNotFoundException $e) {
             Log::error('Midtrans webhook: order not found', [
                 'order_id' => $payload['order_id'] ?? null,
             ]);
@@ -69,7 +71,7 @@ class MidtransWebhookController extends Controller
             return response()->json(['status' => 'order_not_found'], 200);
 
         } catch (\Exception $e) {
-            Log::error('Midtrans webhook handler error: ' . $e->getMessage(), [
+            Log::error('Midtrans webhook handler error: '.$e->getMessage(), [
                 'payload' => $payload,
             ]);
 

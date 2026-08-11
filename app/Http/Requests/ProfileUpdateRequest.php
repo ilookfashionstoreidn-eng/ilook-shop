@@ -31,7 +31,7 @@ class ProfileUpdateRequest extends FormRequest
                 'string',
                 'min:9',
                 'max:20',
-                'regex:/^[0-9\-\+\s]+$/'
+                'regex:/^[0-9\-\+\s]+$/',
             ],
         ];
     }

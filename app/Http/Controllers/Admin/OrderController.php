@@ -3,14 +3,16 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Coupon;
 use App\Models\Order;
-use App\Models\ProductVariant;
 use App\Models\StockLog;
+use App\Services\GineeService;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
 use Inertia\Inertia;
 use Inertia\Response;
-use Illuminate\Http\RedirectResponse;
-use Illuminate\Support\Facades\DB;
 
 class OrderController extends Controller
 {
@@ -24,10 +26,10 @@ class OrderController extends Controller
         if ($search) {
             $query->where(function ($q) use ($search) {
                 $q->where('order_number', 'like', "%{$search}%")
-                  ->orWhereHas('shipping', function ($sq) use ($search) {
-                      $sq->where('recipient_name', 'like', "%{$search}%")
-                        ->orWhere('phone', 'like', "%{$search}%");
-                  });
+                    ->orWhereHas('shipping', function ($sq) use ($search) {
+                        $sq->where('recipient_name', 'like', "%{$search}%")
+                            ->orWhere('phone', 'like', "%{$search}%");
+                    });
             });
         }
 
@@ -55,7 +57,7 @@ class OrderController extends Controller
             $newStatus = $validated['status'];
 
             $updateData = ['status' => $newStatus];
-            if (!empty($validated['payment_status'])) {
+            if (! empty($validated['payment_status'])) {
                 $updateData['payment_status'] = $validated['payment_status'];
             }
 
@@ -82,7 +84,7 @@ class OrderController extends Controller
 
             // If order cancelled, return coupon usage
             if ($newStatus === 'cancelled' && $oldStatus !== 'cancelled' && $order->coupon_code) {
-                $coupon = \App\Models\Coupon::where('code', $order->coupon_code)->first();
+                $coupon = Coupon::where('code', $order->coupon_code)->first();
                 if ($coupon && $coupon->used_count > 0) {
                     $coupon->decrement('used_count');
                 }
@@ -93,10 +95,10 @@ class OrderController extends Controller
         // If paid or processing and not pushed to Ginee yet, push to Ginee OMS
         if (in_array($order->status, ['paid', 'processing']) && empty($order->ginee_order_id)) {
             try {
-                $gineeService = app(\App\Services\GineeService::class);
+                $gineeService = app(GineeService::class);
                 $gineeService->pushOrder($order);
             } catch (\Exception $e) {
-                \Log::error('Admin update status Ginee push error: ' . $e->getMessage());
+                \Log::error('Admin update status Ginee push error: '.$e->getMessage());
             }
         }
 
@@ -132,7 +134,7 @@ class OrderController extends Controller
      */
     public function syncGinee(Order $order): RedirectResponse
     {
-        $gineeService = app(\App\Services\GineeService::class);
+        $gineeService = app(GineeService::class);
         $order->load('shipping');
 
         $gineeOrderId = $order->ginee_order_id;
@@ -144,11 +146,11 @@ class OrderController extends Controller
         }
 
         // 2. Fallback: Search Ginee by channelOrderId (using our local order_number)
-        if (!$gineeOrder) {
+        if (! $gineeOrder) {
             try {
                 $shops = $gineeService->getShops();
                 $shopId = null;
-                
+
                 // Get manual channel shop ID
                 $shopsContent = $shops['content'] ?? $shops ?? [];
                 foreach ($shopsContent as $shop) {
@@ -157,37 +159,37 @@ class OrderController extends Controller
                         break;
                     }
                 }
-                
+
                 if ($shopId) {
                     $uri = '/openapi/order/v1/batch-get';
                     $accessKey = env('GINEE_ACCESS_KEY');
                     $secretKey = env('GINEE_SECRET_KEY');
                     $baseUrl = env('GINEE_API_URL');
                     $country = env('GINEE_COUNTRY', 'ID');
-                    
+
                     $stringToSign = "POST\${$uri}\$";
                     $signature = base64_encode(hash_hmac('sha256', $stringToSign, $secretKey, true));
-                    
-                    $response = \Illuminate\Support\Facades\Http::withHeaders([
+
+                    $response = Http::withHeaders([
                         'Content-Type' => 'application/json',
                         'X-Advai-Country' => $country,
                         'Authorization' => "{$accessKey}:{$signature}",
-                    ])->timeout(15)->post($baseUrl . $uri, [
+                    ])->timeout(15)->post($baseUrl.$uri, [
                         'shopId' => $shopId,
-                        'channelOrderIds' => [$order->order_number]
+                        'channelOrderIds' => [$order->order_number],
                     ]);
-                    
+
                     if ($response->successful()) {
                         $ordersList = $response->json('data') ?? [];
                         $gineeOrder = $ordersList[0] ?? null;
                     }
                 }
             } catch (\Exception $e) {
-                \Log::error('syncGinee fallback fetch exception: ' . $e->getMessage());
+                \Log::error('syncGinee fallback fetch exception: '.$e->getMessage());
             }
         }
 
-        if (!$gineeOrder) {
+        if (! $gineeOrder) {
             return redirect()->route('admin.orders')->with('error', "Pesanan {$order->order_number} tidak ditemukan di sistem Ginee.");
         }
 
@@ -198,7 +200,7 @@ class OrderController extends Controller
         $gineeOrderIdReal = $gineeOrder['gineeOrderId'] ?? null;
 
         $logistics = $gineeOrder['logisticsInfos'] ?? $gineeOrder['logistics'] ?? [];
-        if (!empty($logistics)) {
+        if (! empty($logistics)) {
             if (isset($logistics[0])) {
                 $trackingNumber = $logistics[0]['trackingNo'] ?? $logistics[0]['trackingNumber'] ?? $logistics[0]['airwayBill'] ?? null;
                 $courier = $logistics[0]['courierCode'] ?? $logistics[0]['provider'] ?? null;
@@ -208,10 +210,10 @@ class OrderController extends Controller
             }
         }
 
-        if (!$trackingNumber) {
+        if (! $trackingNumber) {
             $trackingNumber = $gineeOrder['trackingNo'] ?? $gineeOrder['trackingNumber'] ?? $gineeOrder['airwayBillNo'] ?? null;
         }
-        if (!$courier) {
+        if (! $courier) {
             $courier = $gineeOrder['courierCode'] ?? $gineeOrder['courier'] ?? null;
         }
 
@@ -244,7 +246,7 @@ class OrderController extends Controller
                     'CANCELLED' => 'cancelled',
                     'CANCEL' => 'cancelled',
                 ];
-                
+
                 $newStatus = $statusMap[strtoupper($gineeStatus)] ?? null;
                 if ($newStatus && $order->status !== $newStatus) {
                     $order->update([
@@ -253,7 +255,7 @@ class OrderController extends Controller
                     ]);
                     $updated = true;
                 }
-            } elseif ($trackingNumber && !in_array($order->status, ['shipped', 'delivered', 'completed'])) {
+            } elseif ($trackingNumber && ! in_array($order->status, ['shipped', 'delivered', 'completed'])) {
                 $order->update([
                     'status' => 'shipped',
                     'payment_status' => 'paid',
@@ -272,6 +274,7 @@ class OrderController extends Controller
     public function showInvoice(Order $order): Response
     {
         $order->load(['user', 'items.variant.product', 'shipping']);
+
         return Inertia::render('Admin/Invoice', [
             'order' => $order,
         ]);

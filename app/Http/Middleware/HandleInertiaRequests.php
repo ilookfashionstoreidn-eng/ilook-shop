@@ -2,6 +2,8 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\FlashSaleProduct;
+use App\Models\Setting;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -35,13 +37,13 @@ class HandleInertiaRequests extends Middleware
                 'user' => $request->user(),
             ],
             'flashSale' => function () {
-                $isActive = \App\Models\Setting::where('key', 'flash_sale_is_active')->first()->value ?? '0';
-                $startTime = \App\Models\Setting::where('key', 'flash_sale_start_time')->first()->value ?? null;
-                $endTime = \App\Models\Setting::where('key', 'flash_sale_end_time')->first()->value ?? null;
-                
+                $isActive = Setting::where('key', 'flash_sale_is_active')->first()->value ?? '0';
+                $startTime = Setting::where('key', 'flash_sale_start_time')->first()->value ?? null;
+                $endTime = Setting::where('key', 'flash_sale_end_time')->first()->value ?? null;
+
                 $products = [];
                 if ($isActive === '1') {
-                    $products = \App\Models\FlashSaleProduct::with('product.variants', 'product.category')->get()->map(function($fsp) {
+                    $products = FlashSaleProduct::with('product.variants', 'product.category')->get()->map(function ($fsp) {
                         $product = $fsp->product;
                         if ($product) {
                             $fsPrice = 0;
@@ -50,7 +52,7 @@ class HandleInertiaRequests extends Middleware
                             } else {
                                 $fsPrice = max(0, $product->base_price - $fsp->discount_value);
                             }
-                            
+
                             return [
                                 'id' => $product->id,
                                 'name' => $product->name,
@@ -64,6 +66,7 @@ class HandleInertiaRequests extends Middleware
                                 'category_name' => $product->category?->name ?? 'Executive',
                             ];
                         }
+
                         return null;
                     })->filter()->values();
                 }

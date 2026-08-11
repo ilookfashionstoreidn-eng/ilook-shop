@@ -4,10 +4,10 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Setting;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
-use Illuminate\Http\RedirectResponse;
 
 class SettingController extends Controller
 {
@@ -15,7 +15,7 @@ class SettingController extends Controller
     {
         $settingsRaw = Setting::all();
         $settings = [];
-        
+
         foreach ($settingsRaw as $setting) {
             $value = $setting->value;
             // Detect if value is JSON
