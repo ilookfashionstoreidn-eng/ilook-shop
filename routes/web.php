@@ -25,6 +25,7 @@ use Illuminate\Support\Facades\Route;
 
 // Public Storefront Routes
 Route::get('/', [StorefrontController::class, 'home'])->name('storefront.home');
+Route::get('/products', [StorefrontController::class, 'products'])->name('storefront.products');
 Route::get('/product/{slug}', [StorefrontController::class, 'productDetail'])->name('storefront.product');
 Route::get('/cart', [StorefrontController::class, 'cart'])->name('storefront.cart');
 Route::get('/checkout', [StorefrontController::class, 'checkoutPage'])->name('storefront.checkout');

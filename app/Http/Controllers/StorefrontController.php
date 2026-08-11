@@ -320,6 +320,37 @@ class StorefrontController extends Controller
     }
 
     /**
+     * Full product catalog page (paginated) — the homepage only shows a
+     * 10-item preview row, this is the "browse everything" destination.
+     */
+    public function products(Request $request): Response
+    {
+        $query = Product::with(['category', 'variants'])->where('status', 'active');
+
+        if ($request->input('category')) {
+            $query->whereHas('category', function ($q) use ($request) {
+                $q->where('slug', $request->input('category'));
+            });
+        }
+
+        if ($request->input('search')) {
+            $query->where('name', 'like', '%'.$request->input('search').'%');
+        }
+
+        $products = $query->orderBy('created_at', 'desc')
+            ->paginate(24)
+            ->withQueryString();
+
+        $categories = Category::withCount('products')->get();
+
+        return Inertia::render('Storefront/Products', [
+            'products' => $products,
+            'categories' => $categories,
+            'filters' => $request->only(['category', 'search']),
+        ]);
+    }
+
+    /**
      * Product Detail Page
      */
     public function productDetail(string $slug): Response

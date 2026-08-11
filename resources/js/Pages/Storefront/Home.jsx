@@ -663,6 +663,12 @@ export default function Home({ products, categories, filters, activeLivestreams 
                         <h2 className="text-3xl font-extrabold uppercase tracking-wider mt-1.5" style={{ fontFamily: "'Outfit', sans-serif" }}>
                             {filters.search ? `"${filters.search}"` : filters.category ? 'PRODUK' : 'NEW ARRIVALS'}
                         </h2>
+                        <Link
+                            href={route('storefront.products', filters.category ? { category: filters.category } : {})}
+                            className="inline-block mt-2 text-[11px] font-bold uppercase tracking-[0.15em] text-gray-500 hover:text-black underline underline-offset-4 transition-colors"
+                        >
+                            Lihat Semua Produk →
+                        </Link>
                     </div>
                     <div className="flex items-center gap-2 overflow-x-auto no-scrollbar whitespace-nowrap pb-2 -mb-2 w-full md:w-auto md:overflow-x-visible md:pb-0 md:mb-0">
                         <button
