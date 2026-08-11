@@ -477,8 +477,8 @@ export default function ProductDetail({ product, related, origin, whatsappNumber
                             )}
                         </div>
 
-                        {/* Variant Thumbnail Strip */}
-                        {((product.variants && product.variants.some(v => v.image)) || product.video_url) && (
+                        {/* Variant Thumbnail Strip — one thumbnail per unique color, not per color+size combo */}
+                        {((uniqueColors && uniqueColors.some(c => c.image)) || product.video_url) && (
                             <div className="flex gap-2 flex-wrap">
                                 {product.video_url && (
                                     <button
@@ -494,26 +494,25 @@ export default function ProductDetail({ product, related, origin, whatsappNumber
                                         <span className="text-[9px] font-extrabold uppercase tracking-widest mt-1 text-indigo-650">Video</span>
                                     </button>
                                 )}
-                                {product.variants && product.variants.map((v) => {
-                                    if (!v.image) return null;
-                                    const thumbImg = v.image || (product.images && product.images[0]) || FALLBACK_IMG;
-                                    const isActive = selectedVariant?.id === v.id && activeMediaType === 'image';
+                                {uniqueColors.map((colorObj) => {
+                                    if (!colorObj.image) return null;
+                                    const isActive = selectedColor?.toLowerCase() === colorObj.name.toLowerCase() && activeMediaType === 'image';
                                     return (
                                         <button
-                                            key={v.id}
+                                            key={colorObj.name}
                                             type="button"
                                             onClick={() => {
-                                                setSelectedVariant(v);
+                                                handleColorSelect(colorObj.name);
                                                 setActiveMediaType('image');
                                             }}
-                                            title={v.name}
+                                            title={colorObj.name}
                                             className={`w-16 h-16 rounded-none overflow-hidden border-2 flex-shrink-0 transition-all duration-200 ${
                                                 isActive ? 'border-black scale-105' : 'border-transparent hover:border-[#aaa]'
                                             }`}
                                         >
                                             <img
-                                                src={thumbImg}
-                                                alt={v.name}
+                                                src={colorObj.image}
+                                                alt={colorObj.name}
                                                 className="w-full h-full object-cover"
                                             />
                                         </button>
