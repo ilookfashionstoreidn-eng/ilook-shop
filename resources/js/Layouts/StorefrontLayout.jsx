@@ -343,7 +343,7 @@ export default function StorefrontLayout({ children }) {
 
             {/* Secondary category nav — sits directly under the header, like a category sub-bar */}
             {navCategories.length > 0 && (
-                <div className="hidden md:flex items-center gap-6 px-4 sm:px-6 md:px-10 h-10 border-b border-gray-100 bg-white/80 backdrop-blur-md sticky top-[116px] z-30 overflow-x-auto no-scrollbar">
+                <div className="flex items-center gap-4 sm:gap-6 px-4 sm:px-6 md:px-10 h-10 border-b border-gray-100 bg-white/80 backdrop-blur-md sticky top-[116px] z-30 overflow-x-auto no-scrollbar">
                     <button
                         onClick={() => router.get(route('storefront.products'))}
                         className={`text-[10px] font-bold uppercase tracking-[0.12em] whitespace-nowrap transition-colors cursor-pointer bg-transparent border-none ${
