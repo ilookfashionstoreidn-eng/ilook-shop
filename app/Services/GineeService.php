@@ -18,10 +18,10 @@ class GineeService
 
     public function __construct()
     {
-        $this->baseUrl = env('GINEE_API_URL', 'https://api.ginee.com');
-        $this->accessKey = env('GINEE_ACCESS_KEY', '');
-        $this->secretKey = env('GINEE_SECRET_KEY', '');
-        $this->country = env('GINEE_COUNTRY', 'ID');
+        $this->baseUrl = config('services.ginee.api_url', 'https://api.ginee.com');
+        $this->accessKey = config('services.ginee.access_key', '');
+        $this->secretKey = config('services.ginee.secret_key', '');
+        $this->country = config('services.ginee.country', 'ID');
     }
 
     /**
