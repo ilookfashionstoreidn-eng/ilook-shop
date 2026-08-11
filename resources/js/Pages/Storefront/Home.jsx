@@ -670,31 +670,6 @@ export default function Home({ products, categories, filters, activeLivestreams 
                             Lihat Semua Produk →
                         </Link>
                     </div>
-                    <div className="flex items-center gap-2 overflow-x-auto no-scrollbar whitespace-nowrap pb-2 -mb-2 w-full md:w-auto md:overflow-x-visible md:pb-0 md:mb-0">
-                        <button
-                            onClick={() => handleCategoryClick(null)}
-                            className={`flex-shrink-0 px-4 py-2 text-[10px] font-extrabold tracking-[0.15em] uppercase rounded-full transition-all duration-300 cursor-pointer ${
-                                !filters.category
-                                    ? 'bg-black text-white shadow-md'
-                                    : 'bg-gray-100 text-gray-500 hover:bg-gray-200 hover:text-black'
-                             }`}
-                        >
-                            Semua
-                        </button>
-                        {categories.map(cat => (
-                            <button
-                                key={cat.id}
-                                onClick={() => handleCategoryClick(cat.slug)}
-                                className={`flex-shrink-0 px-4 py-2 text-[10px] font-extrabold tracking-[0.15em] uppercase rounded-full transition-all duration-300 cursor-pointer ${
-                                    filters.category === cat.slug
-                                        ? 'bg-black text-white shadow-md'
-                                        : 'bg-gray-100 text-gray-500 hover:bg-gray-200 hover:text-black'
-                                }`}
-                            >
-                                {cat.name}
-                            </button>
-                        ))}
-                    </div>
                 </div>
 
                 {/* Products Grid */}

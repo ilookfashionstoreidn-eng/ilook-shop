@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\Category;
 use App\Models\FlashSaleProduct;
 use App\Models\Setting;
 use Illuminate\Http\Request;
@@ -36,6 +37,9 @@ class HandleInertiaRequests extends Middleware
             'auth' => [
                 'user' => $request->user(),
             ],
+            'navCategories' => function () {
+                return Category::withCount('products')->orderBy('sort_order')->get(['id', 'name', 'slug', 'parent_id']);
+            },
             'flashSale' => function () {
                 $isActive = Setting::where('key', 'flash_sale_is_active')->first()->value ?? '0';
                 $startTime = Setting::where('key', 'flash_sale_start_time')->first()->value ?? null;
