@@ -13,8 +13,8 @@ class RajaOngkirService
 
     public function __construct()
     {
-        $this->baseUrl = env('RAJAONGKIR_API_URL', 'https://rajaongkir.komerce.id/api/v1');
-        $this->apiKey = env('RAJAONGKIR_API_KEY', env('KOMERCE_SHIPPING_KEY', ''));
+        $this->baseUrl = config('services.rajaongkir.api_url', 'https://rajaongkir.komerce.id/api/v1');
+        $this->apiKey = config('services.rajaongkir.api_key', '');
     }
 
     /**

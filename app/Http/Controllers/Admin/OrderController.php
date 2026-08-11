@@ -162,10 +162,10 @@ class OrderController extends Controller
 
                 if ($shopId) {
                     $uri = '/openapi/order/v1/batch-get';
-                    $accessKey = env('GINEE_ACCESS_KEY');
-                    $secretKey = env('GINEE_SECRET_KEY');
-                    $baseUrl = env('GINEE_API_URL');
-                    $country = env('GINEE_COUNTRY', 'ID');
+                    $accessKey = config('services.ginee.access_key');
+                    $secretKey = config('services.ginee.secret_key');
+                    $baseUrl = config('services.ginee.api_url');
+                    $country = config('services.ginee.country', 'ID');
 
                     $stringToSign = "POST\${$uri}\$";
                     $signature = base64_encode(hash_hmac('sha256', $stringToSign, $secretKey, true));
