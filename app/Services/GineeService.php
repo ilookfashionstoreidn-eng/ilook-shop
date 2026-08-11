@@ -370,7 +370,8 @@ class GineeService
                 continue;
             }
 
-            DB::transaction(function () use ($gProduct, $name, $gProductId, $priceLookup) {
+            try {
+                DB::transaction(function () use ($gProduct, $name, $gProductId, $priceLookup) {
                 $sku = $gProduct['sellerSku'] ?? ('GN-'.$gProductId);
                 $description = $gProduct['description'] ?? '';
                 $weight = $gProduct['weight'] ?? 200;
@@ -449,9 +450,19 @@ class GineeService
                 ProductVariant::where('product_id', $product->id)
                     ->whereNotIn('id', $importedVariantIds)
                     ->delete();
-            });
+                });
 
-            $importedCount++;
+                $importedCount++;
+            } catch (\Throwable $e) {
+                // Don't let one bad product (e.g. a data conflict) abort a
+                // sync of thousands of products — log it and keep going.
+                Log::error('Ginee sync: failed to save product', [
+                    'ginee_product_id' => $gProductId,
+                    'name' => $name,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+
             if ($onProgress) {
                 $onProgress('save', $importedCount, count($gineeProductsList));
             }
