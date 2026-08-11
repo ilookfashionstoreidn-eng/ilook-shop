@@ -704,7 +704,7 @@ export default function Home({ products, categories, filters, activeLivestreams 
                         </button>
                     </div>
                 ) : (
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-x-5 gap-y-12">
+                    <div className="flex gap-5 overflow-x-auto pb-4 snap-x snap-mandatory no-scrollbar scroll-smooth">
                         {products.map((product) => {
                             const mainImage = product.images && product.images[0]
                                 ? product.images[0]
@@ -718,7 +718,7 @@ export default function Home({ products, categories, filters, activeLivestreams 
                                     ? Math.round((1 - product.sale_price / product.base_price) * 100)
                                     : null);
                             return (
-                                <div key={product.id} className="group flex flex-col h-full bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+                                <div key={product.id} className="group flex flex-col h-full bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 flex-shrink-0 snap-start w-[45vw] sm:w-[240px]">
                                     {/* Image with hover effect */}
                                     <div className="relative aspect-[3/4] overflow-hidden bg-gray-55 flex-shrink-0">
                                         <Link href={route('storefront.product', product.slug)} className="block w-full h-full">

@@ -307,7 +307,7 @@ class StorefrontController extends Controller
             $query->where('name', 'like', '%'.$request->input('search').'%');
         }
 
-        $products = $query->orderBy('created_at', 'desc')->get();
+        $products = $query->orderBy('created_at', 'desc')->take(10)->get();
         $categories = Category::withCount('products')->get();
         $activeLivestreams = Livestream::where('is_active', true)->orderBy('created_at', 'desc')->get();
 
