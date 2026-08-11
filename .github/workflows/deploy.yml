@@ -30,3 +30,4 @@ jobs:
             php artisan view:cache
             sudo systemctl reload php8.3-fpm
             sudo systemctl reload nginx
+
