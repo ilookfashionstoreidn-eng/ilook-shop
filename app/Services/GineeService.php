@@ -237,6 +237,14 @@ class GineeService
         $pathStr = is_array($path) ? strtolower(implode(' > ', $path)) : '';
         $name = $gProduct['productName'] ?? ($gProduct['name'] ?? '');
 
+        // "Anak" in the product name is a strong, unambiguous signal.
+        // Sellers sometimes file kids' items under Ginee's generic adult
+        // "Sets" category by mistake, so this overrides the Ginee tag
+        // rather than deferring to it like the other keywords below.
+        if (preg_match('/\banak\b/i', $name)) {
+            return Category::where('slug', 'setelan-anak')->value('id');
+        }
+
         $slug = null;
 
         if ($pathStr !== '') {
@@ -255,9 +263,7 @@ class GineeService
 
         if (! $slug) {
             // Ginee didn't tag this product — fall back to guessing from the name.
-            if (preg_match('/\banak\b/i', $name)) {
-                $slug = 'setelan-anak';
-            } elseif (preg_match('/\bpiyama\b/i', $name)) {
+            if (preg_match('/\bpiyama\b/i', $name)) {
                 $slug = 'piyama-lingerie';
             } elseif (preg_match('/\b(dress|daster|jumpsuit|gamis)\b/i', $name)) {
                 $slug = 'dress';
