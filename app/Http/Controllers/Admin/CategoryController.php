@@ -56,16 +56,32 @@ class CategoryController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'parent_id' => 'nullable|exists:categories,id|different:id', // Cannot be own parent
+            // Note: 'different:id' here is a no-op — Laravel's `different` rule
+            // compares against another *input* field named "id", which this
+            // form never sends (the category's id comes from the route, not
+            // the payload). The real guard is the self/circular check below.
+            'parent_id' => 'nullable|exists:categories,id',
             'sort_order' => 'required|integer',
             'image_url' => 'nullable|string',
         ]);
 
-        // Prevent circular reference: parent_id cannot be a child of this category
+        // Reject selecting itself directly...
+        if ($validated['parent_id'] && (int) $validated['parent_id'] === $category->id) {
+            return back()->withErrors(['parent_id' => 'Kategori tidak bisa menjadi induk untuk dirinya sendiri.']);
+        }
+
+        // ...or indirectly (picking a descendant, which would create a cycle).
+        // Bounded to guard against traversing a cycle already present in bad data.
         if ($validated['parent_id']) {
-            $parent = Category::find($validated['parent_id']);
-            if ($parent && $parent->parent_id === $category->id) {
-                return back()->withErrors(['parent_id' => 'Tidak dapat memilih kategori anak sebagai induk.']);
+            $currentParentId = $validated['parent_id'];
+            $hops = 0;
+            while ($currentParentId && $hops < 50) {
+                if ((int) $currentParentId === $category->id) {
+                    return back()->withErrors(['parent_id' => 'Tidak dapat memilih sub-kategori sebagai induk (mencegah dependensi melingkar).']);
+                }
+                $parentCategory = Category::find($currentParentId);
+                $currentParentId = $parentCategory?->parent_id;
+                $hops++;
             }
         }
 

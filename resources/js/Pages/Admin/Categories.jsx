@@ -255,11 +255,13 @@ export default function Categories({ categories, parentCategories }) {
                                     className="w-full bg-white border border-gray-200 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 text-sm rounded-xl px-4 py-2.5 text-gray-800"
                                 >
                                     <option value="">Tidak ada (Jadikan Kategori Induk)</option>
-                                    {parentCategories.map((cat) => (
-                                        <option key={cat.id} value={cat.id}>
-                                            {cat.name}
-                                        </option>
-                                    ))}
+                                    {parentCategories
+                                        .filter((cat) => cat.id !== currentCategoryId)
+                                        .map((cat) => (
+                                            <option key={cat.id} value={cat.id}>
+                                                {cat.name}
+                                            </option>
+                                        ))}
                                 </select>
                                 {errors.parent_id && <p className="text-xs text-red-500 mt-1">{errors.parent_id}</p>}
                             </div>
