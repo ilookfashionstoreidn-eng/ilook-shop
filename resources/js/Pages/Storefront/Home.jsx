@@ -446,6 +446,57 @@ function ActiveLivestreamSection({ streams }) {
     );
 }
 
+function CategoryBannerCard({ images, tagline, title, onClick }) {
+    const [activeIdx, setActiveIdx] = useState(0);
+
+    useEffect(() => {
+        if (images.length <= 1) return;
+        const interval = setInterval(() => {
+            setActiveIdx((prev) => (prev + 1) % images.length);
+        }, 2000);
+        return () => clearInterval(interval);
+    }, [images]);
+
+    return (
+        <div
+            className="relative h-[45vh] sm:h-[60vh] overflow-hidden group cursor-pointer"
+            onClick={onClick}
+        >
+            <div className="absolute inset-0 bg-black/20 z-10 group-hover:bg-black/35 transition-colors duration-500" />
+            {images.map((src, idx) => (
+                <img
+                    key={src}
+                    src={src}
+                    alt={title}
+                    className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-700 ease-in-out group-hover:scale-105 ${
+                        idx === activeIdx ? 'opacity-100' : 'opacity-0'
+                    }`}
+                    style={{ transitionProperty: 'opacity, transform', transitionDuration: '700ms, 1500ms' }}
+                />
+            ))}
+            {images.length > 1 && (
+                <div className="absolute top-4 right-4 z-20 flex gap-1.5">
+                    {images.map((_, i) => (
+                        <span
+                            key={i}
+                            className={`h-1.5 rounded-full transition-all duration-300 ${i === activeIdx ? 'w-4 bg-white' : 'w-1.5 bg-white/50'}`}
+                        />
+                    ))}
+                </div>
+            )}
+            <div className="absolute inset-0 z-20 flex flex-col justify-end p-8 sm:p-12">
+                <span className="text-[10px] font-bold text-white/80 tracking-widest uppercase mb-1">{tagline}</span>
+                <h3 className="text-white text-2xl sm:text-3xl font-extrabold uppercase tracking-[0.1em] mb-5">{title}</h3>
+                <div>
+                    <span className="bg-white text-black font-extrabold uppercase tracking-[0.15em] text-[10px] px-8 py-3.5 inline-block hover:bg-black hover:text-white transition-colors duration-300 shadow-md">
+                        JELAJAHI KOLEKSI
+                    </span>
+                </div>
+            </div>
+        </div>
+    );
+}
+
 function HighlightProductCard({ label, product, formatCurrency }) {
     // Unique color images: dedupe variant photos so the auto-cycle doesn't
     // repeat the same image back-to-back for size-only variants.
@@ -693,86 +744,50 @@ export default function Home({ products, categories, filters, activeLivestreams 
 
             {/* Split Category Banners */}
             <section className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-1.5 w-full mt-1.5">
-                <div
-                    className="relative h-[45vh] sm:h-[60vh] overflow-hidden group cursor-pointer"
+                <CategoryBannerCard
+                    images={[
+                        'https://images.unsplash.com/photo-1509631179647-0177331693ae?w=900&auto=format&fit=crop&q=80',
+                        'https://images.unsplash.com/photo-1529139574466-a303027c1d8b?w=900&auto=format&fit=crop&q=80',
+                        'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=900&auto=format&fit=crop&q=80',
+                        'https://images.unsplash.com/photo-1441984904996-e0b6ba687e04?w=900&auto=format&fit=crop&q=80',
+                    ]}
+                    tagline="ELEGANCE"
+                    title="WOMEN'S COLLECTION"
                     onClick={() => handleCategoryClick('pakaian-wanita')}
-                >
-                    <div className="absolute inset-0 bg-black/20 z-10 group-hover:bg-black/35 transition-colors duration-500" />
-                    <img
-                        src="https://images.unsplash.com/photo-1509631179647-0177331693ae?w=900&auto=format&fit=crop&q=80"
-                        alt="Koleksi Wanita"
-                        className="w-full h-full object-cover transition-transform duration-[1500ms] group-hover:scale-105"
-                    />
-                    <div className="absolute inset-0 z-20 flex flex-col justify-end p-8 sm:p-12">
-                        <span className="text-[10px] font-bold text-white/80 tracking-widest uppercase mb-1">ELEGANCE</span>
-                        <h3 className="text-white text-2xl sm:text-3xl font-extrabold uppercase tracking-[0.1em] mb-5">WOMEN'S COLLECTION</h3>
-                        <div>
-                            <span className="bg-white text-black font-extrabold uppercase tracking-[0.15em] text-[10px] px-8 py-3.5 inline-block hover:bg-black hover:text-white transition-colors duration-300 shadow-md">
-                                JELAJAHI KOLEKSI
-                            </span>
-                        </div>
-                    </div>
-                </div>
-                <div 
-                    className="relative h-[45vh] sm:h-[60vh] overflow-hidden group cursor-pointer"
+                />
+                <CategoryBannerCard
+                    images={[
+                        'https://images.unsplash.com/photo-1507679799987-c73779587ccf?w=900&auto=format&fit=crop&q=80',
+                        'https://images.unsplash.com/photo-1489424731084-a5d8b219a5bb?w=900&auto=format&fit=crop&q=80',
+                        'https://images.unsplash.com/photo-1552374196-c4e7ffc6e126?w=900&auto=format&fit=crop&q=80',
+                        'https://images.unsplash.com/photo-1516257984-b1b4d707412e?w=900&auto=format&fit=crop&q=80',
+                    ]}
+                    tagline="STRENGTH & STYLE"
+                    title="MEN'S COLLECTION"
                     onClick={() => handleCategoryClick('pakaian-pria')}
-                >
-                    <div className="absolute inset-0 bg-black/20 z-10 group-hover:bg-black/35 transition-colors duration-500" />
-                    <img
-                        src="https://images.unsplash.com/photo-1507679799987-c73779587ccf?w=900&auto=format&fit=crop&q=80"
-                        alt="Koleksi Pria"
-                        className="w-full h-full object-cover transition-transform duration-[1500ms] group-hover:scale-105"
-                    />
-                    <div className="absolute inset-0 z-20 flex flex-col justify-end p-8 sm:p-12">
-                        <span className="text-[10px] font-bold text-white/80 tracking-widest uppercase mb-1">STRENGTH & STYLE</span>
-                        <h3 className="text-white text-2xl sm:text-3xl font-extrabold uppercase tracking-[0.1em] mb-5">MEN'S COLLECTION</h3>
-                        <div>
-                            <span className="bg-white text-black font-extrabold uppercase tracking-[0.15em] text-[10px] px-8 py-3.5 inline-block hover:bg-black hover:text-white transition-colors duration-300 shadow-md">
-                                JELAJAHI KOLEKSI
-                            </span>
-                        </div>
-                    </div>
-                </div>
-                <div
-                    className="relative h-[45vh] sm:h-[60vh] overflow-hidden group cursor-pointer"
+                />
+                <CategoryBannerCard
+                    images={[
+                        'https://images.unsplash.com/photo-1519238263530-99bdd11df2ea?w=900&auto=format&fit=crop&q=80',
+                        'https://images.unsplash.com/photo-1503919545889-aef636e10ad4?w=900&auto=format&fit=crop&q=80',
+                        'https://images.unsplash.com/photo-1519340241574-2cec6aef0c01?w=900&auto=format&fit=crop&q=80',
+                        'https://images.unsplash.com/photo-1503454537195-1dcabb73ffb9?w=900&auto=format&fit=crop&q=80',
+                    ]}
+                    tagline="PLAYFUL & COZY"
+                    title="KIDS' COLLECTION"
                     onClick={() => handleCategoryClick('pakaian-anak')}
-                >
-                    <div className="absolute inset-0 bg-black/20 z-10 group-hover:bg-black/35 transition-colors duration-500" />
-                    <img
-                        src="https://images.unsplash.com/photo-1519238263530-99bdd11df2ea?w=900&auto=format&fit=crop&q=80"
-                        alt="Koleksi Anak"
-                        className="w-full h-full object-cover transition-transform duration-[1500ms] group-hover:scale-105"
-                    />
-                    <div className="absolute inset-0 z-20 flex flex-col justify-end p-8 sm:p-12">
-                        <span className="text-[10px] font-bold text-white/80 tracking-widest uppercase mb-1">PLAYFUL & COZY</span>
-                        <h3 className="text-white text-2xl sm:text-3xl font-extrabold uppercase tracking-[0.1em] mb-5">KIDS' COLLECTION</h3>
-                        <div>
-                            <span className="bg-white text-black font-extrabold uppercase tracking-[0.15em] text-[10px] px-8 py-3.5 inline-block hover:bg-black hover:text-white transition-colors duration-300 shadow-md">
-                                JELAJAHI KOLEKSI
-                            </span>
-                        </div>
-                    </div>
-                </div>
-                <div
-                    className="relative h-[45vh] sm:h-[60vh] overflow-hidden group cursor-pointer"
+                />
+                <CategoryBannerCard
+                    images={[
+                        'https://images.unsplash.com/photo-1511895426328-dc8714191300?w=900&auto=format&fit=crop&q=80',
+                        'https://images.unsplash.com/photo-1476703993599-0035a21b17a9?w=900&auto=format&fit=crop&q=80',
+                        'https://images.unsplash.com/photo-1466442929976-97f336a657be?w=900&auto=format&fit=crop&q=80',
+                        'https://images.unsplash.com/photo-1478131143081-80f7f84ca84d?w=900&auto=format&fit=crop&q=80',
+                    ]}
+                    tagline="MATCHING MOMENTS"
+                    title="FAMILY SET"
                     onClick={() => handleCategoryClick('family-set')}
-                >
-                    <div className="absolute inset-0 bg-black/20 z-10 group-hover:bg-black/35 transition-colors duration-500" />
-                    <img
-                        src="https://images.unsplash.com/photo-1511895426328-dc8714191300?w=900&auto=format&fit=crop&q=80"
-                        alt="Koleksi Family Set"
-                        className="w-full h-full object-cover transition-transform duration-[1500ms] group-hover:scale-105"
-                    />
-                    <div className="absolute inset-0 z-20 flex flex-col justify-end p-8 sm:p-12">
-                        <span className="text-[10px] font-bold text-white/80 tracking-widest uppercase mb-1">MATCHING MOMENTS</span>
-                        <h3 className="text-white text-2xl sm:text-3xl font-extrabold uppercase tracking-[0.1em] mb-5">FAMILY SET</h3>
-                        <div>
-                            <span className="bg-white text-black font-extrabold uppercase tracking-[0.15em] text-[10px] px-8 py-3.5 inline-block hover:bg-black hover:text-white transition-colors duration-300 shadow-md">
-                                JELAJAHI KOLEKSI
-                            </span>
-                        </div>
-                    </div>
-                </div>
+                />
             </section>
             {/* Dynamic Flash Sale Banner */}
             {flashSale && flashSale.is_active && flashSale.products && flashSale.products.length > 0 && (
