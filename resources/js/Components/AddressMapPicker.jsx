@@ -104,7 +104,10 @@ export default function AddressMapPicker({ latitude, longitude, onLocationSelect
                 </button>
             </div>
 
-            <div className="w-full h-[280px] border border-[#E0E0E0] overflow-hidden relative">
+            {/* isolate: Leaflet's panes/controls use z-index values (400–1000)
+                that otherwise leak above the site's sticky header — this
+                creates a new stacking context so they stay contained here. */}
+            <div className="w-full h-[280px] border border-[#E0E0E0] overflow-hidden relative isolate z-0">
                 <MapContainer
                     center={position || DEFAULT_CENTER}
                     zoom={position ? 16 : 11}
