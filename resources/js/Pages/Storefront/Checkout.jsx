@@ -29,6 +29,8 @@ export default function Checkout({ provinces, activeCouriers, originCityId, midt
     const [buyerEmail, setBuyerEmail] = useState('');
     const [buyerPhone, setBuyerPhone] = useState('');
     const [address, setAddress] = useState('');
+    const [kelurahan, setKelurahan] = useState('');
+    const [kecamatan, setKecamatan] = useState('');
     const [selectedProvinceId, setSelectedProvinceId] = useState('');
     const [selectedProvinceName, setSelectedProvinceName] = useState('');
     const [cities, setCities] = useState([]);
@@ -279,7 +281,7 @@ export default function Checkout({ provinces, activeCouriers, originCityId, midt
     // Move to next step validations
     const handleNextStep = (e) => {
         e.preventDefault();
-        if (!buyerName || !buyerEmail || !buyerPhone || !address || !selectedProvinceId || !selectedCityId || !postalCode) {
+        if (!buyerName || !buyerEmail || !buyerPhone || !address || !kelurahan || !kecamatan || !selectedProvinceId || !selectedCityId || !postalCode) {
             setErrorMessage('Silakan lengkapi seluruh kolom alamat pengiriman.');
             return;
         }
@@ -302,6 +304,8 @@ export default function Checkout({ provinces, activeCouriers, originCityId, midt
             buyer_email: buyerEmail,
             buyer_phone: buyerPhone,
             address: address,
+            kelurahan: kelurahan,
+            kecamatan: kecamatan,
             province_id: parseInt(selectedProvinceId),
             province_name: selectedProvinceName,
             city_id: parseInt(selectedCityId),
@@ -489,13 +493,39 @@ export default function Checkout({ provinces, activeCouriers, originCityId, midt
 
                                         <div className="space-y-1 sm:col-span-2">
                                             <label className="text-[10px] text-[#747878] font-bold uppercase tracking-wider">Alamat Lengkap</label>
-                                            <textarea 
+                                            <textarea
                                                 rows="3"
                                                 required
-                                                placeholder="Tuliskan nama jalan, nomor rumah, RT/RW, kecamatan..."
+                                                placeholder="Tuliskan nama jalan, nomor rumah, RT/RW..."
                                                 value={address}
                                                 onChange={e => setAddress(e.target.value)}
                                                 className="w-full bg-white border border-[#E0E0E0] focus:border-[#212121] focus:ring-0 rounded-none p-2.5 text-[#212121] font-sans"
+                                            />
+                                        </div>
+
+                                        {/* Kelurahan / Desa */}
+                                        <div className="space-y-1">
+                                            <label className="text-[10px] text-[#747878] font-bold uppercase tracking-wider">Kelurahan / Desa</label>
+                                            <input
+                                                type="text"
+                                                required
+                                                placeholder="Contoh: Kebon Jeruk"
+                                                value={kelurahan}
+                                                onChange={e => setKelurahan(e.target.value)}
+                                                className="w-full bg-white border border-[#E0E0E0] focus:border-[#212121] focus:ring-0 rounded-none p-2.5 text-[#212121]"
+                                            />
+                                        </div>
+
+                                        {/* Kecamatan */}
+                                        <div className="space-y-1">
+                                            <label className="text-[10px] text-[#747878] font-bold uppercase tracking-wider">Kecamatan</label>
+                                            <input
+                                                type="text"
+                                                required
+                                                placeholder="Contoh: Kebon Jeruk"
+                                                value={kecamatan}
+                                                onChange={e => setKecamatan(e.target.value)}
+                                                className="w-full bg-white border border-[#E0E0E0] focus:border-[#212121] focus:ring-0 rounded-none p-2.5 text-[#212121]"
                                             />
                                         </div>
 

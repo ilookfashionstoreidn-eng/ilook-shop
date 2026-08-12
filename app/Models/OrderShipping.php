@@ -17,6 +17,8 @@ class OrderShipping extends Model
         'recipient_name',
         'phone',
         'address',
+        'kelurahan',
+        'kecamatan',
         'city',
         'province',
         'postal_code',

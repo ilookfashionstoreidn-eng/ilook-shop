@@ -81,6 +81,9 @@ export default function Invoice({ order }) {
                         <p className="font-semibold text-slate-800">{order.shipping?.recipient_name}</p>
                         <p className="text-slate-500">
                             {order.shipping?.address}<br />
+                            {(order.shipping?.kelurahan || order.shipping?.kecamatan) && (
+                                <>{[order.shipping?.kelurahan, order.shipping?.kecamatan].filter(Boolean).join(', ')}<br /></>
+                            )}
                             {order.shipping?.city}, {order.shipping?.province}<br />
                             Kode Pos: {order.shipping?.postal_code}<br />
                             Telp: {order.shipping?.phone}

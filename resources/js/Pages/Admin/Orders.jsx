@@ -418,6 +418,9 @@ export default function Orders({ orders, filters }) {
                                     <div className="space-y-1 text-xs text-gray-650">
                                         <p className="font-medium text-gray-850">{selectedOrder.shipping?.recipient_name}</p>
                                         <p>{selectedOrder.shipping?.address}</p>
+                                        {(selectedOrder.shipping?.kelurahan || selectedOrder.shipping?.kecamatan) && (
+                                            <p>{[selectedOrder.shipping?.kelurahan, selectedOrder.shipping?.kecamatan].filter(Boolean).join(', ')}</p>
+                                        )}
                                         <p>{selectedOrder.shipping?.city}, {selectedOrder.shipping?.province} - {selectedOrder.shipping?.postal_code}</p>
                                         <p className="pt-2 text-gray-500 font-semibold uppercase">Kurir: {selectedOrder.shipping?.courier?.toUpperCase()} ({selectedOrder.shipping?.service})</p>
                                     </div>

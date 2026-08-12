@@ -496,6 +496,11 @@ export default function OrderDetail({ order: initialOrder, midtransClientKey, mi
                                     <p className="font-bold text-[#212121]">{order.shipping.recipient_name}</p>
                                     <p className="text-[#747878]">{order.shipping.phone}</p>
                                     <p className="text-[#747878]">{order.shipping.address}</p>
+                                    {(order.shipping.kelurahan || order.shipping.kecamatan) && (
+                                        <p className="text-[#747878]">
+                                            {[order.shipping.kelurahan, order.shipping.kecamatan].filter(Boolean).join(', ')}
+                                        </p>
+                                    )}
                                     <p className="text-[#747878]">{order.shipping.city}, {order.shipping.province} {order.shipping.postal_code}</p>
 
                                     <div className="pt-2 mt-2 border-t border-[#E0E0E0] flex items-center gap-2 flex-wrap">
