@@ -602,8 +602,8 @@ export default function Home({ products, categories, filters, activeLivestreams 
             )}
 
             {/* Split Category Banners */}
-            <section className="grid grid-cols-1 md:grid-cols-2 gap-1.5 w-full mt-1.5">
-                <div 
+            <section className="grid grid-cols-1 md:grid-cols-3 gap-1.5 w-full mt-1.5">
+                <div
                     className="relative h-[45vh] sm:h-[60vh] overflow-hidden group cursor-pointer"
                     onClick={() => handleCategoryClick('dress')}
                 >
@@ -636,6 +636,26 @@ export default function Home({ products, categories, filters, activeLivestreams 
                     <div className="absolute inset-0 z-20 flex flex-col justify-end p-8 sm:p-12">
                         <span className="text-[10px] font-bold text-white/80 tracking-widest uppercase mb-1">STRENGTH & STYLE</span>
                         <h3 className="text-white text-2xl sm:text-3xl font-extrabold uppercase tracking-[0.1em] mb-5">MEN'S COLLECTION</h3>
+                        <div>
+                            <span className="bg-white text-black font-extrabold uppercase tracking-[0.15em] text-[10px] px-8 py-3.5 inline-block hover:bg-black hover:text-white transition-colors duration-300 shadow-md">
+                                JELAJAHI KOLEKSI
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                <div
+                    className="relative h-[45vh] sm:h-[60vh] overflow-hidden group cursor-pointer"
+                    onClick={() => handleCategoryClick('pakaian-anak')}
+                >
+                    <div className="absolute inset-0 bg-black/20 z-10 group-hover:bg-black/35 transition-colors duration-500" />
+                    <img
+                        src="https://images.unsplash.com/photo-1519457851262-4a373e2fca87?w=900&auto=format&fit=crop&q=80"
+                        alt="Koleksi Anak"
+                        className="w-full h-full object-cover transition-transform duration-[1500ms] group-hover:scale-105"
+                    />
+                    <div className="absolute inset-0 z-20 flex flex-col justify-end p-8 sm:p-12">
+                        <span className="text-[10px] font-bold text-white/80 tracking-widest uppercase mb-1">PLAYFUL & COZY</span>
+                        <h3 className="text-white text-2xl sm:text-3xl font-extrabold uppercase tracking-[0.1em] mb-5">KIDS' COLLECTION</h3>
                         <div>
                             <span className="bg-white text-black font-extrabold uppercase tracking-[0.15em] text-[10px] px-8 py-3.5 inline-block hover:bg-black hover:text-white transition-colors duration-300 shadow-md">
                                 JELAJAHI KOLEKSI
