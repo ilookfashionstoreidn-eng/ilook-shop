@@ -312,9 +312,68 @@ class StorefrontController extends Controller
         return Inertia::render('Storefront/Home', [
             'products' => $products,
             'categories' => $categories,
+            'highlightProducts' => $this->getHighlightProducts(),
             'filters' => $request->only(['category', 'search']),
             'activeLivestreams' => $activeLivestreams,
         ]);
+    }
+
+    /**
+     * One "spotlight" product per top-level family (Wanita/Pria/Anak/Family
+     * Set) for the homepage highlight row — each card auto-cycles through
+     * the product's color variants client-side.
+     */
+    private function getHighlightProducts(): array
+    {
+        $groups = [
+            'Wanita' => 'pakaian-wanita',
+            'Pria' => 'pakaian-pria',
+            'Anak' => 'pakaian-anak',
+            'Family' => 'family-set',
+        ];
+
+        $highlights = [];
+        foreach ($groups as $label => $slug) {
+            $categoryIds = $this->categoryIdsForSlug($slug);
+            if (empty($categoryIds)) {
+                continue;
+            }
+
+            $product = Product::with('variants')
+                ->where('status', 'active')
+                ->whereIn('category_id', $categoryIds)
+                ->orderBy('created_at', 'desc')
+                ->first();
+
+            if ($product) {
+                $highlights[] = [
+                    'label' => $label,
+                    'product' => $product,
+                ];
+            }
+        }
+
+        return $highlights;
+    }
+
+    /**
+     * Resolve a category slug to the ID(s) that should match it: itself, or
+     * itself + all children if it's a top-level parent (parent categories
+     * hold no products directly — everything lives on the children).
+     */
+    private function categoryIdsForSlug(string $slug): array
+    {
+        $category = Category::where('slug', $slug)->withCount('children')->first();
+
+        if (! $category) {
+            return [];
+        }
+
+        if ($category->children_count > 0) {
+            return $category->children()->pluck('id')->push($category->id)->all();
+        }
+
+        return [$category->id];
     }
 
     /**
@@ -325,20 +384,15 @@ class StorefrontController extends Controller
      */
     private function applyCategoryFilter($query, string $slug): void
     {
-        $category = Category::where('slug', $slug)->withCount('children')->first();
+        $categoryIds = $this->categoryIdsForSlug($slug);
 
-        if (! $category) {
+        if (empty($categoryIds)) {
             $query->whereHas('category', fn ($q) => $q->where('slug', $slug));
 
             return;
         }
 
-        if ($category->children_count > 0) {
-            $categoryIds = $category->children()->pluck('id')->push($category->id);
-            $query->whereIn('category_id', $categoryIds);
-        } else {
-            $query->where('category_id', $category->id);
-        }
+        $query->whereIn('category_id', $categoryIds);
     }
 
     /**

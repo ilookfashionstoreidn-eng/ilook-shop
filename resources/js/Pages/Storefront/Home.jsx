@@ -446,7 +446,97 @@ function ActiveLivestreamSection({ streams }) {
     );
 }
 
-export default function Home({ products, categories, filters, activeLivestreams = [] }) {
+function HighlightProductCard({ label, product, formatCurrency }) {
+    // Unique color images: dedupe variant photos so the auto-cycle doesn't
+    // repeat the same image back-to-back for size-only variants.
+    const images = React.useMemo(() => {
+        const seen = new Set();
+        const imgs = [];
+        (product.variants || []).forEach((v) => {
+            if (v.image && !seen.has(v.image)) {
+                seen.add(v.image);
+                imgs.push(v.image);
+            }
+        });
+        if (imgs.length === 0) {
+            imgs.push(
+                (product.images && product.images[0]) ||
+                'https://images.unsplash.com/photo-1434389677669-e08b4cac3105?w=800&auto=format&fit=crop&q=60'
+            );
+        }
+        return imgs;
+    }, [product]);
+
+    const [activeIdx, setActiveIdx] = useState(0);
+
+    useEffect(() => {
+        if (images.length <= 1) return;
+        const interval = setInterval(() => {
+            setActiveIdx((prev) => (prev + 1) % images.length);
+        }, 2000);
+        return () => clearInterval(interval);
+    }, [images]);
+
+    return (
+        <div className="group flex flex-col h-full bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+            <div className="relative aspect-[3/4] overflow-hidden bg-gray-55 flex-shrink-0">
+                <span className="absolute top-3 left-3 z-10 bg-black text-white text-[9px] font-black px-2.5 py-1 uppercase tracking-wider rounded-md shadow-md">
+                    {label}
+                </span>
+                <Link href={route('storefront.product', product.slug)} className="block w-full h-full">
+                    <img
+                        key={activeIdx}
+                        src={images[activeIdx]}
+                        alt={product.name}
+                        className="w-full h-full object-contain animate-fade-in"
+                    />
+                </Link>
+                {images.length > 1 && (
+                    <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 z-10">
+                        {images.map((_, i) => (
+                            <span
+                                key={i}
+                                className={`h-1.5 rounded-full transition-all duration-300 ${i === activeIdx ? 'w-4 bg-white' : 'w-1.5 bg-white/50'}`}
+                            />
+                        ))}
+                    </div>
+                )}
+                <Link
+                    href={route('storefront.product', product.slug)}
+                    className="absolute bottom-0 left-0 right-0 bg-[#111111]/90 backdrop-blur-xs text-white py-3.5 text-[9px] font-bold tracking-[0.2em] uppercase text-center transform translate-y-full group-hover:translate-y-0 transition-transform duration-300"
+                >
+                    BELI SEKARANG
+                </Link>
+            </div>
+            <div className="p-4 flex-grow flex flex-col justify-between bg-white border-t border-gray-50">
+                <div className="space-y-1">
+                    <p className="text-[9px] font-black tracking-widest uppercase text-gray-400">iLOOK</p>
+                    <Link href={route('storefront.product', product.slug)}>
+                        <h3 className="text-xs sm:text-[13px] font-bold text-gray-800 hover:text-black transition-colors line-clamp-1 mt-0.5 leading-snug">
+                            {product.name}
+                        </h3>
+                    </Link>
+                </div>
+                <div className="flex items-center gap-2 pt-2 mt-2 border-t border-gray-50/50">
+                    <span className="text-[13px] sm:text-sm font-extrabold text-black">
+                        {formatCurrency(product.sale_price || product.base_price)}
+                    </span>
+                    {product.sale_price && (
+                        <span className="text-[11px] text-gray-400 line-through">
+                            {formatCurrency(product.base_price)}
+                        </span>
+                    )}
+                </div>
+            </div>
+            <style>{`
+                @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+                .animate-fade-in { animation: fadeIn 0.4s ease-in-out; }
+            `}</style>
+        </div>
+    );
+}
+
+export default function Home({ products, categories, filters, activeLivestreams = [], highlightProducts = [] }) {
     const { flashSale } = usePage().props;
 
     // Hero Banners Slider
@@ -712,8 +802,20 @@ export default function Home({ products, categories, filters, activeLivestreams 
                     </div>
                 </div>
 
-                {/* Products Grid */}
-                {products.length === 0 ? (
+                {/* Highlight Grid — 1 spotlight product per family (Wanita/Pria/Anak/Family), auto-cycling color */}
+                {!filters.category && !filters.search ? (
+                    highlightProducts.length === 0 ? (
+                        <div className="py-24 text-center">
+                            <p className="text-xl font-bold uppercase tracking-widest text-[#111111] mb-2">Tidak Ada Produk</p>
+                        </div>
+                    ) : (
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
+                            {highlightProducts.map(({ label, product }) => (
+                                <HighlightProductCard key={product.id} label={label} product={product} formatCurrency={formatCurrency} />
+                            ))}
+                        </div>
+                    )
+                ) : products.length === 0 ? (
                     <div className="py-24 text-center">
                         <p className="text-xl font-bold uppercase tracking-widest text-[#111111] mb-2">Tidak Ada Produk</p>
                         <p className="text-sm text-[#666666] mb-8">Kami tidak menemukan produk yang sesuai dengan kriteria Anda.</p>
@@ -732,8 +834,8 @@ export default function Home({ products, categories, filters, activeLivestreams 
                                 : 'https://images.unsplash.com/photo-1434389677669-e08b4cac3105?w=800&auto=format&fit=crop&q=60';
                             const isFlashSale = product.is_flash_sale_active;
                             const discount = isFlashSale
-                                ? (product.flash_sale?.discount_type === 'percentage' 
-                                    ? Math.round(product.flash_sale.discount_value) 
+                                ? (product.flash_sale?.discount_type === 'percentage'
+                                    ? Math.round(product.flash_sale.discount_value)
                                     : Math.round((1 - product.flash_sale_price / product.base_price) * 100))
                                 : (product.sale_price && product.base_price
                                     ? Math.round((1 - product.sale_price / product.base_price) * 100)
