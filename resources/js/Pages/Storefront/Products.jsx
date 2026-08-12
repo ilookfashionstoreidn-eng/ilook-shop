@@ -10,9 +10,28 @@ export default function Products({ products, categories, filters }) {
         }).format(val);
     };
 
-    const activeCategoryName = filters.category
-        ? categories.find(c => c.slug === filters.category)?.name || filters.category
+    const activeCategory = filters.category
+        ? categories.find(c => c.slug === filters.category)
         : null;
+    const activeCategoryName = activeCategory?.name || filters.category || null;
+
+    // Subcategory pills for the current "family": if browsing a parent
+    // category, show its children; if browsing a child, show its siblings
+    // (plus a way back to the parent) so switching stays within context.
+    let subCategories = [];
+    let parentCategory = null;
+    if (activeCategory) {
+        if (!activeCategory.parent_id) {
+            subCategories = categories.filter(c => c.parent_id === activeCategory.id);
+        } else {
+            parentCategory = categories.find(c => c.id === activeCategory.parent_id);
+            subCategories = categories.filter(c => c.parent_id === activeCategory.parent_id);
+        }
+    }
+
+    const goToCategory = (slug) => {
+        router.get(route('storefront.products'), slug ? { category: slug } : {}, { preserveScroll: true });
+    };
 
     return (
         <StorefrontLayout>
@@ -28,6 +47,36 @@ export default function Products({ products, categories, filters }) {
                         {filters.search ? `"${filters.search}"` : 'SEMUA PRODUK'}
                     </h1>
                     <p className="text-xs text-gray-500 mt-2">{products.total} produk ditemukan</p>
+
+                    {subCategories.length > 0 && (
+                        <div className="flex items-center gap-2 flex-wrap mt-5">
+                            {parentCategory && (
+                                <button
+                                    onClick={() => goToCategory(parentCategory.slug)}
+                                    className={`px-4 py-1.5 text-[10px] font-extrabold tracking-[0.12em] uppercase rounded-full transition-all cursor-pointer ${
+                                        activeCategory?.id === parentCategory.id
+                                            ? 'bg-black text-white shadow-md'
+                                            : 'bg-gray-100 text-gray-500 hover:bg-gray-200 hover:text-black'
+                                    }`}
+                                >
+                                    Semua {parentCategory.name}
+                                </button>
+                            )}
+                            {subCategories.map(sub => (
+                                <button
+                                    key={sub.id}
+                                    onClick={() => goToCategory(sub.slug)}
+                                    className={`px-4 py-1.5 text-[10px] font-extrabold tracking-[0.12em] uppercase rounded-full transition-all cursor-pointer ${
+                                        activeCategory?.id === sub.id
+                                            ? 'bg-black text-white shadow-md'
+                                            : 'bg-gray-100 text-gray-500 hover:bg-gray-200 hover:text-black'
+                                    }`}
+                                >
+                                    {sub.name}
+                                </button>
+                            ))}
+                        </div>
+                    )}
                 </div>
 
                 {/* Products Grid */}

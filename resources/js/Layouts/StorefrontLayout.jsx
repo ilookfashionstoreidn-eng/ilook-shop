@@ -341,10 +341,12 @@ export default function StorefrontLayout({ children }) {
                 </div>
             </header>
 
-            {/* Secondary category nav — sits directly under the header. Top-level
-                categories only; ones with subcategories (Pakaian Wanita, Pakaian
-                Pria) reveal them in a dropdown on hover (desktop) or an inline
-                expand (mobile), instead of dumping every category flat. */}
+            {/* Secondary category nav — sits directly under the header. Only the
+                top-level categories (Pakaian Wanita, Pakaian Pria, Pakaian Anak);
+                subcategories are picked from a pill row on the /products page
+                itself instead of a hover dropdown here (which got clipped by
+                this row's own overflow-x-auto — vertical overflow computes to
+                'auto' too once horizontal is non-visible, per the CSS spec). */}
             {navCategories.length > 0 && (
                 <div className="flex items-center gap-4 sm:gap-6 px-4 sm:px-6 md:px-10 h-10 border-b border-gray-100 bg-white/80 backdrop-blur-md sticky top-[116px] z-30 overflow-x-auto no-scrollbar">
                     <button
@@ -358,40 +360,19 @@ export default function StorefrontLayout({ children }) {
                         Semua
                     </button>
                     {navCategories.map(cat => {
-                        const hasChildren = cat.children && cat.children.length > 0;
                         const isActive = route().params?.category === cat.slug
                             || cat.children?.some(c => c.slug === route().params?.category);
 
                         return (
-                            <div key={cat.id} className="relative group flex-shrink-0">
-                                <button
-                                    onClick={() => router.get(route('storefront.products'), { category: cat.slug })}
-                                    className={`flex items-center gap-1 text-[10px] font-bold uppercase tracking-[0.12em] whitespace-nowrap transition-colors cursor-pointer bg-transparent border-none py-2.5 ${
-                                        isActive ? 'text-black' : 'text-gray-500 hover:text-black'
-                                    }`}
-                                >
-                                    {cat.name}
-                                    {hasChildren && <span className="text-[8px] mt-px">▾</span>}
-                                </button>
-
-                                {hasChildren && (
-                                    <div className="absolute left-0 top-full hidden group-hover:flex md:flex-col bg-white border border-gray-100 shadow-lg rounded-md py-2 min-w-[190px] z-50 flex-col">
-                                        {cat.children.map(child => (
-                                            <button
-                                                key={child.id}
-                                                onClick={() => router.get(route('storefront.products'), { category: child.slug })}
-                                                className={`px-4 py-2 text-left text-[11px] font-bold uppercase tracking-[0.1em] whitespace-nowrap transition-colors cursor-pointer bg-transparent border-none ${
-                                                    route().params?.category === child.slug
-                                                        ? 'text-black bg-gray-50'
-                                                        : 'text-gray-500 hover:text-black hover:bg-gray-50'
-                                                }`}
-                                            >
-                                                {child.name}
-                                            </button>
-                                        ))}
-                                    </div>
-                                )}
-                            </div>
+                            <button
+                                key={cat.id}
+                                onClick={() => router.get(route('storefront.products'), { category: cat.slug })}
+                                className={`text-[10px] font-bold uppercase tracking-[0.12em] whitespace-nowrap transition-colors cursor-pointer bg-transparent border-none flex-shrink-0 ${
+                                    isActive ? 'text-black' : 'text-gray-500 hover:text-black'
+                                }`}
+                            >
+                                {cat.name}
+                            </button>
                         );
                     })}
                 </div>
