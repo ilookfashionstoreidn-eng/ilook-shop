@@ -772,10 +772,10 @@ export default function Home({ products, categories, filters, activeLivestreams 
                 />
                 <CategoryBannerCard
                     images={[
-                        'https://images.unsplash.com/photo-1519238263530-99bdd11df2ea?w=900&auto=format&fit=crop&q=80',
-                        'https://images.unsplash.com/photo-1503919545889-aef636e10ad4?w=900&auto=format&fit=crop&q=80',
-                        'https://images.unsplash.com/photo-1519340241574-2cec6aef0c01?w=900&auto=format&fit=crop&q=80',
-                        'https://images.unsplash.com/photo-1503454537195-1dcabb73ffb9?w=900&auto=format&fit=crop&q=80',
+                        '/images/banners/kids-1.webp',
+                        '/images/banners/kids-2.webp',
+                        '/images/banners/kids-3.webp',
+                        '/images/banners/kids-4.webp',
                     ]}
                     tagline="PLAYFUL & COZY"
                     title="KIDS' COLLECTION"
