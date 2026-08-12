@@ -62,7 +62,7 @@ class UserController extends Controller
 
         User::create($validated);
 
-        return redirect()->route('admin.users')->with('success', 'User berhasil ditambahkan.');
+        return back()->with('success', 'User berhasil ditambahkan.');
     }
 
     /**
@@ -86,7 +86,7 @@ class UserController extends Controller
 
         $user->update($validated);
 
-        return redirect()->route('admin.users')->with('success', 'User berhasil diperbarui.');
+        return back()->with('success', 'User berhasil diperbarui.');
     }
 
     /**
@@ -95,11 +95,11 @@ class UserController extends Controller
     public function destroy(User $user): RedirectResponse
     {
         if ($user->id === auth()->id()) {
-            return redirect()->route('admin.users')->with('error', 'Anda tidak dapat menghapus akun Anda sendiri.');
+            return back()->with('error', 'Anda tidak dapat menghapus akun Anda sendiri.');
         }
 
         $user->delete();
 
-        return redirect()->route('admin.users')->with('success', 'User berhasil dihapus.');
+        return back()->with('success', 'User berhasil dihapus.');
     }
 }

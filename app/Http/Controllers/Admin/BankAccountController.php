@@ -37,7 +37,7 @@ class BankAccountController extends Controller
 
         BankAccount::create($validated);
 
-        return redirect()->route('admin.payments')->with('success', 'Rekening bank berhasil ditambahkan.');
+        return back()->with('success', 'Rekening bank berhasil ditambahkan.');
     }
 
     /**
@@ -54,7 +54,7 @@ class BankAccountController extends Controller
 
         $bankAccount->update($validated);
 
-        return redirect()->route('admin.payments')->with('success', 'Rekening bank berhasil diperbarui.');
+        return back()->with('success', 'Rekening bank berhasil diperbarui.');
     }
 
     /**
@@ -64,6 +64,6 @@ class BankAccountController extends Controller
     {
         $bankAccount->delete();
 
-        return redirect()->route('admin.payments')->with('success', 'Rekening bank berhasil dihapus.');
+        return back()->with('success', 'Rekening bank berhasil dihapus.');
     }
 }

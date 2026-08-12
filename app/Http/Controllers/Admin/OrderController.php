@@ -102,7 +102,7 @@ class OrderController extends Controller
             }
         }
 
-        return redirect()->route('admin.orders')->with('success', "Status pesanan {$order->order_number} berhasil diubah.");
+        return back()->with('success', "Status pesanan {$order->order_number} berhasil diubah.");
     }
 
     public function updateResi(Request $request, Order $order): RedirectResponse
@@ -126,7 +126,7 @@ class OrderController extends Controller
             ]);
         });
 
-        return redirect()->route('admin.orders')->with('success', "Nomor resi untuk pesanan {$order->order_number} berhasil disimpan.");
+        return back()->with('success', "Nomor resi untuk pesanan {$order->order_number} berhasil disimpan.");
     }
 
     /**
@@ -190,7 +190,7 @@ class OrderController extends Controller
         }
 
         if (! $gineeOrder) {
-            return redirect()->route('admin.orders')->with('error', "Pesanan {$order->order_number} tidak ditemukan di sistem Ginee.");
+            return back()->with('error', "Pesanan {$order->order_number} tidak ditemukan di sistem Ginee.");
         }
 
         // Extract tracking and status
@@ -265,10 +265,10 @@ class OrderController extends Controller
         });
 
         if ($updated) {
-            return redirect()->route('admin.orders')->with('success', "Status dan resi pesanan {$order->order_number} berhasil disinkronkan dengan Ginee.");
+            return back()->with('success', "Status dan resi pesanan {$order->order_number} berhasil disinkronkan dengan Ginee.");
         }
 
-        return redirect()->route('admin.orders')->with('info', "Data pesanan {$order->order_number} di Ginee sudah sinkron (tidak ada perubahan).");
+        return back()->with('info', "Data pesanan {$order->order_number} di Ginee sudah sinkron (tidak ada perubahan).");
     }
 
     public function showInvoice(Order $order): Response

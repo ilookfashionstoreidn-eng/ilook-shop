@@ -49,7 +49,7 @@ class CategoryController extends Controller
 
         Category::create($validated);
 
-        return redirect()->route('admin.categories')->with('success', 'Kategori berhasil ditambahkan.');
+        return back()->with('success', 'Kategori berhasil ditambahkan.');
     }
 
     public function update(Request $request, Category $category): RedirectResponse
@@ -95,13 +95,13 @@ class CategoryController extends Controller
 
         $category->update($validated);
 
-        return redirect()->route('admin.categories')->with('success', 'Kategori berhasil diperbarui.');
+        return back()->with('success', 'Kategori berhasil diperbarui.');
     }
 
     public function destroy(Category $category): RedirectResponse
     {
         $category->delete(); // This deletes child categories as well due to onDelete('cascade') in migration.
 
-        return redirect()->route('admin.categories')->with('success', 'Kategori berhasil dihapus.');
+        return back()->with('success', 'Kategori berhasil dihapus.');
     }
 }

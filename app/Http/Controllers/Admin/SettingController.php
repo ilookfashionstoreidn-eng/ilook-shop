@@ -93,6 +93,6 @@ class SettingController extends Controller
             );
         }
 
-        return redirect()->route('admin.settings')->with('success', 'Pengaturan toko berhasil diperbarui.');
+        return back()->with('success', 'Pengaturan toko berhasil diperbarui.');
     }
 }

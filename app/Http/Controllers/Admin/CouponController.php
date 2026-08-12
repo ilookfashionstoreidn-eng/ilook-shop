@@ -47,7 +47,7 @@ class CouponController extends Controller
 
         Coupon::create($validated);
 
-        return redirect()->route('admin.coupons')->with('success', 'Kupon berhasil ditambahkan.');
+        return back()->with('success', 'Kupon berhasil ditambahkan.');
     }
 
     public function update(Request $request, Coupon $coupon): RedirectResponse
@@ -77,13 +77,13 @@ class CouponController extends Controller
 
         $coupon->update($validated);
 
-        return redirect()->route('admin.coupons')->with('success', 'Kupon berhasil diperbarui.');
+        return back()->with('success', 'Kupon berhasil diperbarui.');
     }
 
     public function destroy(Coupon $coupon): RedirectResponse
     {
         $coupon->delete();
 
-        return redirect()->route('admin.coupons')->with('success', 'Kupon berhasil dihapus.');
+        return back()->with('success', 'Kupon berhasil dihapus.');
     }
 }

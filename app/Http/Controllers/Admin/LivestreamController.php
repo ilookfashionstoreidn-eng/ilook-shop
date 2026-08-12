@@ -30,7 +30,7 @@ class LivestreamController extends Controller
 
         Livestream::create($validated);
 
-        return redirect()->route('admin.livestream')->with('success', 'Livestream berhasil ditambahkan.');
+        return back()->with('success', 'Livestream berhasil ditambahkan.');
     }
 
     public function update(Request $request, Livestream $livestream): RedirectResponse
@@ -43,13 +43,13 @@ class LivestreamController extends Controller
 
         $livestream->update($validated);
 
-        return redirect()->route('admin.livestream')->with('success', 'Livestream berhasil diperbarui.');
+        return back()->with('success', 'Livestream berhasil diperbarui.');
     }
 
     public function destroy(Livestream $livestream): RedirectResponse
     {
         $livestream->delete();
 
-        return redirect()->route('admin.livestream')->with('success', 'Livestream berhasil dihapus.');
+        return back()->with('success', 'Livestream berhasil dihapus.');
     }
 }

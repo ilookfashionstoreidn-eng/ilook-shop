@@ -47,6 +47,6 @@ class TaxSettingController extends Controller
             );
         }
 
-        return redirect()->route('admin.tax-settings')->with('success', 'Pengaturan PPN dan Biaya Admin berhasil diperbarui.');
+        return back()->with('success', 'Pengaturan PPN dan Biaya Admin berhasil diperbarui.');
     }
 }

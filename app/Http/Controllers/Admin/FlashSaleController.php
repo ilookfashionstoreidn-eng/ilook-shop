@@ -58,7 +58,7 @@ class FlashSaleController extends Controller
 
         FlashSaleProduct::create($validated);
 
-        return redirect()->route('admin.flash-sales')->with('success', 'Produk berhasil ditambahkan ke Flash Sale.');
+        return back()->with('success', 'Produk berhasil ditambahkan ke Flash Sale.');
     }
 
     public function update(Request $request, FlashSaleProduct $flashSaleProduct): RedirectResponse
@@ -74,14 +74,14 @@ class FlashSaleController extends Controller
 
         $flashSaleProduct->update($validated);
 
-        return redirect()->route('admin.flash-sales')->with('success', 'Detail diskon produk berhasil diperbarui.');
+        return back()->with('success', 'Detail diskon produk berhasil diperbarui.');
     }
 
     public function destroy(FlashSaleProduct $flashSaleProduct): RedirectResponse
     {
         $flashSaleProduct->delete();
 
-        return redirect()->route('admin.flash-sales')->with('success', 'Produk berhasil dihapus dari Flash Sale.');
+        return back()->with('success', 'Produk berhasil dihapus dari Flash Sale.');
     }
 
     public function updateSettings(Request $request): RedirectResponse
@@ -107,6 +107,6 @@ class FlashSaleController extends Controller
             ['value' => $validated['flash_sale_end_time'] ?: null]
         );
 
-        return redirect()->route('admin.flash-sales')->with('success', 'Pengaturan global Flash Sale berhasil diperbarui.');
+        return back()->with('success', 'Pengaturan global Flash Sale berhasil diperbarui.');
     }
 }

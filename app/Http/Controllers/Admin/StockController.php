@@ -89,6 +89,6 @@ class StockController extends Controller
             });
         }
 
-        return redirect()->route('admin.stocks')->with('success', "Stok untuk variant {$variant->sku} berhasil diperbarui.");
+        return back()->with('success', "Stok untuk variant {$variant->sku} berhasil diperbarui.");
     }
 }

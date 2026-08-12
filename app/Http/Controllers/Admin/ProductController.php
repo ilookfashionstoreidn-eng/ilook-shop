@@ -125,7 +125,7 @@ class ProductController extends Controller
             }
         });
 
-        return redirect()->route('admin.products')->with('success', 'Produk berhasil ditambahkan.');
+        return back()->with('success', 'Produk berhasil ditambahkan.');
     }
 
     public function update(Request $request, Product $product): RedirectResponse
@@ -228,14 +228,14 @@ class ProductController extends Controller
             }
         });
 
-        return redirect()->route('admin.products')->with('success', 'Produk berhasil diubah.');
+        return back()->with('success', 'Produk berhasil diubah.');
     }
 
     public function destroy(Product $product): RedirectResponse
     {
         $product->delete();
 
-        return redirect()->route('admin.products')->with('success', 'Produk berhasil dihapus.');
+        return back()->with('success', 'Produk berhasil dihapus.');
     }
 
     public function syncGinee(Request $request, Product $product, GineeService $gineeService): RedirectResponse
@@ -321,10 +321,10 @@ class ProductController extends Controller
             }
 
             if (! $found) {
-                return redirect()->route('admin.products')->with('error', "Produk dengan Ginee ID {$product->ginee_product_id} tidak ditemukan di Ginee.");
+                return back()->with('error', "Produk dengan Ginee ID {$product->ginee_product_id} tidak ditemukan di Ginee.");
             }
 
-            return redirect()->route('admin.products')->with('success', "Data produk {$product->name} berhasil disinkronisasi dari Ginee.");
+            return back()->with('success', "Data produk {$product->name} berhasil disinkronisasi dari Ginee.");
         }
 
         // Mock push/fallback sync if not found/pushing
@@ -342,7 +342,7 @@ class ProductController extends Controller
             ? "Produk {$product->name} berhasil di-push ke Ginee (Simulasi)."
             : "Data produk {$product->name} berhasil disinkronisasi dari Ginee (Simulasi).";
 
-        return redirect()->route('admin.products')->with('success', $message);
+        return back()->with('success', $message);
     }
 
     public function syncAllGinee(GineeService $gineeService): RedirectResponse
@@ -354,10 +354,10 @@ class ProductController extends Controller
         $result = $gineeService->syncAllProducts();
 
         if ($result['fetched'] === 0) {
-            return redirect()->route('admin.products')->with('error', 'Gagal mengambil data produk dari Ginee Open API. Periksa kembali kredensial Anda.');
+            return back()->with('error', 'Gagal mengambil data produk dari Ginee Open API. Periksa kembali kredensial Anda.');
         }
 
-        return redirect()->route('admin.products')->with('success', "Berhasil menarik & mensinkronisasi {$result['imported']} dari {$result['total']} produk di Ginee.");
+        return back()->with('success', "Berhasil menarik & mensinkronisasi {$result['imported']} dari {$result['total']} produk di Ginee.");
     }
 
     public function uploadVideo(Request $request): JsonResponse

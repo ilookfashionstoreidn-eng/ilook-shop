@@ -74,7 +74,7 @@ class ReviewController extends Controller
 
         ProductReview::create($validated);
 
-        return redirect()->route('admin.reviews')->with('success', 'Ulasan/rating berhasil ditambahkan!');
+        return back()->with('success', 'Ulasan/rating berhasil ditambahkan!');
     }
 
     /**
@@ -96,7 +96,7 @@ class ReviewController extends Controller
 
         $review->update($validated);
 
-        return redirect()->route('admin.reviews')->with('success', 'Ulasan/rating berhasil diperbarui!');
+        return back()->with('success', 'Ulasan/rating berhasil diperbarui!');
     }
 
     /**
@@ -106,6 +106,6 @@ class ReviewController extends Controller
     {
         $review->delete();
 
-        return redirect()->route('admin.reviews')->with('success', 'Ulasan/rating berhasil dihapus!');
+        return back()->with('success', 'Ulasan/rating berhasil dihapus!');
     }
 }
