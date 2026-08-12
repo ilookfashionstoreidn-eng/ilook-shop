@@ -38,7 +38,13 @@ class HandleInertiaRequests extends Middleware
                 'user' => $request->user(),
             ],
             'navCategories' => function () {
-                return Category::withCount('products')->orderBy('sort_order')->get(['id', 'name', 'slug', 'parent_id']);
+                return Category::whereNull('parent_id')
+                    ->withCount('products')
+                    ->with(['children' => function ($q) {
+                        $q->withCount('products');
+                    }])
+                    ->orderBy('sort_order')
+                    ->get(['id', 'name', 'slug', 'parent_id']);
             },
             'flashSale' => function () {
                 $isActive = Setting::where('key', 'flash_sale_is_active')->first()->value ?? '0';

@@ -298,9 +298,7 @@ class StorefrontController extends Controller
         $query = Product::with(['category', 'variants'])->where('status', 'active');
 
         if ($request->input('category')) {
-            $query->whereHas('category', function ($q) use ($request) {
-                $q->where('slug', $request->input('category'));
-            });
+            $this->applyCategoryFilter($query, $request->input('category'));
         }
 
         if ($request->input('search')) {
@@ -320,6 +318,30 @@ class StorefrontController extends Controller
     }
 
     /**
+     * Filter a product query by category slug. If the slug belongs to a
+     * top-level (parent) category, include products from its subcategories
+     * too — parent categories hold no products directly, everything lives
+     * on the children (Dress/Blouse/Setelan under Pakaian Wanita, etc).
+     */
+    private function applyCategoryFilter($query, string $slug): void
+    {
+        $category = Category::where('slug', $slug)->withCount('children')->first();
+
+        if (! $category) {
+            $query->whereHas('category', fn ($q) => $q->where('slug', $slug));
+
+            return;
+        }
+
+        if ($category->children_count > 0) {
+            $categoryIds = $category->children()->pluck('id')->push($category->id);
+            $query->whereIn('category_id', $categoryIds);
+        } else {
+            $query->where('category_id', $category->id);
+        }
+    }
+
+    /**
      * Full product catalog page (paginated) — the homepage only shows a
      * 10-item preview row, this is the "browse everything" destination.
      */
@@ -328,9 +350,7 @@ class StorefrontController extends Controller
         $query = Product::with(['category', 'variants'])->where('status', 'active');
 
         if ($request->input('category')) {
-            $query->whereHas('category', function ($q) use ($request) {
-                $q->where('slug', $request->input('category'));
-            });
+            $this->applyCategoryFilter($query, $request->input('category'));
         }
 
         if ($request->input('search')) {
