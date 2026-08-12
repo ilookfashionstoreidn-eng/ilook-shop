@@ -448,14 +448,18 @@ function ActiveLivestreamSection({ streams }) {
 
 function CategoryBannerCard({ images, tagline, title, onClick }) {
     const [activeIdx, setActiveIdx] = useState(0);
+    const count = images.length;
 
     useEffect(() => {
-        if (images.length <= 1) return;
+        if (count <= 1) return;
         const interval = setInterval(() => {
-            setActiveIdx((prev) => (prev + 1) % images.length);
+            setActiveIdx((prev) => (prev + 1) % count);
         }, 2000);
         return () => clearInterval(interval);
-    }, [images]);
+        // count is a stable primitive across re-renders (unlike the `images`
+        // array literal, which is a new reference every parent render and
+        // would otherwise keep tearing down/restarting this interval).
+    }, [count]);
 
     return (
         <div
