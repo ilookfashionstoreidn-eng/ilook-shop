@@ -747,7 +747,7 @@ export default function Home({ products, categories, filters, activeLivestreams 
             )}
 
             {/* Split Category Banners */}
-            <section className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-1.5 w-full mt-1.5">
+            <section className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-1.5 w-full mt-1.5">
                 <CategoryBannerCard
                     images={[
                         '/images/banners/women-1.png',
@@ -758,17 +758,6 @@ export default function Home({ products, categories, filters, activeLivestreams 
                     tagline="ELEGANCE"
                     title="WOMEN'S COLLECTION"
                     onClick={() => handleCategoryClick('pakaian-wanita')}
-                />
-                <CategoryBannerCard
-                    images={[
-                        'https://images.unsplash.com/photo-1507679799987-c73779587ccf?w=900&auto=format&fit=crop&q=80',
-                        'https://images.unsplash.com/photo-1489424731084-a5d8b219a5bb?w=900&auto=format&fit=crop&q=80',
-                        'https://images.unsplash.com/photo-1552374196-c4e7ffc6e126?w=900&auto=format&fit=crop&q=80',
-                        'https://images.unsplash.com/photo-1516257984-b1b4d707412e?w=900&auto=format&fit=crop&q=80',
-                    ]}
-                    tagline="STRENGTH & STYLE"
-                    title="MEN'S COLLECTION"
-                    onClick={() => handleCategoryClick('pakaian-pria')}
                 />
                 <CategoryBannerCard
                     images={[
