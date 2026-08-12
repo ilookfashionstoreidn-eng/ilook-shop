@@ -216,9 +216,22 @@ export default function StorefrontLayout({ children }) {
                                 : 'text-gray-500 hover:text-black'
                         }`}
                     >
-                        WANITA
+                        HOME
                         <span className={`absolute bottom-0 left-0 h-[2px] bg-black transition-all duration-300 ${
                             isHomePage && !route().params?.category ? 'w-full' : 'w-0 group-hover:w-full'
+                        }`} />
+                    </Link>
+                    <Link
+                        href={route('storefront.home', { category: 'pakaian-wanita' })}
+                        className={`text-[11px] font-extrabold tracking-[0.2em] uppercase transition-all duration-300 relative py-1.5 group ${
+                            route().params?.category === 'pakaian-wanita'
+                                ? 'text-black'
+                                : 'text-gray-500 hover:text-black'
+                        }`}
+                    >
+                        WANITA
+                        <span className={`absolute bottom-0 left-0 h-[2px] bg-black transition-all duration-300 ${
+                            route().params?.category === 'pakaian-wanita' ? 'w-full' : 'w-0 group-hover:w-full'
                         }`} />
                     </Link>
                     <Link
@@ -459,7 +472,8 @@ export default function StorefrontLayout({ children }) {
                         </button>
                     </div>
                     <nav className="flex flex-col divide-y divide-gray-100">
-                        <Link href={route('storefront.home')} onClick={() => setIsMenuOpen(false)} className="py-4 text-sm font-bold uppercase tracking-[0.1em] text-[#111111] hover:pl-2 transition-all duration-200">Wanita</Link>
+                        <Link href={route('storefront.home')} onClick={() => setIsMenuOpen(false)} className="py-4 text-sm font-bold uppercase tracking-[0.1em] text-[#111111] hover:pl-2 transition-all duration-200">Home</Link>
+                        <Link href={route('storefront.home', { category: 'pakaian-wanita' })} onClick={() => setIsMenuOpen(false)} className="py-4 text-sm font-bold uppercase tracking-[0.1em] text-[#111111] hover:pl-2 transition-all duration-200">Wanita</Link>
                         <Link href={route('storefront.home', { category: 'pakaian-pria' })} onClick={() => setIsMenuOpen(false)} className="py-4 text-sm font-bold uppercase tracking-[0.1em] text-[#111111] hover:pl-2 transition-all duration-200">Pria</Link>
                         <Link href={route('storefront.home', { category: 'pakaian-anak' })} onClick={() => setIsMenuOpen(false)} className="py-4 text-sm font-bold uppercase tracking-[0.1em] text-[#111111] hover:pl-2 transition-all duration-200">Anak</Link>
                         <Link href={route('storefront.home')} onClick={() => setIsMenuOpen(false)} className="py-4 text-sm font-bold uppercase tracking-[0.1em] text-[#c22e2e] hover:pl-2 transition-all duration-200">Promo</Link>
