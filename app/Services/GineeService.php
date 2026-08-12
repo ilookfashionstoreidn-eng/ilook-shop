@@ -242,6 +242,14 @@ class GineeService
         $pathStr = is_array($path) ? strtolower(implode(' > ', $path)) : '';
         $name = $gProduct['productName'] ?? ($gProduct['name'] ?? '');
 
+        // Family/couple matching sets (e.g. "Ibu dan Anak", "Sarimbit
+        // Keluarga") almost always contain the word "anak" too, so this has
+        // to be checked before the plain "anak" rule below or every family
+        // set would get misfiled as a kids-only item.
+        if (preg_match('/\b(couple|keluarga|sarimbit)\b/i', $name) || preg_match('/\bibu\s+dan\s+anak\b/i', $name)) {
+            return Category::where('slug', 'family-set')->value('id');
+        }
+
         // "Anak" in the product name is a strong, unambiguous signal.
         // Sellers sometimes file kids' items under Ginee's generic adult
         // "Sets" category by mistake, so this overrides the Ginee tag
