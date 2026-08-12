@@ -772,78 +772,29 @@ export default function Home({ products, categories, filters, activeLivestreams 
                 )}
             </section>
 
-            {/* Bento Grid — Kategori Populer */}
+            {/* Kategori Populer — 4 equal columns */}
             <section className="pb-16 md:pb-24 px-4 md:px-10 max-w-[1280px] mx-auto select-none">
                 <h2 className="text-2xl md:text-3xl font-extrabold uppercase tracking-tight mb-8 md:mb-12 text-[#111111]" style={{ fontFamily: "'Outfit', sans-serif" }}>Kategori Populer</h2>
-                <div className="grid grid-cols-2 md:grid-cols-4 md:grid-rows-2 gap-5 md:h-[600px] lg:h-[750px]">
-                    {/* Large feature — col 1-2, row 1-2 */}
-                    <div
-                        className="col-span-2 row-span-2 md:col-span-2 md:row-span-2 relative group overflow-hidden bg-[#eeeeee] cursor-pointer min-h-[320px] md:min-h-0 rounded-2xl shadow-sm hover:shadow-lg transition-all duration-500"
-                        onClick={() => handleCategoryClick(bentoCategories[0]?.slug)}
-                    >
-                        <img
-                            src={bentoImages[0]}
-                            alt={bentoCategories[0]?.name}
-                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-1000"
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent flex flex-col justify-end p-6 md:p-10">
-                            <h3 className="text-2xl sm:text-3xl md:text-[38px] font-black text-white uppercase leading-none mb-3" style={{ fontFamily: "'Outfit', sans-serif" }}>
-                                {bentoCategories[0]?.name || 'BLOUSE'}
-                            </h3>
-                            <p className="text-[10px] font-black tracking-[0.15em] uppercase text-white/80">JELAJAHI KOLEKSI</p>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-5">
+                    {bentoCategories.map((cat, idx) => (
+                        <div
+                            key={cat?.slug || idx}
+                            className="relative group overflow-hidden bg-[#eeeeee] cursor-pointer aspect-[3/4] rounded-2xl shadow-sm hover:shadow-lg transition-all duration-500"
+                            onClick={() => handleCategoryClick(cat?.slug)}
+                        >
+                            <img
+                                src={bentoImages[idx]}
+                                alt={cat?.name}
+                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-1000"
+                            />
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent flex flex-col justify-end p-5 md:p-6">
+                                <h3 className="text-xl md:text-2xl font-black text-white lowercase leading-none mb-1" style={{ fontFamily: "'Outfit', sans-serif" }}>
+                                    {(cat?.name || '').toLowerCase()}
+                                </h3>
+                                <p className="text-[11px] font-medium lowercase text-white/80">collection</p>
+                            </div>
                         </div>
-                    </div>
-                    {/* Top right — col 3-4, row 1 */}
-                    <div
-                        className="col-span-2 md:col-span-2 md:row-span-1 relative group overflow-hidden bg-[#eeeeee] cursor-pointer min-h-[160px] sm:min-h-[220px] md:min-h-0 rounded-2xl shadow-sm hover:shadow-lg transition-all duration-500"
-                        onClick={() => handleCategoryClick(bentoCategories[1]?.slug)}
-                    >
-                        <img
-                            src={bentoImages[1]}
-                            alt={bentoCategories[1]?.name}
-                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-1000"
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-black/10 flex flex-col justify-end p-6 md:p-8">
-                            <h3 className="text-xl sm:text-2xl font-black text-white uppercase leading-none mb-2" style={{ fontFamily: "'Outfit', sans-serif" }}>
-                                {bentoCategories[1]?.name || 'DRESS'}
-                            </h3>
-                            <p className="text-[10px] font-black tracking-[0.15em] uppercase text-white/80">JELAJAHI KOLEKSI</p>
-                        </div>
-                    </div>
-                    {/* Bottom right left — col 3, row 2 */}
-                    <div
-                        className="col-span-1 md:col-span-1 md:row-span-1 relative group overflow-hidden bg-[#eeeeee] cursor-pointer min-h-[160px] sm:min-h-[220px] md:min-h-0 rounded-2xl shadow-sm hover:shadow-lg transition-all duration-500"
-                        onClick={() => handleCategoryClick(bentoCategories[2]?.slug)}
-                    >
-                        <img
-                            src={bentoImages[2]}
-                            alt={bentoCategories[2]?.name}
-                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-1000"
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-black/10 flex flex-col justify-end p-5 md:p-6">
-                            <h3 className="text-base sm:text-xl font-black text-white uppercase leading-none mb-2" style={{ fontFamily: "'Outfit', sans-serif" }}>
-                                {bentoCategories[2]?.name || 'PAKAIAN PRIA'}
-                            </h3>
-                            <p className="text-[8px] font-black tracking-[0.15em] uppercase text-white/80">JELAJAHI</p>
-                        </div>
-                    </div>
-                    {/* Bottom right — col 4, row 2 */}
-                    <div
-                        className="col-span-1 md:col-span-1 md:row-span-1 relative group overflow-hidden bg-[#eeeeee] cursor-pointer min-h-[160px] sm:min-h-[220px] md:min-h-0 rounded-2xl shadow-sm hover:shadow-lg transition-all duration-500"
-                        onClick={() => handleCategoryClick(bentoCategories[3]?.slug)}
-                    >
-                        <img
-                            src={bentoImages[3]}
-                            alt={bentoCategories[3]?.name}
-                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-1000"
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-black/10 flex flex-col justify-end p-5 md:p-6">
-                            <h3 className="text-base sm:text-xl font-black text-white uppercase leading-none mb-2" style={{ fontFamily: "'Outfit', sans-serif" }}>
-                                {bentoCategories[3]?.name || 'KAOS'}
-                            </h3>
-                            <p className="text-[8px] font-black tracking-[0.15em] uppercase text-white/80">JELAJAHI</p>
-                        </div>
-                    </div>
+                    ))}
                 </div>
             </section>
 
