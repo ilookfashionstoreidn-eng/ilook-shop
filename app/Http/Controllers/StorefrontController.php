@@ -358,7 +358,7 @@ class StorefrontController extends Controller
         }
 
         $products = $query->orderBy('created_at', 'asc')
-            ->paginate(24)
+            ->paginate(50)
             ->withQueryString();
 
         $categories = Category::withCount('products')->get();

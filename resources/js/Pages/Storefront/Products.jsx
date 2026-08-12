@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import StorefrontLayout from '@/Layouts/StorefrontLayout';
 import { Head, Link, router } from '@inertiajs/react';
 import { Heart } from 'lucide-react';
@@ -8,6 +8,36 @@ export default function Products({ products, categories, filters }) {
         return new Intl.NumberFormat('id-ID', {
             style: 'currency', currency: 'IDR', minimumFractionDigits: 0
         }).format(val);
+    };
+
+    // Lazy-load ("Muat Lebih Banyak") state: 50 products per batch. We keep
+    // our own accumulated list instead of rendering products.data directly
+    // so clicking "load more" can append rather than replace. Switching
+    // filters/category is a real Inertia navigation that gives us a fresh
+    // page-1 result, so that's what resets the accumulated list below.
+    const [allProducts, setAllProducts] = useState(products.data);
+    const [nextPageUrl, setNextPageUrl] = useState(products.next_page_url);
+    const [loadingMore, setLoadingMore] = useState(false);
+
+    useEffect(() => {
+        setAllProducts(products.data);
+        setNextPageUrl(products.next_page_url);
+    }, [filters.category, filters.search]);
+
+    const handleLoadMore = () => {
+        if (!nextPageUrl || loadingMore) return;
+        setLoadingMore(true);
+        router.get(nextPageUrl, {}, {
+            preserveState: true,
+            preserveScroll: true,
+            only: ['products'],
+            onSuccess: (page) => {
+                const newProducts = page.props.products;
+                setAllProducts(prev => [...prev, ...newProducts.data]);
+                setNextPageUrl(newProducts.next_page_url);
+            },
+            onFinish: () => setLoadingMore(false),
+        });
     };
 
     const activeCategory = filters.category
@@ -46,7 +76,9 @@ export default function Products({ products, categories, filters }) {
                     <h1 className="text-3xl font-extrabold uppercase tracking-wider mt-1.5" style={{ fontFamily: "'Outfit', sans-serif" }}>
                         {filters.search ? `"${filters.search}"` : 'SEMUA PRODUK'}
                     </h1>
-                    <p className="text-xs text-gray-500 mt-2">{products.total} produk ditemukan</p>
+                    <p className="text-xs text-gray-500 mt-2">
+                        Menampilkan {allProducts.length} dari {products.total} produk
+                    </p>
 
                     {subCategories.length > 0 && (
                         <div className="flex items-center gap-2 flex-wrap mt-5">
@@ -80,7 +112,7 @@ export default function Products({ products, categories, filters }) {
                 </div>
 
                 {/* Products Grid */}
-                {products.data.length === 0 ? (
+                {allProducts.length === 0 ? (
                     <div className="py-24 text-center">
                         <p className="text-xl font-bold uppercase tracking-widest text-[#111111] mb-2">Tidak Ada Produk</p>
                         <p className="text-sm text-[#666666] mb-8">Kami tidak menemukan produk yang sesuai dengan kriteria Anda.</p>
@@ -93,7 +125,7 @@ export default function Products({ products, categories, filters }) {
                     </div>
                 ) : (
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-x-5 gap-y-12">
-                        {products.data.map((product) => {
+                        {allProducts.map((product) => {
                             const mainImage = product.images && product.images[0]
                                 ? product.images[0]
                                 : 'https://images.unsplash.com/photo-1434389677669-e08b4cac3105?w=800&auto=format&fit=crop&q=60';
@@ -107,6 +139,7 @@ export default function Products({ products, categories, filters }) {
                                             <img
                                                 src={mainImage}
                                                 alt={product.name}
+                                                loading="lazy"
                                                 className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500"
                                             />
                                         </Link>
@@ -156,29 +189,16 @@ export default function Products({ products, categories, filters }) {
                     </div>
                 )}
 
-                {/* Pagination */}
-                {products.last_page > 1 && (
-                    <div className="flex items-center justify-center flex-wrap gap-2 mt-16">
-                        {products.links.map((link, idx) => {
-                            const label = link.label
-                                .replace('&laquo; Previous', '←')
-                                .replace('Next &raquo;', '→');
-                            return (
-                                <button
-                                    key={idx}
-                                    disabled={!link.url}
-                                    onClick={() => link.url && router.get(link.url, {}, { preserveState: true, preserveScroll: true })}
-                                    dangerouslySetInnerHTML={{ __html: label }}
-                                    className={`min-w-[36px] h-9 px-3 text-xs font-bold rounded-md transition-all ${
-                                        link.active
-                                            ? 'bg-black text-white'
-                                            : link.url
-                                                ? 'bg-gray-100 text-gray-600 hover:bg-gray-200 cursor-pointer'
-                                                : 'bg-gray-50 text-gray-300 cursor-not-allowed'
-                                    }`}
-                                />
-                            );
-                        })}
+                {/* Lazy load trigger — shows only once the current batch has rendered */}
+                {nextPageUrl && (
+                    <div className="flex justify-center mt-16">
+                        <button
+                            onClick={handleLoadMore}
+                            disabled={loadingMore}
+                            className="bg-black text-white px-10 py-3.5 text-[10px] font-bold uppercase tracking-[0.2em] hover:bg-gray-800 transition-all rounded-sm shadow-md cursor-pointer disabled:opacity-50 disabled:cursor-wait"
+                        >
+                            {loadingMore ? 'MEMUAT...' : 'MUAT LEBIH BANYAK'}
+                        </button>
                     </div>
                 )}
             </div>
