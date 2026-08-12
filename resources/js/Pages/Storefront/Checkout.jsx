@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import StorefrontLayout from '@/Layouts/StorefrontLayout';
+import AddressMapPicker from '@/Components/AddressMapPicker';
 import { Head, Link, router } from '@inertiajs/react';
 import { 
     MapPin, 
@@ -31,6 +32,16 @@ export default function Checkout({ provinces, activeCouriers, originCityId, midt
     const [address, setAddress] = useState('');
     const [kelurahan, setKelurahan] = useState('');
     const [kecamatan, setKecamatan] = useState('');
+    const [latitude, setLatitude] = useState(null);
+    const [longitude, setLongitude] = useState(null);
+
+    const handleMapLocationSelect = (lat, lng, addressText) => {
+        setLatitude(lat);
+        setLongitude(lng);
+        if (addressText) {
+            setAddress(addressText);
+        }
+    };
     const [selectedProvinceId, setSelectedProvinceId] = useState('');
     const [selectedProvinceName, setSelectedProvinceName] = useState('');
     const [cities, setCities] = useState([]);
@@ -306,6 +317,8 @@ export default function Checkout({ provinces, activeCouriers, originCityId, midt
             address: address,
             kelurahan: kelurahan,
             kecamatan: kecamatan,
+            latitude: latitude,
+            longitude: longitude,
             province_id: parseInt(selectedProvinceId),
             province_name: selectedProvinceName,
             city_id: parseInt(selectedCityId),
@@ -488,6 +501,14 @@ export default function Checkout({ provinces, activeCouriers, originCityId, midt
                                                 value={buyerEmail}
                                                 onChange={e => setBuyerEmail(e.target.value)}
                                                 className="w-full bg-white border border-[#E0E0E0] focus:border-[#212121] focus:ring-0 rounded-none p-2.5 text-[#212121]"
+                                            />
+                                        </div>
+
+                                        <div className="sm:col-span-2">
+                                            <AddressMapPicker
+                                                latitude={latitude}
+                                                longitude={longitude}
+                                                onLocationSelect={handleMapLocationSelect}
                                             />
                                         </div>
 

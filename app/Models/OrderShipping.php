@@ -19,6 +19,8 @@ class OrderShipping extends Model
         'address',
         'kelurahan',
         'kecamatan',
+        'latitude',
+        'longitude',
         'city',
         'province',
         'postal_code',

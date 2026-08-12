@@ -422,6 +422,16 @@ export default function Orders({ orders, filters }) {
                                             <p>{[selectedOrder.shipping?.kelurahan, selectedOrder.shipping?.kecamatan].filter(Boolean).join(', ')}</p>
                                         )}
                                         <p>{selectedOrder.shipping?.city}, {selectedOrder.shipping?.province} - {selectedOrder.shipping?.postal_code}</p>
+                                        {selectedOrder.shipping?.latitude && selectedOrder.shipping?.longitude && (
+                                            <a
+                                                href={`https://www.openstreetmap.org/?mlat=${selectedOrder.shipping.latitude}&mlon=${selectedOrder.shipping.longitude}#map=17/${selectedOrder.shipping.latitude}/${selectedOrder.shipping.longitude}`}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="inline-block text-emerald-600 font-semibold underline underline-offset-2"
+                                            >
+                                                Lihat di Peta
+                                            </a>
+                                        )}
                                         <p className="pt-2 text-gray-500 font-semibold uppercase">Kurir: {selectedOrder.shipping?.courier?.toUpperCase()} ({selectedOrder.shipping?.service})</p>
                                     </div>
                                 </div>

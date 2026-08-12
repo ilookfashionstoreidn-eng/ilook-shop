@@ -502,6 +502,16 @@ export default function OrderDetail({ order: initialOrder, midtransClientKey, mi
                                         </p>
                                     )}
                                     <p className="text-[#747878]">{order.shipping.city}, {order.shipping.province} {order.shipping.postal_code}</p>
+                                    {order.shipping.latitude && order.shipping.longitude && (
+                                        <a
+                                            href={`https://www.openstreetmap.org/?mlat=${order.shipping.latitude}&mlon=${order.shipping.longitude}#map=17/${order.shipping.latitude}/${order.shipping.longitude}`}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-[#530A0C] underline underline-offset-2"
+                                        >
+                                            <MapPin className="w-3 h-3" /> Lihat di Peta
+                                        </a>
+                                    )}
 
                                     <div className="pt-2 mt-2 border-t border-[#E0E0E0] flex items-center gap-2 flex-wrap">
                                         <Truck className="w-3.5 h-3.5 text-[#212121]" />
