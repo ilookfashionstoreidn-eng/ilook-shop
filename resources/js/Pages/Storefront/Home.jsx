@@ -750,10 +750,10 @@ export default function Home({ products, categories, filters, activeLivestreams 
             <section className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-1.5 w-full mt-1.5">
                 <CategoryBannerCard
                     images={[
-                        'https://images.unsplash.com/photo-1509631179647-0177331693ae?w=900&auto=format&fit=crop&q=80',
-                        'https://images.unsplash.com/photo-1529139574466-a303027c1d8b?w=900&auto=format&fit=crop&q=80',
-                        'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=900&auto=format&fit=crop&q=80',
-                        'https://images.unsplash.com/photo-1441984904996-e0b6ba687e04?w=900&auto=format&fit=crop&q=80',
+                        '/images/banners/women-1.png',
+                        '/images/banners/women-2.png',
+                        '/images/banners/women-3.webp',
+                        '/images/banners/women-4.png',
                     ]}
                     tagline="ELEGANCE"
                     title="WOMEN'S COLLECTION"
