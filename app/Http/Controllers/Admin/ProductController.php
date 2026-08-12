@@ -34,7 +34,17 @@ class ProductController extends Controller
         }
 
         if ($categoryId) {
-            $query->where('category_id', $categoryId);
+            // Top-level categories (Pakaian Wanita, Pakaian Pria, Pakaian
+            // Anak) hold no products directly — everything lives on their
+            // children (Dress/Blouse/Setelan/...). Match on the category
+            // itself plus its children so picking a parent isn't a dead end.
+            $category = Category::withCount('children')->find($categoryId);
+            if ($category && $category->children_count > 0) {
+                $categoryIds = $category->children()->pluck('id')->push($category->id);
+                $query->whereIn('category_id', $categoryIds);
+            } else {
+                $query->where('category_id', $categoryId);
+            }
         }
 
         if ($status) {
