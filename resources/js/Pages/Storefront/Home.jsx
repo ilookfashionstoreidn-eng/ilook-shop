@@ -783,10 +783,10 @@ export default function Home({ products, categories, filters, activeLivestreams 
                 />
                 <CategoryBannerCard
                     images={[
-                        'https://images.unsplash.com/photo-1511895426328-dc8714191300?w=900&auto=format&fit=crop&q=80',
-                        'https://images.unsplash.com/photo-1476703993599-0035a21b17a9?w=900&auto=format&fit=crop&q=80',
-                        'https://images.unsplash.com/photo-1466442929976-97f336a657be?w=900&auto=format&fit=crop&q=80',
-                        'https://images.unsplash.com/photo-1478131143081-80f7f84ca84d?w=900&auto=format&fit=crop&q=80',
+                        '/images/banners/family-1.webp',
+                        '/images/banners/family-2.webp',
+                        '/images/banners/family-3.webp',
+                        '/images/banners/family-4.webp',
                     ]}
                     tagline="MATCHING MOMENTS"
                     title="FAMILY SET"
