@@ -605,7 +605,7 @@ export default function Home({ products, categories, filters, activeLivestreams 
             <section className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-1.5 w-full mt-1.5">
                 <div
                     className="relative h-[45vh] sm:h-[60vh] overflow-hidden group cursor-pointer"
-                    onClick={() => handleCategoryClick('dress')}
+                    onClick={() => handleCategoryClick('pakaian-wanita')}
                 >
                     <div className="absolute inset-0 bg-black/20 z-10 group-hover:bg-black/35 transition-colors duration-500" />
                     <img
@@ -649,7 +649,7 @@ export default function Home({ products, categories, filters, activeLivestreams 
                 >
                     <div className="absolute inset-0 bg-black/20 z-10 group-hover:bg-black/35 transition-colors duration-500" />
                     <img
-                        src="https://images.unsplash.com/photo-1519457851262-4a373e2fca87?w=900&auto=format&fit=crop&q=80"
+                        src="https://images.unsplash.com/photo-1519238263530-99bdd11df2ea?w=900&auto=format&fit=crop&q=80"
                         alt="Koleksi Anak"
                         className="w-full h-full object-cover transition-transform duration-[1500ms] group-hover:scale-105"
                     />
