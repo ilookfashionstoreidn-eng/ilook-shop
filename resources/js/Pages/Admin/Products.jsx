@@ -112,12 +112,29 @@ export default function Products({ products, categories, filters }) {
         setSearchTerm(e.target.value);
     };
 
-    const handleApplyFilters = () => {
+    const handleApplyFilters = (overrides = {}) => {
         router.get(route('admin.products'), {
             search: searchTerm,
             category_id: selectedCategory,
-            status: selectedStatus
+            status: selectedStatus,
+            ...overrides,
         }, { preserveState: true });
+    };
+
+    // Category/status changing is a discrete choice, not free text — apply
+    // it immediately instead of waiting for a separate "Filter" click,
+    // which was confusing (dropdown shows the new pick, table still shows
+    // the old results until Filter is clicked).
+    const handleCategoryChange = (e) => {
+        const value = e.target.value;
+        setSelectedCategory(value);
+        handleApplyFilters({ category_id: value });
+    };
+
+    const handleStatusChange = (e) => {
+        const value = e.target.value;
+        setSelectedStatus(value);
+        handleApplyFilters({ status: value });
     };
 
     const handleResetFilters = () => {
@@ -286,7 +303,7 @@ export default function Products({ products, categories, filters }) {
                     <div className="flex flex-wrap md:flex-nowrap items-center gap-3 w-full md:w-auto">
                         <select
                             value={selectedCategory}
-                            onChange={(e) => setSelectedCategory(e.target.value)}
+                            onChange={handleCategoryChange}
                             className="bg-white border border-gray-200 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 text-sm rounded-xl px-4 py-2.5 text-gray-700 w-full md:w-44"
                         >
                             <option value="">Semua Kategori</option>
@@ -297,7 +314,7 @@ export default function Products({ products, categories, filters }) {
 
                         <select
                             value={selectedStatus}
-                            onChange={(e) => setSelectedStatus(e.target.value)}
+                            onChange={handleStatusChange}
                             className="bg-white border border-gray-200 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 text-sm rounded-xl px-4 py-2.5 text-gray-700 w-full md:w-40"
                         >
                             <option value="">Semua Status</option>
