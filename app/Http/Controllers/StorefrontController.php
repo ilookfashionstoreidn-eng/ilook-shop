@@ -337,7 +337,7 @@ class StorefrontController extends Controller
             $query->where('name', 'like', '%'.$request->input('search').'%');
         }
 
-        $products = $query->orderBy('created_at', 'desc')
+        $products = $query->orderBy('created_at', 'asc')
             ->paginate(24)
             ->withQueryString();
 
