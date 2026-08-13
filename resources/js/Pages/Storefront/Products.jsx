@@ -81,11 +81,14 @@ export default function Products({ products, categories, filters }) {
                     </p>
 
                     {subCategories.length > 0 && (
-                        <div className="flex items-center gap-2 flex-wrap mt-5">
+                        // overflow-x-auto contains the scroll here, on the pill row itself —
+                        // without it, pills too wide for the viewport used to drag the whole
+                        // page horizontally instead of just scrolling this row.
+                        <div className="flex items-center gap-2 flex-nowrap overflow-x-auto no-scrollbar mt-5 -mx-4 px-4 sm:mx-0 sm:px-0">
                             {parentCategory && (
                                 <button
                                     onClick={() => goToCategory(parentCategory.slug)}
-                                    className={`px-4 py-1.5 text-[10px] font-extrabold tracking-[0.12em] uppercase rounded-full transition-all cursor-pointer ${
+                                    className={`flex-shrink-0 px-4 py-1.5 text-[10px] font-extrabold tracking-[0.12em] uppercase rounded-full whitespace-nowrap transition-all cursor-pointer ${
                                         activeCategory?.id === parentCategory.id
                                             ? 'bg-black text-white shadow-md'
                                             : 'bg-gray-100 text-gray-500 hover:bg-gray-200 hover:text-black'
@@ -98,7 +101,7 @@ export default function Products({ products, categories, filters }) {
                                 <button
                                     key={sub.id}
                                     onClick={() => goToCategory(sub.slug)}
-                                    className={`px-4 py-1.5 text-[10px] font-extrabold tracking-[0.12em] uppercase rounded-full transition-all cursor-pointer ${
+                                    className={`flex-shrink-0 px-4 py-1.5 text-[10px] font-extrabold tracking-[0.12em] uppercase rounded-full whitespace-nowrap transition-all cursor-pointer ${
                                         activeCategory?.id === sub.id
                                             ? 'bg-black text-white shadow-md'
                                             : 'bg-gray-100 text-gray-500 hover:bg-gray-200 hover:text-black'
