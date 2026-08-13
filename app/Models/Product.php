@@ -123,4 +123,26 @@ class Product extends Model
 
         return max(0, $originalPrice - $flashSale->discount_value);
     }
+
+    /**
+     * Deactivate this product if every variant's stock is now <= 0.
+     * One-directional by design (per explicit decision): does NOT
+     * reactivate on restock — an admin who set a product inactive for a
+     * non-stock reason shouldn't have it silently flipped back on by a
+     * Ginee sync or stock edit. Called from ProductVariantObserver on every
+     * variant save/delete, so it applies regardless of which code path
+     * changed the stock (Ginee sync, admin edit, order placement, /admin
+     * /stocks adjustment).
+     */
+    public function deactivateIfOutOfStock(): void
+    {
+        if ($this->status !== 'active') {
+            return;
+        }
+
+        $totalStock = $this->variants()->sum('stock');
+        if ($totalStock <= 0) {
+            $this->update(['status' => 'inactive']);
+        }
+    }
 }

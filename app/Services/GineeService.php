@@ -410,19 +410,27 @@ class GineeService
                 $existing = Product::where('ginee_product_id', $gProductId)->first();
                 $categoryId = $existing?->category_id ?? $this->resolveCategoryId($gProduct);
 
+                $productValues = [
+                    'name' => $name,
+                    'slug' => Str::slug($name).'-'.substr($gProductId, -4),
+                    'description' => $description,
+                    'sku' => $sku,
+                    'weight' => $weight,
+                    'base_price' => $basePrice,
+                    'images' => $images,
+                    'category_id' => $categoryId,
+                ];
+                // Only default a brand-new product to 'active' — for an
+                // existing one, leave status untouched so a sync can't
+                // silently undo an admin's manual deactivation (for being
+                // out of stock, discontinued, or any other reason).
+                if (! $existing) {
+                    $productValues['status'] = 'active';
+                }
+
                 $product = Product::updateOrCreate(
                     ['ginee_product_id' => $gProductId],
-                    [
-                        'name' => $name,
-                        'slug' => Str::slug($name).'-'.substr($gProductId, -4),
-                        'description' => $description,
-                        'sku' => $sku,
-                        'weight' => $weight,
-                        'base_price' => $basePrice,
-                        'status' => 'active',
-                        'images' => $images,
-                        'category_id' => $categoryId,
-                    ]
+                    $productValues
                 );
 
                 $importedVariantIds = [];
@@ -458,6 +466,12 @@ class GineeService
                 ProductVariant::where('product_id', $product->id)
                     ->whereNotIn('id', $importedVariantIds)
                     ->delete();
+
+                // A bulk delete doesn't fire ProductVariantObserver, so
+                // recheck directly in case this sync brought total stock to 0
+                // (updateOrCreate above already covers the normal stock-update
+                // case via the observer).
+                $product->deactivateIfOutOfStock();
                 });
 
                 $importedCount++;

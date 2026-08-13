@@ -69,6 +69,9 @@ class StockController extends Controller
 
         if ($oldStock !== $newStock) {
             DB::transaction(function () use ($variant, $oldStock, $newStock, $validated) {
+                // ProductVariantObserver handles deactivating the parent
+                // product if this brings its total stock to 0 — see
+                // Product::deactivateIfOutOfStock().
                 $variant->update(['stock' => $newStock]);
 
                 StockLog::create([
@@ -77,15 +80,6 @@ class StockController extends Controller
                     'after' => $newStock,
                     'reason' => $validated['reason'] ?: 'manual_adjust',
                 ]);
-
-                // Update product status to out_of_stock if all variants have 0 stock
-                $product = $variant->product;
-                $totalStock = $product->variants()->sum('stock');
-                if ($totalStock === 0) {
-                    $product->update(['status' => 'out_of_stock']);
-                } elseif ($product->status === 'out_of_stock' && $totalStock > 0) {
-                    $product->update(['status' => 'active']);
-                }
             });
         }
 

@@ -224,7 +224,12 @@ class ProductController extends Controller
             // Delete variants that were removed
             $deletedIds = array_diff($currentVariantIds, $newVariantIds);
             if (! empty($deletedIds)) {
+                // A bulk whereIn()->delete() doesn't fire per-model "deleted"
+                // events, so ProductVariantObserver won't see this one —
+                // recheck directly in case removing these variants brought
+                // the product's total stock to 0.
                 ProductVariant::whereIn('id', $deletedIds)->delete();
+                $product->deactivateIfOutOfStock();
             }
         });
 
