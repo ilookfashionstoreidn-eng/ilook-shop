@@ -81,14 +81,27 @@ export default function Checkout({ provinces, activeCouriers, originCityId, midt
     // Determine cart type based on items: if any item is pre_order → use pre_order limits
     const cartType = cartItems.some(item => item.product_type === 'pre_order') ? 'pre_order' : 'ready';
 
-    // Date bounds
+    // Date bounds: Pre-Order = H+15 s/d 30 hari, Ready Stock = H+1
     const getDateBounds = () => {
         const today = new Date();
         const minDate = new Date(today);
-        minDate.setDate(today.getDate() + 1); // minimal besok
         const maxDate = new Date(today);
-        maxDate.setDate(today.getDate() + (cartType === 'pre_order' ? 18 : 1));
-        const toISO = (d) => d.toISOString().split('T')[0];
+
+        if (cartType === 'pre_order') {
+            minDate.setDate(today.getDate() + 15); // Earliest: H+15
+            maxDate.setDate(today.getDate() + 30); // Latest: 30 hari
+        } else {
+            minDate.setDate(today.getDate() + 1); // Ready stock: H+1
+            maxDate.setDate(today.getDate() + 1);
+        }
+
+        const toISO = (d) => {
+            const year = d.getFullYear();
+            const month = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        };
+
         return { min: toISO(minDate), max: toISO(maxDate) };
     };
     const dateBounds = getDateBounds();
@@ -748,8 +761,8 @@ export default function Checkout({ provinces, activeCouriers, originCityId, midt
                                         </h3>
                                         <p className="text-[10px] text-[#747878] leading-relaxed">
                                             {cartType === 'pre_order'
-                                                ? 'Produk ini adalah Pre-Order. Pilih tanggal yang Anda inginkan untuk pengiriman (maks. 18 hari dari sekarang).'
-                                                : 'Produk tersedia. Anda bisa memilih tanggal pengiriman untuk besok.'}
+                                                ? 'Produk ini adalah Pre-Order. Pengiriman dapat dipilih mulai hari ke-15 (H+15) hingga 30 hari ke depan.'
+                                                : 'Produk Ready Stock. Pengiriman dapat dipilih untuk besok (H+1).'}
                                         </p>
                                         <div className="space-y-1.5">
                                             <label className="text-[10px] text-[#747878] font-bold uppercase tracking-wider block">
