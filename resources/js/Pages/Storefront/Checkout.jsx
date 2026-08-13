@@ -74,6 +74,24 @@ export default function Checkout({ provinces, activeCouriers, originCityId, midt
     const [paymentMethod, setPaymentMethod] = useState('midtrans'); // midtrans | manual_transfer
     const [selectedBankAccountId, setSelectedBankAccountId] = useState(bankAccounts[0]?.id || null);
 
+    // Requested Shipping Date
+    const [requestedShippingDate, setRequestedShippingDate] = useState('');
+
+    // Determine cart type based on items: if any item is pre_order → use pre_order limits
+    const cartType = cartItems.some(item => item.product_type === 'pre_order') ? 'pre_order' : 'ready';
+
+    // Date bounds
+    const getDateBounds = () => {
+        const today = new Date();
+        const minDate = new Date(today);
+        minDate.setDate(today.getDate() + 1); // minimal besok
+        const maxDate = new Date(today);
+        maxDate.setDate(today.getDate() + (cartType === 'pre_order' ? 18 : 1));
+        const toISO = (d) => d.toISOString().split('T')[0];
+        return { min: toISO(minDate), max: toISO(maxDate) };
+    };
+    const dateBounds = getDateBounds();
+
     useEffect(() => {
         if (bankAccounts && bankAccounts.length > 0 && !selectedBankAccountId) {
             setSelectedBankAccountId(bankAccounts[0].id);
@@ -368,6 +386,7 @@ export default function Checkout({ provinces, activeCouriers, originCityId, midt
             coupon_code: appliedCoupon ? appliedCoupon.code : null,
             payment_method: paymentMethod,
             bank_account_id: paymentMethod === 'manual_transfer' ? selectedBankAccountId : null,
+            requested_shipping_date: requestedShippingDate || null,
             items: cartItems.map(i => ({
                 variant_id: i.variant_id,
                 quantity: i.quantity
@@ -711,6 +730,47 @@ export default function Checkout({ provinces, activeCouriers, originCityId, midt
                                                 })}
                                             </div>
                                         )}
+                                    </div>
+
+                                    {/* Requested Shipping Date */}
+                                    <div className="bg-white p-6 rounded-none border border-[#E0E0E0] space-y-4 text-xs">
+                                        <h3 className="text-sm font-extrabold text-[#212121] border-b border-[#E0E0E0] pb-2 flex items-center gap-2 uppercase tracking-widest">
+                                            <svg xmlns="http://www.w3.org/2000/svg" className="w-4.5 h-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                                            <span>Pilih Tanggal Pengiriman</span>
+                                            <span className={`ml-auto text-[9px] font-extrabold px-2 py-0.5 uppercase tracking-wider ${
+                                                cartType === 'pre_order'
+                                                    ? 'bg-amber-100 text-amber-800 border border-amber-300'
+                                                    : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                            }`}>
+                                                {cartType === 'pre_order' ? '🕐 Pre-Order' : '✅ Ready Stock'}
+                                            </span>
+                                        </h3>
+                                        <p className="text-[10px] text-[#747878] leading-relaxed">
+                                            {cartType === 'pre_order'
+                                                ? 'Produk ini adalah Pre-Order. Pilih tanggal yang Anda inginkan untuk pengiriman (maks. 18 hari dari sekarang).'
+                                                : 'Produk tersedia. Anda bisa memilih tanggal pengiriman untuk besok.'}
+                                        </p>
+                                        <div className="space-y-1.5">
+                                            <label className="text-[10px] text-[#747878] font-bold uppercase tracking-wider block">
+                                                Ingin Dikirim Kapan?
+                                                <span className="text-[#747878] font-normal ml-1">(Opsional)</span>
+                                            </label>
+                                            <input
+                                                type="date"
+                                                id="requested-shipping-date"
+                                                value={requestedShippingDate}
+                                                min={dateBounds.min}
+                                                max={dateBounds.max}
+                                                onChange={e => setRequestedShippingDate(e.target.value)}
+                                                className="w-full sm:w-64 bg-white border border-[#E0E0E0] focus:border-[#212121] focus:ring-0 rounded-none p-2.5 text-[#212121] text-xs"
+                                            />
+                                            {requestedShippingDate && (
+                                                <p className="text-[10px] text-emerald-700 font-bold flex items-center gap-1 mt-1">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                                                    Tanggal dipilih: {new Date(requestedShippingDate + 'T00:00:00').toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                                                </p>
+                                            )}
+                                        </div>
                                     </div>
 
                                     {/* Step 3: Payment */}

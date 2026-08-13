@@ -24,6 +24,7 @@ class OrderShipping extends Model
         'city',
         'province',
         'postal_code',
+        'requested_shipping_date',
     ];
 
     public function order(): BelongsTo

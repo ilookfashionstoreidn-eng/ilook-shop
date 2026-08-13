@@ -98,6 +98,7 @@ export default function Products({ products, categories, filters }) {
         base_price: 0,
         sale_price: '',
         status: 'active',
+        product_type: 'ready',
         images: [],
         video_url: '',
         variants: [
@@ -209,6 +210,7 @@ export default function Products({ products, categories, filters }) {
             base_price: product.base_price,
             sale_price: product.sale_price || '',
             status: product.status,
+            product_type: product.product_type || 'ready',
             images: product.images || [],
             video_url: product.video_url || '',
             variants: product.variants.map(v => ({
@@ -810,6 +812,20 @@ export default function Products({ products, categories, filters }) {
                                         <option value="out_of_stock">Stok Habis</option>
                                     </select>
                                     {errors.status && <p className="text-xs text-red-500">{errors.status}</p>}
+                                </div>
+
+                                <div className="space-y-1.5">
+                                    <label className="text-xs font-semibold text-gray-400 uppercase">Tipe Produk</label>
+                                    <select
+                                        value={data.product_type}
+                                        onChange={e => setData('product_type', e.target.value)}
+                                        className="w-full bg-white border border-gray-200 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 text-sm rounded-xl px-4 py-2.5 text-gray-700"
+                                    >
+                                        <option value="ready">Ready Stock</option>
+                                        <option value="pre_order">Pre-Order</option>
+                                    </select>
+                                    {errors.product_type && <p className="text-xs text-red-500">{errors.product_type}</p>}
+                                    <p className="text-[10px] text-gray-400">Ready = bisa dikirim 1 hari setelah checkout. Pre-Order = bisa dikirim hingga 18 hari.</p>
                                 </div>
                             </div>
 

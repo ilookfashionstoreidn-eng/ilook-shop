@@ -34,6 +34,7 @@ class Product extends Model
         'new_arrival_marked_at',
         'is_promo',
         'promo_marked_at',
+        'product_type',
     ];
 
     protected $casts = [
@@ -44,6 +45,7 @@ class Product extends Model
         'new_arrival_marked_at' => 'datetime',
         'is_promo' => 'boolean',
         'promo_marked_at' => 'datetime',
+        'product_type' => 'string',
     ];
 
     public function category(): BelongsTo

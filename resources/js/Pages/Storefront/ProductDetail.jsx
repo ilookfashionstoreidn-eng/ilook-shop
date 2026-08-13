@@ -298,7 +298,8 @@ export default function ProductDetail({ product, related, origin, whatsappNumber
                 price: currentPrice,
                 image: getVariantImage(selectedVariant),
                 quantity: quantity,
-                weight: product.weight
+                weight: product.weight,
+                product_type: product.product_type || 'ready',
             });
         }
 
@@ -324,7 +325,8 @@ export default function ProductDetail({ product, related, origin, whatsappNumber
             price: currentPrice,
             image: getVariantImage(selectedVariant),
             quantity: quantity,
-            weight: product.weight
+            weight: product.weight,
+            product_type: product.product_type || 'ready',
         };
 
         localStorage.setItem('ilook_cart', JSON.stringify([item]));

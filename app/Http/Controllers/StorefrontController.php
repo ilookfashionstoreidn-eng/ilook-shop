@@ -607,6 +607,7 @@ class StorefrontController extends Controller
             'items.*.quantity' => 'required|integer|min:1',
             'payment_method' => 'required|string|in:midtrans,manual_transfer',
             'bank_account_id' => 'nullable|required_if:payment_method,manual_transfer|exists:bank_accounts,id',
+            'requested_shipping_date' => 'nullable|date|after_or_equal:today',
         ]);
 
         try {
@@ -772,6 +773,7 @@ class StorefrontController extends Controller
                     'city' => $request->input('city_name'),
                     'province' => $request->input('province_name'),
                     'postal_code' => $request->input('postal_code', '12345'),
+                    'requested_shipping_date' => $request->input('requested_shipping_date'),
                 ]);
 
                 return $order;
