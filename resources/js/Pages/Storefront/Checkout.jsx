@@ -83,6 +83,11 @@ export default function Checkout({ provinces, activeCouriers, originCityId, midt
     // Snap.js script loaded state
     const snapScriptLoaded = useRef(false);
 
+    // Holds the buyer's saved rajaongkir_city_id while their saved province
+    // loads the city list (see "Load cities when province changes" below) —
+    // the city dropdown can't be prefilled before its options exist.
+    const pendingCityIdRef = useRef(null);
+
     const formatCurrency = (val) => {
         return new Intl.NumberFormat('id-ID', {
             style: 'currency',
@@ -162,6 +167,24 @@ export default function Checkout({ provinces, activeCouriers, originCityId, midt
             if (auth.user.phone) {
                 setBuyerPhone(auth.user.phone);
             }
+
+            // Prefill the shipping address the buyer saved on their profile
+            // (/profile), so returning buyers don't have to retype it every
+            // order. Only province/city need special handling — see the
+            // "Load cities when province changes" effect — because the city
+            // dropdown's options don't exist until that province's list loads.
+            const u = auth.user;
+            if (u.address) setAddress(u.address);
+            if (u.kelurahan) setKelurahan(u.kelurahan);
+            if (u.kecamatan) setKecamatan(u.kecamatan);
+            if (u.postal_code) setPostalCode(u.postal_code);
+            if (u.latitude != null) setLatitude(u.latitude);
+            if (u.longitude != null) setLongitude(u.longitude);
+            if (u.rajaongkir_province_id) {
+                setSelectedProvinceId(u.rajaongkir_province_id);
+                setSelectedProvinceName(u.province || '');
+                pendingCityIdRef.current = u.rajaongkir_city_id || null;
+            }
         }
     }, []);
 
@@ -206,6 +229,20 @@ export default function Checkout({ provinces, activeCouriers, originCityId, midt
                 const res = await axios.get(`/api/shipping/cities/${selectedProvinceId}`);
                 if (res.data && res.data.success) {
                     setCities(res.data.cities);
+
+                    // Restore the buyer's saved city now that this province's
+                    // city list has loaded (only set right after the profile
+                    // prefill above — a manual province change by the user
+                    // leaves this null, so the city correctly stays cleared).
+                    const pending = pendingCityIdRef.current;
+                    if (pending) {
+                        const match = res.data.cities.find((c) => String(c.city_id) === String(pending));
+                        if (match) {
+                            setSelectedCityId(match.city_id);
+                            setSelectedCityName(match.type ? `${match.type} ${match.city_name}` : match.city_name);
+                        }
+                        pendingCityIdRef.current = null;
+                    }
                 }
             } catch (err) {
                 console.error(err);
