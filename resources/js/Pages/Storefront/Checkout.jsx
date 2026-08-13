@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import StorefrontLayout from '@/Layouts/StorefrontLayout';
 import AddressMapPicker from '@/Components/AddressMapPicker';
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
 import { 
     MapPin, 
     Truck, 
@@ -24,6 +24,7 @@ import axios from 'axios';
 import Swal from 'sweetalert2';
 
 export default function Checkout({ provinces, activeCouriers, originCityId, midtransClientKey, midtransSnapUrl, bankAccounts = [], availableCoupons = [], taxType = 'percentage', taxValue = 0, taxChargedTo = 'buyer', adminFeeType = 'nominal', adminFeeValue = 0, adminFeeChargedTo = 'buyer' }) {
+    const { auth } = usePage().props;
     const [cartItems, setCartItems] = useState([]);
     
     // Form States
@@ -186,26 +187,17 @@ export default function Checkout({ provinces, activeCouriers, originCityId, midt
         setCouponError('');
     };
 
-    // Load cart items on mount
+    // Load cart items & prefill buyer profile on mount
     useEffect(() => {
         const cart = JSON.parse(localStorage.getItem('ilook_cart') || '[]');
         setCartItems(cart);
         
-        // Populate default emails if auth is present
-        const auth = router.page?.props?.auth;
         if (auth && auth.user) {
-            setBuyerName(auth.user.name);
-            setBuyerEmail(auth.user.email);
-            if (auth.user.phone) {
-                setBuyerPhone(auth.user.phone);
-            }
-
-            // Prefill the shipping address the buyer saved on their profile
-            // (/profile), so returning buyers don't have to retype it every
-            // order. Only province/city need special handling — see the
-            // "Load cities when province changes" effect — because the city
-            // dropdown's options don't exist until that province's list loads.
             const u = auth.user;
+            if (u.name) setBuyerName(u.name);
+            if (u.email) setBuyerEmail(u.email);
+            if (u.phone) setBuyerPhone(u.phone);
+
             if (u.address) setAddress(u.address);
             if (u.kelurahan) setKelurahan(u.kelurahan);
             if (u.kecamatan) setKecamatan(u.kecamatan);
@@ -218,7 +210,7 @@ export default function Checkout({ provinces, activeCouriers, originCityId, midt
                 pendingCityIdRef.current = u.rajaongkir_city_id || null;
             }
         }
-    }, []);
+    }, [auth]);
 
     // Load Midtrans Snap.js script
     useEffect(() => {
