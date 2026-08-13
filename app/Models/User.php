@@ -25,6 +25,16 @@ class User extends Authenticatable
         'password',
         'role',
         'phone',
+        'address',
+        'kelurahan',
+        'kecamatan',
+        'rajaongkir_province_id',
+        'province',
+        'rajaongkir_city_id',
+        'city',
+        'postal_code',
+        'latitude',
+        'longitude',
     ];
 
     /**
@@ -47,6 +57,8 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'latitude' => 'float',
+            'longitude' => 'float',
         ];
     }
 }

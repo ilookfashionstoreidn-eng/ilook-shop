@@ -4,8 +4,9 @@ import { Head, usePage } from '@inertiajs/react';
 import DeleteUserForm from './Partials/DeleteUserForm';
 import UpdatePasswordForm from './Partials/UpdatePasswordForm';
 import UpdateProfileInformationForm from './Partials/UpdateProfileInformationForm';
+import UpdateShippingForm from './Partials/UpdateShippingForm';
 
-export default function Edit({ mustVerifyEmail, status }) {
+export default function Edit({ mustVerifyEmail, status, provinces = [] }) {
     const { auth } = usePage().props;
     const isAdmin = auth?.user?.role === 'admin';
 
@@ -62,6 +63,10 @@ export default function Edit({ mustVerifyEmail, status }) {
                             className="max-w-xl"
                             isAdmin={false}
                         />
+                    </div>
+
+                    <div className="bg-white border border-[#E0E0E0] p-6 sm:p-8">
+                        <UpdateShippingForm provinces={provinces} className="max-w-xl" />
                     </div>
 
                     <div className="bg-white border border-[#E0E0E0] p-6 sm:p-8">
