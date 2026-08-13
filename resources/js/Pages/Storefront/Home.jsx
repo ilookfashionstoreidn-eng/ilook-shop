@@ -532,12 +532,21 @@ function HighlightProductCard({ label, product, formatCurrency }) {
         return () => clearInterval(interval);
     }, [images]);
 
+    const discountPercent = product.sale_price && product.sale_price < product.base_price
+        ? Math.round((1 - product.sale_price / product.base_price) * 100)
+        : null;
+
     return (
         <div className="group flex flex-col h-full bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
             <div className="relative aspect-[3/4] overflow-hidden bg-gray-55 flex-shrink-0">
                 <span className="absolute top-3 left-3 z-10 bg-black text-white text-[9px] font-black px-2.5 py-1 uppercase tracking-wider rounded-md shadow-md">
                     {label}
                 </span>
+                {discountPercent && (
+                    <span className="absolute top-3 right-3 z-10 bg-red-600 text-white text-[9px] font-black px-2.5 py-1 uppercase tracking-wider rounded-md shadow-md">
+                        -{discountPercent}%
+                    </span>
+                )}
                 <Link href={route('storefront.product', product.slug)} className="block w-full h-full">
                     <img
                         key={activeIdx}

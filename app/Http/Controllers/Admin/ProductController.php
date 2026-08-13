@@ -238,6 +238,29 @@ class ProductController extends Controller
         return back()->with('success', 'Produk berhasil dihapus.');
     }
 
+    /**
+     * Flip whether this product is manually featured in the homepage "New
+     * Arrivals" grid. `new_arrival_marked_at` is stamped only here (not
+     * touched by unrelated edits) so the storefront can order featured
+     * picks by "most recently marked" instead of the noisier updated_at.
+     */
+    public function toggleNewArrival(Product $product): RedirectResponse
+    {
+        $isNowFeatured = ! $product->is_new_arrival;
+
+        $product->update([
+            'is_new_arrival' => $isNowFeatured,
+            'new_arrival_marked_at' => $isNowFeatured ? now() : null,
+        ]);
+
+        return back()->with(
+            'success',
+            $isNowFeatured
+                ? 'Produk ditambahkan ke New Arrivals.'
+                : 'Produk dihapus dari New Arrivals.'
+        );
+    }
+
     public function syncGinee(Request $request, Product $product, GineeService $gineeService): RedirectResponse
     {
         $action = $request->input('action', 'push'); // push or pull

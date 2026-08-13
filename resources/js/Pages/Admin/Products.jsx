@@ -17,6 +17,7 @@ import {
     Tag,
     Video,
     Upload,
+    Sparkles,
 } from 'lucide-react';
 import axios from 'axios';
 
@@ -213,6 +214,10 @@ export default function Products({ products, categories, filters }) {
         router.post(route('admin.products.sync-ginee', id), { action }, {
             onFinish: () => setSyncingId(null)
         });
+    };
+
+    const handleToggleNewArrival = (id) => {
+        router.post(route('admin.products.toggle-new-arrival', id), {}, { preserveScroll: true });
     };
 
     const handleSyncAllGinee = () => {
@@ -497,6 +502,17 @@ export default function Products({ products, categories, filters }) {
                                                     {isFirst && (
                                                         <td rowSpan={totalRows} className="px-6 py-4 text-right align-middle whitespace-nowrap bg-white border-l border-gray-100">
                                                             <div className="flex items-center justify-end gap-1.5">
+                                                                <button
+                                                                    onClick={() => handleToggleNewArrival(product.id)}
+                                                                    className={`p-1.5 rounded-lg border transition-all shadow-sm ${
+                                                                        product.is_new_arrival
+                                                                            ? 'border-amber-300 bg-amber-50 text-amber-500'
+                                                                            : 'border-gray-200 bg-white text-gray-400 hover:text-amber-500 hover:bg-amber-50'
+                                                                    }`}
+                                                                    title={product.is_new_arrival ? 'Hapus dari New Arrivals (Beranda)' : 'Tampilkan di New Arrivals (Beranda)'}
+                                                                >
+                                                                    <Sparkles className={`w-4 h-4 ${product.is_new_arrival ? 'fill-amber-400' : ''}`} />
+                                                                </button>
                                                                 <button
                                                                     onClick={() => handleSyncGinee(product.id, 'push')}
                                                                     disabled={syncingId === product.id}

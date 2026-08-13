@@ -88,6 +88,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::delete('/products/{product}', [ProductController::class, 'destroy'])->name('products.destroy');
     Route::post('/products/{product}/sync-ginee', [ProductController::class, 'syncGinee'])->name('products.sync-ginee');
     Route::post('/products/sync-all-ginee', [ProductController::class, 'syncAllGinee'])->name('products.sync-all-ginee');
+    Route::post('/products/{product}/toggle-new-arrival', [ProductController::class, 'toggleNewArrival'])->name('products.toggle-new-arrival');
 
     // Categories CRUD
     Route::get('/categories', [CategoryController::class, 'index'])->name('categories');

@@ -30,12 +30,16 @@ class Product extends Model
         'ginee_product_id',
         'images',
         'video_url',
+        'is_new_arrival',
+        'new_arrival_marked_at',
     ];
 
     protected $casts = [
         'images' => 'array',
         'base_price' => 'float',
         'sale_price' => 'float',
+        'is_new_arrival' => 'boolean',
+        'new_arrival_marked_at' => 'datetime',
     ];
 
     public function category(): BelongsTo
