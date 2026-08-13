@@ -252,6 +252,29 @@ export default function Products({ products, categories, filters }) {
         setData('variants', list);
     };
 
+    // "Harga Coret/Promo" only drives the catalog-card badge/strikethrough —
+    // ProductDetail.jsx falls back to it only until a variant is picked,
+    // then always uses that variant's own Harga Custom. This button applies
+    // the same discount ratio (sale_price / base_price) to every variant's
+    // *current* price so the discount actually holds once checked out, since
+    // variants often already have different prices (e.g. Jumbo vs Standard).
+    const applyDiscountToAllVariants = () => {
+        const basePrice = parseFloat(data.base_price);
+        const salePrice = parseFloat(data.sale_price);
+
+        if (!basePrice || !salePrice || salePrice <= 0 || salePrice >= basePrice) {
+            alert('Isi dulu Harga Normal dan Harga Coret/Promo yang valid (Harga Coret harus lebih kecil dari Harga Normal) sebelum menerapkan ke semua varian.');
+            return;
+        }
+
+        const discountRatio = salePrice / basePrice;
+        const updated = data.variants.map(v => {
+            const currentPrice = parseFloat(v.price) || basePrice;
+            return { ...v, price: Math.round(currentPrice * discountRatio) };
+        });
+        setData('variants', updated);
+    };
+
     const autoGenerateSKU = () => {
         const baseSKU = data.sku || data.name.substring(0, 3).toUpperCase().replace(/[^a-zA-Z0-9]/g, '');
         if (!baseSKU) return;
@@ -866,6 +889,15 @@ export default function Products({ products, categories, filters }) {
                                         <p className="text-[11px] text-gray-400 mt-0.5">Wajib memiliki minimal 1 varian (isi nama "Default" jika tidak ada opsi khusus)</p>
                                     </div>
                                     <div className="flex items-center gap-2">
+                                        <button
+                                            type="button"
+                                            onClick={applyDiscountToAllVariants}
+                                            title="Hitung persentase dari Harga Normal & Harga Coret/Promo di atas, lalu terapkan potongan yang sama ke Harga Custom tiap varian (dari harga masing-masing saat ini)"
+                                            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-white border border-red-200 hover:bg-red-50 text-red-600"
+                                        >
+                                            <Percent className="w-3.5 h-3.5" />
+                                            <span>Terapkan Diskon ke Semua Varian</span>
+                                        </button>
                                         <button
                                             type="button"
                                             onClick={autoGenerateSKU}
