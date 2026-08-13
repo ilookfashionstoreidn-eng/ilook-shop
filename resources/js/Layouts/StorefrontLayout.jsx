@@ -169,9 +169,11 @@ export default function StorefrontLayout({ children }) {
     }, []);
 
     const handleSearchSubmit = (e) => {
-        e.preventDefault();
+        if (e) e.preventDefault();
+        if (!searchQuery || !searchQuery.trim()) return;
+        const q = searchQuery.trim();
         setShowSearch(false);
-        router.get(route('storefront.home'), { search: searchQuery });
+        router.get(route('storefront.products'), { search: q });
     };
 
     const handleLogout = (e) => {
@@ -408,20 +410,28 @@ export default function StorefrontLayout({ children }) {
             {showSearch && (
                 <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-start justify-center pt-20 transition-all duration-300">
                     <div className="bg-white w-full max-w-3xl mx-4 rounded-2xl shadow-2xl overflow-hidden border border-gray-100 animate-slide-up">
-                        <form onSubmit={handleSearchSubmit} className="flex items-center border-b border-gray-100">
-                            <Search className="w-5 h-5 text-gray-400 mx-5 flex-shrink-0" />
+                        <form onSubmit={handleSearchSubmit} className="flex items-center border-b border-gray-100 p-2">
+                            <button type="submit" className="p-3 text-gray-400 hover:text-black transition-colors cursor-pointer bg-transparent border-none">
+                                <Search className="w-5 h-5 flex-shrink-0" />
+                            </button>
                             <input
                                 type="text"
-                                placeholder="Cari fashion item, dress, kemeja..."
+                                placeholder="Cari produk, dress, kemeja..."
                                 value={searchQuery}
                                 onChange={e => setSearchQuery(e.target.value)}
                                 autoFocus
-                                className="flex-1 py-6 text-sm bg-transparent border-none focus:ring-0 text-[#0a0a0a] placeholder-gray-400 focus:outline-none"
+                                className="flex-1 py-4 text-sm bg-transparent border-none focus:ring-0 text-[#0a0a0a] placeholder-gray-400 focus:outline-none"
                             />
+                            <button
+                                type="submit"
+                                className="px-4 py-2 bg-[#111111] text-white text-xs font-bold uppercase tracking-wider rounded-lg hover:bg-gray-800 transition-colors mr-2 cursor-pointer border-none"
+                            >
+                                Cari
+                            </button>
                             <button
                                 type="button"
                                 onClick={() => setShowSearch(false)}
-                                className="p-5 text-gray-400 hover:text-black transition-colors cursor-pointer bg-transparent border-none"
+                                className="p-3 text-gray-400 hover:text-black transition-colors cursor-pointer bg-transparent border-none"
                             >
                                 <X className="w-5 h-5" />
                             </button>
@@ -437,7 +447,7 @@ export default function StorefrontLayout({ children }) {
                                         type="button"
                                         onClick={() => {
                                             setSearchQuery(term);
-                                            router.get(route('storefront.home'), { search: term });
+                                            router.get(route('storefront.products'), { search: term });
                                             setShowSearch(false);
                                         }}
                                         className="px-3.5 py-1.5 bg-white border border-gray-200 rounded-full text-xs text-gray-600 hover:bg-black hover:text-white hover:border-black transition-all duration-200 cursor-pointer"
@@ -458,7 +468,7 @@ export default function StorefrontLayout({ children }) {
                                         key={cat.name}
                                         type="button"
                                         onClick={() => {
-                                            router.get(route('storefront.home'), cat.slug ? { category: cat.slug } : {});
+                                            router.get(route('storefront.products'), cat.slug ? { category: cat.slug } : {});
                                             setShowSearch(false);
                                         }}
                                         className="p-3 bg-white border border-gray-200 hover:border-black rounded-lg text-left text-xs font-bold uppercase tracking-wider text-[#111111] transition-all duration-200 cursor-pointer flex items-center justify-between"

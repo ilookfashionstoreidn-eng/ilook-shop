@@ -305,7 +305,7 @@ class StorefrontController extends Controller
         }
 
         if ($request->input('search')) {
-            $query->where('name', 'like', '%'.$request->input('search').'%');
+            $this->applySearchFilter($query, $request->input('search'));
         }
 
         $products = $query->orderBy('created_at', 'desc')->take(5)->get();
@@ -365,6 +365,31 @@ class StorefrontController extends Controller
     }
 
     /**
+     * Filter a product query by search query across product name, SKU,
+     * description, category name, and variant name/SKU.
+     */
+    private function applySearchFilter($query, string $search): void
+    {
+        $term = trim($search);
+        if ($term === '') {
+            return;
+        }
+
+        $query->where(function ($q) use ($term) {
+            $q->where('name', 'like', "%{$term}%")
+                ->orWhere('sku', 'like', "%{$term}%")
+                ->orWhere('description', 'like', "%{$term}%")
+                ->orWhereHas('category', function ($cq) use ($term) {
+                    $cq->where('name', 'like', "%{$term}%");
+                })
+                ->orWhereHas('variants', function ($vq) use ($term) {
+                    $vq->where('name', 'like', "%{$term}%")
+                        ->orWhere('sku', 'like', "%{$term}%");
+                });
+        });
+    }
+
+    /**
      * Filter a product query by category slug. If the slug belongs to a
      * top-level (parent) category, include products from its subcategories
      * too — parent categories hold no products directly, everything lives
@@ -396,7 +421,7 @@ class StorefrontController extends Controller
         }
 
         if ($request->input('search')) {
-            $query->where('name', 'like', '%'.$request->input('search').'%');
+            $this->applySearchFilter($query, $request->input('search'));
         }
 
         $products = $query->orderBy('created_at', 'asc')
@@ -425,7 +450,7 @@ class StorefrontController extends Controller
             ->where('is_promo', true);
 
         if ($request->input('search')) {
-            $query->where('name', 'like', '%'.$request->input('search').'%');
+            $this->applySearchFilter($query, $request->input('search'));
         }
 
         // Tiebreak on id — promo_marked_at is second-precision, so products
