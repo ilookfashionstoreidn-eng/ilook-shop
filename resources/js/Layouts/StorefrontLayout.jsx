@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, usePage, router } from '@inertiajs/react';
-import { ShoppingBag, Search, User, LogOut, Lock, Menu, X, Heart, MessageSquare, Send, Minus } from 'lucide-react';
+import { ShoppingBag, Search, User, LogOut, Lock, Menu, X, Heart, MessageSquare, Send, Minus, ChevronRight } from 'lucide-react';
 import axios from 'axios';
 
 export default function StorefrontLayout({ children }) {
