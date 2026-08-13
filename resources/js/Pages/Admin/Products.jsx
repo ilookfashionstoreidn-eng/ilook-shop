@@ -18,6 +18,7 @@ import {
     Video,
     Upload,
     Sparkles,
+    Percent,
 } from 'lucide-react';
 import axios from 'axios';
 
@@ -218,6 +219,10 @@ export default function Products({ products, categories, filters }) {
 
     const handleToggleNewArrival = (id) => {
         router.post(route('admin.products.toggle-new-arrival', id), {}, { preserveScroll: true });
+    };
+
+    const handleTogglePromo = (id) => {
+        router.post(route('admin.products.toggle-promo', id), {}, { preserveScroll: true });
     };
 
     const handleSyncAllGinee = () => {
@@ -512,6 +517,17 @@ export default function Products({ products, categories, filters }) {
                                                                     title={product.is_new_arrival ? 'Hapus dari New Arrivals (Beranda)' : 'Tampilkan di New Arrivals (Beranda)'}
                                                                 >
                                                                     <Sparkles className={`w-4 h-4 ${product.is_new_arrival ? 'fill-amber-400' : ''}`} />
+                                                                </button>
+                                                                <button
+                                                                    onClick={() => handleTogglePromo(product.id)}
+                                                                    className={`p-1.5 rounded-lg border transition-all shadow-sm ${
+                                                                        product.is_promo
+                                                                            ? 'border-red-300 bg-red-50 text-red-600'
+                                                                            : 'border-gray-200 bg-white text-gray-400 hover:text-red-600 hover:bg-red-50'
+                                                                    }`}
+                                                                    title={product.is_promo ? 'Hapus dari Halaman Promo' : 'Tampilkan di Halaman Promo'}
+                                                                >
+                                                                    <Percent className="w-4 h-4" />
                                                                 </button>
                                                                 <button
                                                                     onClick={() => handleSyncGinee(product.id, 'push')}

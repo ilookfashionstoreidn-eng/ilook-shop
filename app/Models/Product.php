@@ -32,6 +32,8 @@ class Product extends Model
         'video_url',
         'is_new_arrival',
         'new_arrival_marked_at',
+        'is_promo',
+        'promo_marked_at',
     ];
 
     protected $casts = [
@@ -40,6 +42,8 @@ class Product extends Model
         'sale_price' => 'float',
         'is_new_arrival' => 'boolean',
         'new_arrival_marked_at' => 'datetime',
+        'is_promo' => 'boolean',
+        'promo_marked_at' => 'datetime',
     ];
 
     public function category(): BelongsTo

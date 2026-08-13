@@ -26,6 +26,7 @@ use Illuminate\Support\Facades\Route;
 // Public Storefront Routes
 Route::get('/', [StorefrontController::class, 'home'])->name('storefront.home');
 Route::get('/products', [StorefrontController::class, 'products'])->name('storefront.products');
+Route::get('/promo', [StorefrontController::class, 'promo'])->name('storefront.promo');
 Route::get('/product/{slug}', [StorefrontController::class, 'productDetail'])->name('storefront.product');
 Route::get('/cart', [StorefrontController::class, 'cart'])->name('storefront.cart');
 Route::get('/checkout', [StorefrontController::class, 'checkoutPage'])->name('storefront.checkout');
@@ -89,6 +90,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::post('/products/{product}/sync-ginee', [ProductController::class, 'syncGinee'])->name('products.sync-ginee');
     Route::post('/products/sync-all-ginee', [ProductController::class, 'syncAllGinee'])->name('products.sync-all-ginee');
     Route::post('/products/{product}/toggle-new-arrival', [ProductController::class, 'toggleNewArrival'])->name('products.toggle-new-arrival');
+    Route::post('/products/{product}/toggle-promo', [ProductController::class, 'togglePromo'])->name('products.toggle-promo');
 
     // Categories CRUD
     Route::get('/categories', [CategoryController::class, 'index'])->name('categories');

@@ -413,6 +413,35 @@ class StorefrontController extends Controller
     }
 
     /**
+     * /promo — products admins pinned via the ⭐ toggle on
+     * /admin/products, ordered by when they were pinned (newest first).
+     * Reuses the Storefront/Products page/layout with a `promo` filter
+     * flag so it gets the same grid, lazy-load, and empty state for free.
+     */
+    public function promo(Request $request): Response
+    {
+        $query = Product::with(['category', 'variants'])
+            ->where('status', 'active')
+            ->where('is_promo', true);
+
+        if ($request->input('search')) {
+            $query->where('name', 'like', '%'.$request->input('search').'%');
+        }
+
+        $products = $query->orderBy('promo_marked_at', 'desc')
+            ->paginate(50)
+            ->withQueryString();
+
+        $categories = Category::withCount('products')->get();
+
+        return Inertia::render('Storefront/Products', [
+            'products' => $products,
+            'categories' => $categories,
+            'filters' => array_merge($request->only(['search']), ['promo' => true]),
+        ]);
+    }
+
+    /**
      * Product Detail Page
      */
     public function productDetail(string $slug): Response

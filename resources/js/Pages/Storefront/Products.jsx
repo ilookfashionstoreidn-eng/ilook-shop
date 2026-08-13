@@ -22,7 +22,7 @@ export default function Products({ products, categories, filters }) {
     useEffect(() => {
         setAllProducts(products.data);
         setNextPageUrl(products.next_page_url);
-    }, [filters.category, filters.search]);
+    }, [filters.category, filters.search, filters.promo]);
 
     const handleLoadMore = () => {
         if (!nextPageUrl || loadingMore) return;
@@ -65,16 +65,16 @@ export default function Products({ products, categories, filters }) {
 
     return (
         <StorefrontLayout>
-            <Head title={activeCategoryName ? `${activeCategoryName} - iLook Fashion` : 'Semua Produk - iLook Fashion'} />
+            <Head title={filters.promo ? 'Promo - iLook Fashion' : (activeCategoryName ? `${activeCategoryName} - iLook Fashion` : 'Semua Produk - iLook Fashion')} />
 
             <div className="max-w-[1280px] mx-auto px-4 md:px-10 py-10 md:py-16">
                 {/* Header */}
                 <div className="mb-10 border-b border-gray-100 pb-8">
-                    <span className="text-[10px] font-extrabold tracking-[0.2em] uppercase text-gray-400">
-                        {activeCategoryName || 'FULL CATALOG'}
+                    <span className={`text-[10px] font-extrabold tracking-[0.2em] uppercase ${filters.promo ? 'text-red-600' : 'text-gray-400'}`}>
+                        {filters.promo ? 'PENAWARAN SPESIAL' : (activeCategoryName || 'FULL CATALOG')}
                     </span>
                     <h1 className="text-3xl font-extrabold uppercase tracking-wider mt-1.5" style={{ fontFamily: "'Outfit', sans-serif" }}>
-                        {filters.search ? `"${filters.search}"` : 'SEMUA PRODUK'}
+                        {filters.search ? `"${filters.search}"` : filters.promo ? 'PROMO' : 'SEMUA PRODUK'}
                     </h1>
                     <p className="text-xs text-gray-500 mt-2">
                         Menampilkan {allProducts.length} dari {products.total} produk

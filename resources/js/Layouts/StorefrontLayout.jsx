@@ -274,7 +274,7 @@ export default function StorefrontLayout({ children }) {
                         }`} />
                     </Link>
                     <Link
-                        href={route('storefront.home')}
+                        href={route('storefront.promo')}
                         className="text-[11px] font-extrabold tracking-[0.2em] uppercase text-red-600 hover:text-red-500 transition-colors relative py-1.5 group"
                     >
                         PROMO

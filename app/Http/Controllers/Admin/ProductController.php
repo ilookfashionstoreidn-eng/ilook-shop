@@ -261,6 +261,27 @@ class ProductController extends Controller
         );
     }
 
+    /**
+     * Flip whether this product is manually featured on the storefront
+     * /promo page. Same pattern as toggleNewArrival().
+     */
+    public function togglePromo(Product $product): RedirectResponse
+    {
+        $isNowPromo = ! $product->is_promo;
+
+        $product->update([
+            'is_promo' => $isNowPromo,
+            'promo_marked_at' => $isNowPromo ? now() : null,
+        ]);
+
+        return back()->with(
+            'success',
+            $isNowPromo
+                ? 'Produk ditambahkan ke halaman Promo.'
+                : 'Produk dihapus dari halaman Promo.'
+        );
+    }
+
     public function syncGinee(Request $request, Product $product, GineeService $gineeService): RedirectResponse
     {
         $action = $request->input('action', 'push'); // push or pull
