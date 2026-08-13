@@ -605,35 +605,16 @@ function HighlightProductCard({ label, product, formatCurrency }) {
 export default function Home({ products, categories, filters, activeLivestreams = [], highlightProducts = [], tiktokProfileUrl = null }) {
     const { flashSale } = usePage().props;
 
-    // Hero Banners Slider
+    // Hero Banner — single static banner for now (image already has its own
+    // baked-in text/CTA design, so no overlay text is rendered on top of it;
+    // the whole banner just links out to the catalog). Kept as a one-item
+    // array so adding more banners back later is a small diff.
     const heroSlides = [
         {
-            image: 'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=1600&auto=format&fit=crop&q=80',
-            tagline: 'THE EXECUTIVE EDITORIAL',
-            title: 'MODERN CLASSIC',
-            link: '#catalog'
+            image: '/images/banners/hero-koleksi-musim-baru.webp',
+            link: '#catalog',
         },
-        {
-            image: 'https://images.unsplash.com/photo-1469334031218-e382a71b716b?w=1600&auto=format&fit=crop&q=80',
-            tagline: 'SUMMER NEW IN',
-            title: 'ELEVATED ESSENTIALS',
-            link: '#catalog'
-        },
-        {
-            image: 'https://images.unsplash.com/photo-1483985988355-763728e1935b?w=1600&auto=format&fit=crop&q=80',
-            tagline: 'EXCLUSIVELY FOR YOU',
-            title: 'CHIC STYLING EDIT',
-            link: '#catalog'
-        }
     ];
-    const [currentSlide, setCurrentSlide] = useState(0);
-
-    useEffect(() => {
-        const timer = setInterval(() => {
-            setCurrentSlide(prev => (prev + 1) % heroSlides.length);
-        }, 6000);
-        return () => clearInterval(timer);
-    }, []);
 
     // Hero TikTok CTA: prefer the newest active TikTok Live entry ("LIVE di
     // TikTok" — links straight to the live room); fall back to the general
@@ -705,80 +686,35 @@ export default function Home({ products, categories, filters, activeLivestreams 
         <StorefrontLayout>
             <Head title="iLook Fashion | High-End Modern Wear" />
 
-            {/* Hero Carousel — Full Screen Slide */}
-            <section className="relative w-full h-[65vh] sm:h-[85vh] overflow-hidden group select-none">
-                {heroSlides.map((slide, idx) => {
-                    const isActive = idx === currentSlide;
-                    return (
-                        <div
-                            key={idx}
-                            className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${
-                                isActive ? 'opacity-100 z-10' : 'opacity-0 z-0'
-                            }`}
-                        >
-                            <div className="absolute inset-0 bg-black/25 z-10" />
-                            <img
-                                src={slide.image}
-                                alt={slide.title}
-                                className={`w-full h-full object-cover transition-transform duration-[8000ms] ease-out ${
-                                    isActive ? 'scale-105' : 'scale-100'
-                                }`}
-                            />
-                            <div className="absolute inset-0 z-20 flex flex-col justify-center items-center text-center px-4">
-                                <span className={`text-[10px] sm:text-xs font-bold tracking-[0.4em] uppercase text-white mb-4 transition-all duration-700 delay-300 transform ${
-                                    isActive ? 'opacity-90 translate-y-0' : 'opacity-0 translate-y-4'
-                                }`}>
-                                    {slide.tagline}
-                                </span>
-                                <h1 className={`text-4xl sm:text-5xl md:text-[72px] md:leading-none font-extrabold text-white mb-8 max-w-4xl uppercase tracking-wider sm:tracking-widest px-4 transition-all duration-700 delay-500 transform ${
-                                    isActive ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
-                                }`} style={{ fontFamily: "'Outfit', sans-serif" }}>
-                                    {slide.title}
-                                </h1>
-                                <div className={`flex flex-wrap items-center justify-center gap-3 transition-all duration-700 delay-700 transform ${
-                                    isActive ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
-                                }`}>
-                                    <a
-                                        href={slide.link}
-                                        className="bg-white text-black px-10 py-3.5 sm:px-14 sm:py-4.5 text-[10px] font-bold tracking-[0.2em] uppercase hover:bg-black hover:text-white transition-all duration-300 shadow-lg border border-white hover:border-black rounded-sm"
-                                    >
-                                        BELANJA SEKARANG
-                                    </a>
-                                    {tiktokCta && (
-                                        <a
-                                            href={tiktokCta.href}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="flex items-center gap-2 bg-black/60 backdrop-blur-sm text-white px-8 py-3.5 sm:px-10 sm:py-4.5 text-[10px] font-bold tracking-[0.2em] uppercase hover:bg-black transition-all duration-300 shadow-lg border border-white/70 rounded-sm"
-                                        >
-                                            {tiktokCta.isLive && (
-                                                <span className="relative flex h-2 w-2">
-                                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-500 opacity-75" />
-                                                    <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500" />
-                                                </span>
-                                            )}
-                                            {tiktokCta.label}
-                                        </a>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
-                    );
-                })}
-
-                {/* Dot Indicators */}
-                <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-30 flex gap-2.5">
-                    {heroSlides.map((_, idx) => (
-                        <button
-                            key={idx}
-                            onClick={() => setCurrentSlide(idx)}
-                            className={`w-2 h-2 rounded-full transition-all duration-300 bg-white ${
-                                idx === currentSlide ? 'w-8 bg-white' : 'opacity-50 hover:opacity-80'
-                            } cursor-pointer`}
-                            title={`Slide ${idx + 1}`}
-                        />
-                    ))}
-                </div>
+            {/* Hero Banner — single static banner; image already has its own
+                baked-in headline/CTA design, so the whole banner is just a
+                clickable link with no text overlaid on top of it. Uses the
+                image's own aspect ratio (not a fixed vh height) so it never
+                crops the design on any screen size. */}
+            <section className="relative w-full select-none">
+                <a href={heroSlides[0].link} className="block w-full aspect-[1672/941] overflow-hidden">
+                    <img
+                        src={heroSlides[0].image}
+                        alt="Koleksi Musim Baru"
+                        className="w-full h-full object-cover"
+                    />
+                </a>
+                {tiktokCta && (
+                    <a
+                        href={tiktokCta.href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="absolute bottom-4 right-4 sm:bottom-6 sm:right-6 z-10 flex items-center gap-2 bg-black/70 backdrop-blur-sm text-white px-4 py-2.5 sm:px-6 sm:py-3 text-[9px] sm:text-[10px] font-bold tracking-[0.15em] uppercase hover:bg-black transition-all duration-300 shadow-lg rounded-sm"
+                    >
+                        {tiktokCta.isLive && (
+                            <span className="relative flex h-2 w-2">
+                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-500 opacity-75" />
+                                <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500" />
+                            </span>
+                        )}
+                        {tiktokCta.label}
+                    </a>
+                )}
             </section>
 
             {/* Active TikTok Livestream / Video Section */}
