@@ -315,6 +315,7 @@ class StorefrontController extends Controller
             'highlightProducts' => $this->getHighlightProducts(),
             'filters' => $request->only(['category', 'search']),
             'activeLivestreams' => $activeLivestreams,
+            'tiktokProfileUrl' => Setting::where('key', 'tiktok_profile_url')->value('value'),
         ]);
     }
 

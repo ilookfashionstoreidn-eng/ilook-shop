@@ -35,6 +35,7 @@ class SettingController extends Controller
             'min_stock_alert' => 5,
             'ginee_sync_enabled' => false,
             'couriers_active' => ['jne', 'jnt', 'sicepat'],
+            'tiktok_profile_url' => '',
         ];
 
         $settings = array_merge($defaults, $settings);
@@ -58,6 +59,12 @@ class SettingController extends Controller
 
     public function update(Request $request): RedirectResponse
     {
+        // An empty text input arrives as '', not null — normalize so
+        // `nullable|url` doesn't reject a deliberately-cleared field.
+        if ($request->input('tiktok_profile_url') === '') {
+            $request->merge(['tiktok_profile_url' => null]);
+        }
+
         $validated = $request->validate([
             'shop_name' => 'required|string|max:255',
             'whatsapp_number' => 'required|string|max:20',
@@ -65,6 +72,7 @@ class SettingController extends Controller
             'min_stock_alert' => 'required|integer|min:0',
             'ginee_sync_enabled' => 'required|boolean',
             'couriers_active' => 'required|array',
+            'tiktok_profile_url' => 'nullable|string|max:255|url',
         ]);
 
         // Mock city names mapping

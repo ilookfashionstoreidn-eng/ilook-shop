@@ -591,7 +591,7 @@ function HighlightProductCard({ label, product, formatCurrency }) {
     );
 }
 
-export default function Home({ products, categories, filters, activeLivestreams = [], highlightProducts = [] }) {
+export default function Home({ products, categories, filters, activeLivestreams = [], highlightProducts = [], tiktokProfileUrl = null }) {
     const { flashSale } = usePage().props;
 
     // Hero Banners Slider
@@ -623,6 +623,19 @@ export default function Home({ products, categories, filters, activeLivestreams 
         }, 6000);
         return () => clearInterval(timer);
     }, []);
+
+    // Hero TikTok CTA: prefer the newest active TikTok Live entry ("LIVE di
+    // TikTok" — links straight to the live room); fall back to the general
+    // profile link from Pengaturan Toko ("Follow TikTok Kami") when nothing
+    // is live right now. Hidden entirely if neither is configured.
+    const liveTikTokStream = activeLivestreams.find((s) =>
+        /tiktok\.com\/@[a-zA-Z0-9_.]+\/live/i.test(s.tiktok_url || '')
+    );
+    const tiktokCta = liveTikTokStream
+        ? { label: 'LIVE DI TIKTOK', href: liveTikTokStream.tiktok_url, isLive: true }
+        : tiktokProfileUrl
+            ? { label: 'FOLLOW TIKTOK KAMI', href: tiktokProfileUrl, isLive: false }
+            : null;
 
     const [countdown, setCountdown] = useState({ h: '02', m: '45', s: '30' });
 
@@ -711,7 +724,7 @@ export default function Home({ products, categories, filters, activeLivestreams 
                                 }`} style={{ fontFamily: "'Outfit', sans-serif" }}>
                                     {slide.title}
                                 </h1>
-                                <div className={`transition-all duration-700 delay-700 transform ${
+                                <div className={`flex flex-wrap items-center justify-center gap-3 transition-all duration-700 delay-700 transform ${
                                     isActive ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
                                 }`}>
                                     <a
@@ -720,6 +733,22 @@ export default function Home({ products, categories, filters, activeLivestreams 
                                     >
                                         BELANJA SEKARANG
                                     </a>
+                                    {tiktokCta && (
+                                        <a
+                                            href={tiktokCta.href}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="flex items-center gap-2 bg-black/60 backdrop-blur-sm text-white px-8 py-3.5 sm:px-10 sm:py-4.5 text-[10px] font-bold tracking-[0.2em] uppercase hover:bg-black transition-all duration-300 shadow-lg border border-white/70 rounded-sm"
+                                        >
+                                            {tiktokCta.isLive && (
+                                                <span className="relative flex h-2 w-2">
+                                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-500 opacity-75" />
+                                                    <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500" />
+                                                </span>
+                                            )}
+                                            {tiktokCta.label}
+                                        </a>
+                                    )}
                                 </div>
                             </div>
                         </div>
