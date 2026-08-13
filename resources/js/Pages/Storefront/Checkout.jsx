@@ -18,6 +18,7 @@ import {
     Loader2,
     Ticket,
     Tag,
+    Calendar,
 } from 'lucide-react';
 import axios from 'axios';
 import Swal from 'sweetalert2';
@@ -735,7 +736,7 @@ export default function Checkout({ provinces, activeCouriers, originCityId, midt
                                     {/* Requested Shipping Date */}
                                     <div className="bg-white p-6 rounded-none border border-[#E0E0E0] space-y-4 text-xs">
                                         <h3 className="text-sm font-extrabold text-[#212121] border-b border-[#E0E0E0] pb-2 flex items-center gap-2 uppercase tracking-widest">
-                                            <svg xmlns="http://www.w3.org/2000/svg" className="w-4.5 h-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                                            <Calendar className="w-4 h-4 text-[#212121] flex-shrink-0" />
                                             <span>Pilih Tanggal Pengiriman</span>
                                             <span className={`ml-auto text-[9px] font-extrabold px-2 py-0.5 uppercase tracking-wider ${
                                                 cartType === 'pre_order'
@@ -766,7 +767,7 @@ export default function Checkout({ provinces, activeCouriers, originCityId, midt
                                             />
                                             {requestedShippingDate && (
                                                 <p className="text-[10px] text-emerald-700 font-bold flex items-center gap-1 mt-1">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                                                    <Check className="w-3.5 h-3.5 text-emerald-600 flex-shrink-0" />
                                                     Tanggal dipilih: {new Date(requestedShippingDate + 'T00:00:00').toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
                                                 </p>
                                             )}
