@@ -687,12 +687,17 @@ export default function Home({ products, categories, filters, activeLivestreams 
             <Head title="iLook Fashion | High-End Modern Wear" />
 
             {/* Hero Banner — single static banner; image already has its own
-                baked-in headline/CTA design, so the whole banner is just a
-                clickable link with no text overlaid on top of it. Uses the
-                image's own aspect ratio (not a fixed vh height) so it never
-                crops the design on any screen size. */}
+                baked-in headline/discount-badge design. Height is capped via
+                vh (not pure aspect-ratio) so it can never grow taller than
+                the viewport on wide desktop screens — a plain aspect-ratio
+                box would otherwise scale its height together with the full
+                page width, making it far taller than intended on wide
+                monitors. object-cover crops the (mostly blank) top/bottom
+                margins first, so the headline stays intact. A visible
+                "BELANJA SEKARANG" button sits below the image itself so it's
+                never at risk of being cropped or blending into the image. */}
             <section className="relative w-full select-none">
-                <a href={heroSlides[0].link} className="block w-full aspect-[1672/941] overflow-hidden">
+                <a href={heroSlides[0].link} className="block w-full h-[32vh] sm:h-[45vh] lg:h-[55vh] overflow-hidden">
                     <img
                         src={heroSlides[0].image}
                         alt="Koleksi Musim Baru"
@@ -715,6 +720,14 @@ export default function Home({ products, categories, filters, activeLivestreams 
                         {tiktokCta.label}
                     </a>
                 )}
+                <div className="flex justify-center bg-[#faf6f2] py-6">
+                    <a
+                        href={heroSlides[0].link}
+                        className="bg-black text-white px-10 py-3.5 sm:px-14 sm:py-4.5 text-[10px] font-bold tracking-[0.2em] uppercase hover:bg-[#333333] transition-all duration-300 shadow-md rounded-sm"
+                    >
+                        BELANJA SEKARANG
+                    </a>
+                </div>
             </section>
 
             {/* Active TikTok Livestream / Video Section */}
