@@ -532,7 +532,9 @@ function HighlightProductCard({ label, product, formatCurrency }) {
         return () => clearInterval(interval);
     }, [images]);
 
-    const discountPercent = product.sale_price && product.sale_price < product.base_price
+    // `!= null` (not `&&`) — a legitimate sale_price of 0 (a free/giveaway
+    // item) is falsy and must not be treated the same as "no discount set".
+    const discountPercent = product.sale_price != null && product.sale_price < product.base_price
         ? Math.round((1 - product.sale_price / product.base_price) * 100)
         : null;
 
@@ -826,11 +828,17 @@ export default function Home({ products, categories, filters, activeLivestreams 
             )}
 
 
+            {/* Always-present scroll target for the "BELANJA SEKARANG" / "Lihat
+                Katalog Produk" buttons above — the New Arrivals section itself
+                is conditionally rendered (see below) and can't be relied on
+                to provide the #catalog anchor by itself. */}
+            <div id="catalog" />
+
             {/* New Arrivals Grid — admin-pinned via the ⭐ toggle on /admin/products.
                 Section is hidden entirely (not shown with a "no products" message)
                 when nothing's pinned and there's no active filter/search. */}
             {(filters.category || filters.search || highlightProducts.length > 0) && (
-            <section id="catalog" className="py-16 px-4 md:py-24 md:px-10 max-w-[1280px] mx-auto bg-white">
+            <section className="py-16 px-4 md:py-24 md:px-10 max-w-[1280px] mx-auto bg-white">
                 {/* Header */}
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-12 gap-8 border-b border-gray-100 pb-8">
                     <div>

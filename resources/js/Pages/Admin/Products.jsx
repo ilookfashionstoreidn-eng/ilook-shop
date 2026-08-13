@@ -175,7 +175,10 @@ export default function Products({ products, categories, filters }) {
                 id: v.id,
                 sku: v.sku,
                 name: v.name,
-                price: v.price || '',
+                // Nullish (not ||) — a variant intentionally priced at 0
+                // (e.g. a free bundled item) must stay 0, not collapse to ''
+                // and silently fall back to the product's base price.
+                price: v.price ?? '',
                 stock: v.stock,
                 image: v.image || ''
             }))
@@ -269,7 +272,12 @@ export default function Products({ products, categories, filters }) {
 
         const discountRatio = salePrice / basePrice;
         const updated = data.variants.map(v => {
-            const currentPrice = parseFloat(v.price) || basePrice;
+            // v.price === '' means genuinely unset -> fall back to base price.
+            // A variant explicitly priced at 0 (e.g. a free bundled item)
+            // must stay 0, not get treated as "unset" (|| would do that,
+            // since 0 is falsy) and overwritten with a discounted base price.
+            const parsed = parseFloat(v.price);
+            const currentPrice = Number.isNaN(parsed) ? basePrice : parsed;
             return { ...v, price: Math.round(currentPrice * discountRatio) };
         });
         setData('variants', updated);

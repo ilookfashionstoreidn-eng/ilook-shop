@@ -126,7 +126,7 @@ export default function Products({ products, categories, filters }) {
                         <p className="text-xl font-bold uppercase tracking-widest text-[#111111] mb-2">Tidak Ada Produk</p>
                         <p className="text-sm text-[#666666] mb-8">Kami tidak menemukan produk yang sesuai dengan kriteria Anda.</p>
                         <button
-                            onClick={() => router.get(route('storefront.products'))}
+                            onClick={() => router.get(filters.promo ? route('storefront.promo') : route('storefront.products'))}
                             className="bg-black text-white px-8 py-3.5 text-[10px] font-bold uppercase tracking-[0.2em] hover:bg-gray-800 transition-all rounded-sm shadow-md cursor-pointer"
                         >
                             RESET PENCARIAN

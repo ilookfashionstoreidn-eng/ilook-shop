@@ -428,7 +428,11 @@ class StorefrontController extends Controller
             $query->where('name', 'like', '%'.$request->input('search').'%');
         }
 
+        // Tiebreak on id — promo_marked_at is second-precision, so products
+        // pinned within the same second would otherwise have no stable
+        // order, risking duplicates/skips across "Muat Lebih Banyak" pages.
         $products = $query->orderBy('promo_marked_at', 'desc')
+            ->orderBy('id', 'desc')
             ->paginate(50)
             ->withQueryString();
 
