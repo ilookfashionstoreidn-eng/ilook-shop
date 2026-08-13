@@ -323,66 +323,25 @@ class StorefrontController extends Controller
     }
 
     /**
-     * Homepage "New Arrivals" grid — up to 8 products, primarily whichever
-     * ones admins pinned via the ⭐ toggle on /admin/products (ordered by
-     * when they were pinned, newest first). If fewer than 8 are pinned
-     * (e.g. right after this feature shipped, before anyone's used it
-     * yet), the rest are filled with one spotlight product per top-level
-     * family so the section is never sparse/empty.
+     * Homepage "New Arrivals" grid — purely admin-controlled: up to 8
+     * products, whichever ones were pinned via the ⭐ toggle on
+     * /admin/products, ordered by when they were pinned (newest first).
+     * Empty until an admin pins something — Home.jsx hides the whole
+     * section rather than showing a "no products" placeholder.
      */
     private function getHighlightProducts(): array
     {
-        $pinned = Product::with(['variants', 'category'])
+        return Product::with(['variants', 'category'])
             ->where('status', 'active')
             ->where('is_new_arrival', true)
             ->orderBy('new_arrival_marked_at', 'desc')
             ->take(self::HIGHLIGHT_LIMIT)
-            ->get();
-
-        $highlights = $pinned->map(fn ($product) => [
-            'label' => $product->category->name ?? 'Produk',
-            'product' => $product,
-        ])->all();
-
-        if (count($highlights) >= self::HIGHLIGHT_LIMIT) {
-            return $highlights;
-        }
-
-        $usedIds = $pinned->pluck('id')->all();
-        $groups = [
-            'Wanita' => 'pakaian-wanita',
-            'Pria' => 'pakaian-pria',
-            'Anak' => 'pakaian-anak',
-            'Family' => 'family-set',
-        ];
-
-        foreach ($groups as $label => $slug) {
-            if (count($highlights) >= self::HIGHLIGHT_LIMIT) {
-                break;
-            }
-
-            $categoryIds = $this->categoryIdsForSlug($slug);
-            if (empty($categoryIds)) {
-                continue;
-            }
-
-            $product = Product::with('variants')
-                ->where('status', 'active')
-                ->whereIn('category_id', $categoryIds)
-                ->whereNotIn('id', $usedIds)
-                ->orderBy('created_at', 'desc')
-                ->first();
-
-            if ($product) {
-                $highlights[] = [
-                    'label' => $label,
-                    'product' => $product,
-                ];
-                $usedIds[] = $product->id;
-            }
-        }
-
-        return $highlights;
+            ->get()
+            ->map(fn ($product) => [
+                'label' => $product->category->name ?? 'Produk',
+                'product' => $product,
+            ])
+            ->all();
     }
 
     /**

@@ -826,7 +826,10 @@ export default function Home({ products, categories, filters, activeLivestreams 
             )}
 
 
-            {/* New Arrivals Grid */}
+            {/* New Arrivals Grid — admin-pinned via the ⭐ toggle on /admin/products.
+                Section is hidden entirely (not shown with a "no products" message)
+                when nothing's pinned and there's no active filter/search. */}
+            {(filters.category || filters.search || highlightProducts.length > 0) && (
             <section id="catalog" className="py-16 px-4 md:py-24 md:px-10 max-w-[1280px] mx-auto bg-white">
                 {/* Header */}
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-12 gap-8 border-b border-gray-100 pb-8">
@@ -848,19 +851,13 @@ export default function Home({ products, categories, filters, activeLivestreams 
                     </div>
                 </div>
 
-                {/* Highlight Grid — 1 spotlight product per family (Wanita/Pria/Anak/Family), auto-cycling color */}
+                {/* Highlight Grid — products pinned by admins, auto-cycling color */}
                 {!filters.category && !filters.search ? (
-                    highlightProducts.length === 0 ? (
-                        <div className="py-24 text-center">
-                            <p className="text-xl font-bold uppercase tracking-widest text-[#111111] mb-2">Tidak Ada Produk</p>
-                        </div>
-                    ) : (
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
-                            {highlightProducts.map(({ label, product }) => (
-                                <HighlightProductCard key={product.id} label={label} product={product} formatCurrency={formatCurrency} />
-                            ))}
-                        </div>
-                    )
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
+                        {highlightProducts.map(({ label, product }) => (
+                            <HighlightProductCard key={product.id} label={label} product={product} formatCurrency={formatCurrency} />
+                        ))}
+                    </div>
                 ) : products.length === 0 ? (
                     <div className="py-24 text-center">
                         <p className="text-xl font-bold uppercase tracking-widest text-[#111111] mb-2">Tidak Ada Produk</p>
@@ -959,6 +956,7 @@ export default function Home({ products, categories, filters, activeLivestreams 
                     </div>
                 )}
             </section>
+            )}
 
             {/* Kategori Populer — 4 equal columns */}
             <section className="pb-16 md:pb-24 px-4 md:px-10 max-w-[1280px] mx-auto select-none">
