@@ -51,14 +51,39 @@ class ProductController extends Controller
             $query->where('status', $status);
         }
 
-        $products = $query->orderBy('created_at', 'desc')->paginate(10)->withQueryString();
+        // 'per_page=all' powers the "Tampilkan Semua" view so bulk
+        // activate/deactivate can select across the whole filtered result
+        // instead of just the current page. Capped rather than truly
+        // unbounded so a bad/huge input can't force an unbounded query.
+        $perPageInput = $request->input('per_page');
+        $perPage = $perPageInput === 'all' ? 5000 : max(1, min(200, (int) ($perPageInput ?: 10)));
+
+        $products = $query->orderBy('created_at', 'desc')->paginate($perPage)->withQueryString();
         $categories = Category::orderBy('name')->get();
 
         return Inertia::render('Admin/Products', [
             'products' => $products,
             'categories' => $categories,
-            'filters' => $request->only(['search', 'category_id', 'status']),
+            'filters' => $request->only(['search', 'category_id', 'status', 'per_page']),
         ]);
+    }
+
+    /**
+     * Bulk activate/deactivate — used by the admin table's multi-select.
+     */
+    public function bulkUpdateStatus(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'ids' => 'required|array|min:1',
+            'ids.*' => 'integer|exists:products,id',
+            'status' => 'required|string|in:active,inactive',
+        ]);
+
+        $count = Product::whereIn('id', $validated['ids'])->update(['status' => $validated['status']]);
+
+        $label = $validated['status'] === 'active' ? 'diaktifkan' : 'dinonaktifkan';
+
+        return back()->with('success', "{$count} produk berhasil {$label}.");
     }
 
     public function store(Request $request): RedirectResponse

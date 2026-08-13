@@ -26,6 +26,9 @@ export default function Products({ products, categories, filters }) {
     const [searchTerm, setSearchTerm] = useState(filters.search || '');
     const [selectedCategory, setSelectedCategory] = useState(filters.category_id || '');
     const [selectedStatus, setSelectedStatus] = useState(filters.status || '');
+    const [selectedPerPage, setSelectedPerPage] = useState(filters.per_page || '10');
+    const [selectedIds, setSelectedIds] = useState([]);
+    const [bulkUpdating, setBulkUpdating] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editMode, setEditMode] = useState(false);
     const [currentProductId, setCurrentProductId] = useState(null);
@@ -115,10 +118,12 @@ export default function Products({ products, categories, filters }) {
     };
 
     const handleApplyFilters = (overrides = {}) => {
+        setSelectedIds([]);
         router.get(route('admin.products'), {
             search: searchTerm,
             category_id: selectedCategory,
             status: selectedStatus,
+            per_page: selectedPerPage,
             ...overrides,
         }, { preserveState: true });
     };
@@ -139,10 +144,45 @@ export default function Products({ products, categories, filters }) {
         handleApplyFilters({ status: value });
     };
 
+    const handlePerPageChange = (e) => {
+        const value = e.target.value;
+        setSelectedPerPage(value);
+        handleApplyFilters({ per_page: value });
+    };
+
+    // Multi-select for bulk activate/deactivate.
+    const toggleSelectOne = (productId) => {
+        setSelectedIds((prev) =>
+            prev.includes(productId) ? prev.filter((id) => id !== productId) : [...prev, productId]
+        );
+    };
+
+    const allVisibleIds = products.data.map((p) => p.id);
+    const allVisibleSelected = allVisibleIds.length > 0 && allVisibleIds.every((id) => selectedIds.includes(id));
+
+    const toggleSelectAllVisible = () => {
+        setSelectedIds(allVisibleSelected ? [] : allVisibleIds);
+    };
+
+    const handleBulkStatusUpdate = (status) => {
+        if (selectedIds.length === 0) return;
+        const label = status === 'active' ? 'mengaktifkan' : 'menonaktifkan';
+        if (!confirm(`Yakin ingin ${label} ${selectedIds.length} produk terpilih?`)) return;
+
+        setBulkUpdating(true);
+        router.post(route('admin.products.bulk-status'), { ids: selectedIds, status }, {
+            preserveScroll: true,
+            onSuccess: () => setSelectedIds([]),
+            onFinish: () => setBulkUpdating(false),
+        });
+    };
+
     const handleResetFilters = () => {
         setSearchTerm('');
         setSelectedCategory('');
         setSelectedStatus('');
+        setSelectedPerPage('10');
+        setSelectedIds([]);
         router.get(route('admin.products'));
     };
 
@@ -364,6 +404,18 @@ export default function Products({ products, categories, filters }) {
                             <option value="out_of_stock">Stok Habis</option>
                         </select>
 
+                        <select
+                            value={selectedPerPage}
+                            onChange={handlePerPageChange}
+                            title="Jumlah baris per halaman — pilih Semua untuk pilih massal lintas semua hasil"
+                            className="bg-white border border-gray-200 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 text-sm rounded-xl px-4 py-2.5 text-gray-700 w-full md:w-36"
+                        >
+                            <option value="10">10 / Halaman</option>
+                            <option value="50">50 / Halaman</option>
+                            <option value="100">100 / Halaman</option>
+                            <option value="all">Tampilkan Semua</option>
+                        </select>
+
                         <div className="flex items-center gap-2 w-full md:w-auto">
                             <button
                                 onClick={handleApplyFilters}
@@ -383,6 +435,42 @@ export default function Products({ products, categories, filters }) {
                     </div>
                 </div>
 
+                {/* Bulk Action Bar — appears once at least 1 product is checked.
+                    Pair with "Tampilkan Semua" above to select/act across the
+                    whole filtered result instead of just the current page. */}
+                {selectedIds.length > 0 && (
+                    <div className="p-3.5 rounded-xl border border-emerald-200 bg-emerald-50 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <span className="text-sm font-semibold text-emerald-800 px-1">
+                            {selectedIds.length} produk dipilih
+                        </span>
+                        <div className="flex items-center gap-2">
+                            <button
+                                onClick={() => handleBulkStatusUpdate('active')}
+                                disabled={bulkUpdating}
+                                className="flex items-center gap-1.5 px-4 py-2 text-xs font-semibold rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm disabled:opacity-50"
+                            >
+                                <Check className="w-3.5 h-3.5" />
+                                <span>Aktifkan Terpilih</span>
+                            </button>
+                            <button
+                                onClick={() => handleBulkStatusUpdate('inactive')}
+                                disabled={bulkUpdating}
+                                className="flex items-center gap-1.5 px-4 py-2 text-xs font-semibold rounded-lg bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 shadow-sm disabled:opacity-50"
+                            >
+                                <X className="w-3.5 h-3.5" />
+                                <span>Nonaktifkan Terpilih</span>
+                            </button>
+                            <button
+                                onClick={() => setSelectedIds([])}
+                                disabled={bulkUpdating}
+                                className="px-3 py-2 text-xs font-semibold rounded-lg text-gray-500 hover:text-gray-700 hover:bg-white disabled:opacity-50"
+                            >
+                                Batal
+                            </button>
+                        </div>
+                    </div>
+                )}
+
                 {/* Products Table Card */}
                 <div className="admin-card overflow-hidden">
                     <div className="overflow-x-auto min-w-full">
@@ -390,7 +478,13 @@ export default function Products({ products, categories, filters }) {
                             <thead>
                                 <tr>
                                     <th className="px-4 py-4 w-12 text-center">
-                                        <input type="checkbox" className="rounded border-gray-300 text-emerald-600 focus:ring-emerald-500" />
+                                        <input
+                                            type="checkbox"
+                                            checked={allVisibleSelected}
+                                            onChange={toggleSelectAllVisible}
+                                            title="Pilih semua produk di halaman ini"
+                                            className="rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
+                                        />
                                     </th>
                                     <th className="px-6 py-4 text-left">Master Products & Image</th>
                                     <th className="px-6 py-4 text-left">SKU Induk</th>
@@ -444,7 +538,12 @@ export default function Products({ products, categories, filters }) {
                                                     {isFirst && (
                                                         <>
                                                             <td rowSpan={totalRows} className="px-4 py-4 w-12 text-center align-middle border-r border-gray-100 bg-white">
-                                                                <input type="checkbox" className="rounded border-gray-300 text-emerald-600 focus:ring-emerald-500" />
+                                                                <input
+                                                                    type="checkbox"
+                                                                    checked={selectedIds.includes(product.id)}
+                                                                    onChange={() => toggleSelectOne(product.id)}
+                                                                    className="rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
+                                                                />
                                                             </td>
                                                             <td rowSpan={totalRows} className="px-6 py-4 align-middle border-r border-gray-100 bg-white">
                                                                 <div className="flex items-center gap-3">

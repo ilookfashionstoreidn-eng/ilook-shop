@@ -92,6 +92,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::post('/products/sync-all-ginee', [ProductController::class, 'syncAllGinee'])->name('products.sync-all-ginee');
     Route::post('/products/{product}/toggle-new-arrival', [ProductController::class, 'toggleNewArrival'])->name('products.toggle-new-arrival');
     Route::post('/products/{product}/toggle-promo', [ProductController::class, 'togglePromo'])->name('products.toggle-promo');
+    Route::post('/products/bulk-status', [ProductController::class, 'bulkUpdateStatus'])->name('products.bulk-status');
 
     // Categories CRUD
     Route::get('/categories', [CategoryController::class, 'index'])->name('categories');
